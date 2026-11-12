@@ -77,7 +77,8 @@ lb_yfb_study_start <- function(Y, K, prior_LF, center_projection) {
 #' Score fixed Cox risks within cohorts and pooled across all patients
 #' @param risk Fixed higher-is-worse Cox linear predictor. Never reoriented here.
 #' @param time,status Outcomes. @param cohort Cohort labels, used only in scoring.
-#' @return One-row data frame with C_within and C_pooled. Undefined C is NA.
+#' @return One-row data frame with within, pooled and cohort C and comparable-pair counts.
+#'   Undefined C is NA. Cohort labels must differ from within and pooled.
 #' @examples
 #' # lb_yfb_study_concordance(risk, time, status, cohort)
 #' @family lb-yfb-study
@@ -86,14 +87,27 @@ lb_yfb_study_concordance <- function(risk, time, status, cohort) {
       length(cohort) != length(time) || anyNA(cohort) ||
       any(!is.finite(c(risk, time, status))) || any(time <= 0) || any(!status %in% c(0, 1)))
     stop("Finite aligned risks, positive times, binary events and cohort labels required.")
-  if (length(risk) < 2L || stats::sd(risk) == 0)
-    return(data.frame(C_within = NA_real_, C_pooled = NA_real_))
-  y <- survival::Surv(time, status)
-  within <- survival::concordancefit(y, risk, strata = as.integer(factor(cohort)),
-                                     reverse = TRUE, timefix = FALSE)$concordance
-  pooled <- survival::concordancefit(y, risk, reverse = TRUE, timefix = FALSE)$concordance
-  data.frame(C_within = if (is.finite(within)) within else NA_real_,
-             C_pooled = if (is.finite(pooled)) pooled else NA_real_)
+  if (any(as.character(cohort) %in% c("within", "pooled")))
+    stop("Cohort labels within and pooled are reserved for aggregate metrics.")
+  # Counts include comparable pairs with tied scores. Constant risks remain
+  # undefined by this study's convention, while their pair counts are retained.
+  out <- data.frame(C_within = NA_real_, C_pooled = NA_real_,
+                    pairs_within = 0, pairs_pooled = 0)
+  labels <- unique(as.character(cohort))
+  for (label in c("within", "pooled", labels)) {
+    idx <- if (label %in% c("within", "pooled")) seq_along(risk) else which(cohort == label)
+    value <- NA_real_; pairs <- 0
+    if (length(idx) >= 2L) {
+      fit <- survival::concordancefit(survival::Surv(time[idx], status[idx]), risk[idx],
+        strata = if (label == "within") as.integer(factor(cohort[idx])) else NULL,
+        reverse = TRUE, timefix = TRUE)
+      pairs <- if (is.matrix(fit$count)) sum(fit$count[, 1:3]) else sum(fit$count[1:3])
+      if (stats::sd(risk[idx]) > 0 && is.finite(fit$concordance)) value <- fit$concordance
+    }
+    out[[paste0("C_", label)]] <- value
+    out[[paste0("pairs_", label)]] <- pairs
+  }
+  out
 }
 
 #' Correlate scores, leaving constant-program correlations undefined
@@ -148,6 +162,7 @@ lb_yfb_study_pair <- function(Y, time, status, cohort, K, prior_LF, prior_beta,
     prior_LF = prior_LF, prior_beta = prior_beta, canonicalize = TRUE,
     posterior_init = yf_design$state, w_S = w_S, survival_block_weight = TRUE,
     center_projection = center_projection, verbose = FALSE)
+  lb_yfb_study_assert_identical(yf_design, list(Y = Y, fold = fold, state = yf$initial_state))
   fits <- list(LB = lb, YFB = yf)
   fi <- predict_ssbmf_lb_foldin(Y, lb)
   py <- predict_ssbmf_yfb(Y, yf$EF, yf$EBeta, yf$EF_norms,
@@ -221,7 +236,7 @@ lb_yfb_study_cv <- function(X, time, status, cohort, fold, scaling, prior_LF,
       list(pair = list(error = msg, test_indices = te),
            metrics = data.frame(fold = j, model = c("LB", "YFB"), converged = FALSE,
              n_iter = NA_integer_, foldin_converged = FALSE, error = msg,
-             C_within = NA_real_, C_pooled = NA_real_))
+             lb_yfb_study_concordance(rep(0, length(te)), time[te], status[te], cohort[te])))
     })
     pairs[[j]] <- result$pair; rows[[j]] <- result$metrics
     if (!is.null(checkpoint))
@@ -230,7 +245,7 @@ lb_yfb_study_cv <- function(X, time, status, cohort, fold, scaling, prior_LF,
   metrics <- do.call(rbind, rows)
   # Do not silently remove undefined folds. Report the defined count, but the
   # requested five-fold mean and SE are NA unless all five estimates exist.
-  summary <- do.call(rbind, lapply(c("C_within", "C_pooled"), function(metric) {
+  summary <- do.call(rbind, lapply(c("C_within", "C_pooled", paste0("C_", unique(as.character(cohort)))), function(metric) {
     a <- metrics[metrics$model == "LB", metric]; b <- metrics[metrics$model == "YFB", metric]
     delta <- b - a; ok <- is.finite(delta)
     data.frame(metric = metric, defined_LB = sum(is.finite(a)), defined_YFB = sum(is.finite(b)),

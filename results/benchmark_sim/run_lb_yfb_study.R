@@ -21,7 +21,7 @@ lb_yfb_runner_options <- function(args) {
   if (any(!grepl('^--[^=]+=.+$', args))) stop('Use --name=value for every option')
   keys <- sub('^--([^=]+)=.*$', '\\1', args)
   vals <- sub('^--[^=]+=', '', args)
-  allowed <- c('mode', 'scaling', 'prior_LF', 'prior_beta', 'out', 'input')
+  allowed <- c('mode', 'scaling', 'prior_LF', 'prior_beta', 'out', 'input', 'K', 'w_S')
   if (anyDuplicated(keys) || any(!keys %in% allowed)) stop('Duplicate or unknown option')
   x <- as.list(stats::setNames(vals, keys))
   required <- c('mode', 'scaling', 'prior_LF', 'prior_beta', 'out')
@@ -30,6 +30,15 @@ lb_yfb_runner_options <- function(args) {
   if (!x$scaling %in% c('zscore', 'sd')) stop('Invalid scaling')
   if (!x$prior_LF %in% c('point_laplace', 'point_exponential')) stop('Invalid prior_LF')
   if (!x$prior_beta %in% c('normal', 'point_normal', 'point_laplace')) stop('Invalid prior_beta')
+  if (!is.null(x$K)) {
+    k <- suppressWarnings(as.numeric(x$K))
+    if (!is.finite(k) || k <= 0 || k != floor(k) || k > .Machine$integer.max) stop('K must be a positive integer')
+    x$K <- as.integer(k)
+  }
+  if (is.null(x$w_S)) x$w_S <- 1 else {
+    x$w_S <- suppressWarnings(as.numeric(x$w_S))
+    if (!is.finite(x$w_S) || x$w_S <= 0) stop('w_S must be positive and finite')
+  }
   if (is.null(x$input)) x$input <- 'data/lf_prior_real_2026-11-12.rds'
   x
 }
@@ -99,7 +108,9 @@ lb_yfb_runner_capture <- function(cell, expr) {
       data.frame(cell, model = model, converged = FALSE, n_iter = NA_integer_,
         foldin_converged = FALSE, recovery_success = FALSE,
         molecular_loading_correlation = NA_real_, matched_score_recovery = NA_real_,
-        false_active = NA_integer_, validation_C = NA_real_, error = msg)))
+        false_active = NA_integer_, validation_C = NA_real_,
+        C_within = NA_real_, C_pooled = NA_real_, pairs_within = NA_real_,
+        pairs_pooled = NA_real_, C_simulation = NA_real_, pairs_simulation = NA_real_, error = msg)))
     list(metrics = rows, error = msg)
   })
 }
@@ -171,14 +182,16 @@ lb_yfb_runner_simulation <- function(opts, K, max_iter, tol, center, checkpoint)
         recovered_k <- match_k[1:3][is.finite(best[1:3]) & best[1:3] >= .7 & !is.na(match_k[1:3])]
         false_active <- sum(active[setdiff(seq_along(active), recovered_k)])
       }
-      cell_rows[[model]] <- data.frame(cell, model = model,
+      concordance <- lb_yfb_study_concordance(pred$risk_scores, time[va], status[va], cohort[va])
+      cell_rows[[model]] <- cbind(data.frame(cell, model = model,
         converged = isTRUE(fit$history$converged), n_iter = fit$history$n_iter,
         foldin_converged = if (model == 'LB') isTRUE(pred$converged) else TRUE,
         recovery_success = recovery,
         molecular_loading_correlation = if (cell$design == 'matched') NA_real_ else corr,
         matched_score_recovery = if (cell$design == 'matched') corr else NA_real_,
         false_active = false_active,
-        validation_C = frozen_reverse_cindex(pred$risk_scores, time[va], status[va]), error = '')
+        validation_C = frozen_reverse_cindex(pred$risk_scores, time[va], status[va])),
+        concordance, error = '')
     }
     list(metrics = do.call(rbind, cell_rows), comparison = cbind(cell, pair$comparison),
          program = cbind(cell, pair$program), pair = pair, validation_predictions = predictions,
@@ -212,9 +225,9 @@ lb_yfb_runner_main <- function(opts) {
                'code/train_test_split.R', 'code/concordance_ci.R', 'code/lb_yfb_study.R')
   for (path in sources) source(path, local = .GlobalEnv)
   cfg <- yaml::read_yaml('config/globals.yml')
-  K <- cfg$benchmark$k_merged_yfb_desurv
+  K <- if (!is.null(opts$K)) opts$K else cfg$benchmark$k_merged_yfb_desurv
   max_iter <- cfg$cavi$max_iter; tol <- cfg$cavi$tol
-  if (opts$mode == 'smoke') { K <- 2L; max_iter <- 2L }
+  if (opts$mode == 'smoke') max_iter <- 2L
   center <- identical(opts$scaling, 'sd')
   run_id <- basename(normalizePath(opts$out, mustWork = FALSE))
   if (!grepl('^[A-Za-z0-9_.-]+$', run_id)) stop('Unsafe output directory name')
@@ -222,7 +235,9 @@ lb_yfb_runner_main <- function(opts) {
   if (file.exists(checkpoint)) stop('Checkpoint path already exists: ', checkpoint)
   dir.create(opts$out, recursive = TRUE); dir.create(checkpoint, recursive = TRUE)
   if (opts$mode == 'simulation') sources <- c(sources, 'results/benchmark_sim/run_yfb_supervision_decision.R', 'code/simulate_multimodal_yfb.R', 'code/fit_yfb_supervised.R')
-  provenance <- c(paste(names(opts), unlist(opts), sep = '='),
+  provenance <- c(paste(names(opts)[!names(opts) %in% c('K', 'w_S')],
+                        unlist(opts[!names(opts) %in% c('K', 'w_S')]), sep = '='),
+                  paste0('w_S=', if (opts$mode == 'simulation') '1,10' else opts$w_S),
                   paste0('K=', K), paste0('max_iter=', max_iter), paste0('tol=', tol),
                   paste0('git_head=', system2('git', c('rev-parse', 'HEAD'), stdout = TRUE)),
                   paste0('git_status=', paste(system2('git', c('status', '--porcelain'), stdout = TRUE), collapse = '|')),
@@ -246,14 +261,14 @@ lb_yfb_runner_main <- function(opts) {
   needed <- c('X', 'time', 'status', 'cohort', 'fold')
   if (!all(needed %in% names(d))) stop('Input is missing: ', paste(setdiff(needed, names(d)), collapse = ', '))
   cv <- lb_yfb_study_cv(d$X, d$time, d$status, d$cohort, d$fold,
-    opts$scaling, opts$prior_LF, opts$prior_beta, K, 1, max_iter, tol,
+    opts$scaling, opts$prior_LF, opts$prior_beta, K, opts$w_S, max_iter, tol,
     checkpoint = checkpoint)
   saveRDS(cv, file.path(checkpoint, 'cv.rds'))
   lb_yfb_runner_write(list(cv_metrics = cv$metrics, cv_summary = cv$summary), opts$out)
   if (isTRUE(cv$failed)) stop('Training CV failed; see cv_metrics.csv and fold checkpoints')
   Y <- lb_yfb_study_scale(d$X, d$cohort, scaling = opts$scaling)
   pair <- tryCatch(lb_yfb_study_pair(Y, d$time, d$status, d$cohort, K, opts$prior_LF,
-    opts$prior_beta, 1, max_iter, tol, center), error = identity)
+    opts$prior_beta, opts$w_S, max_iter, tol, center), error = identity)
   if (inherits(pair, 'error')) {
     saveRDS(list(error = conditionMessage(pair)), file.path(checkpoint, 'full_fit_error.rds'))
     lb_yfb_runner_write(list(full_metrics = data.frame(model = c('LB', 'YFB'),

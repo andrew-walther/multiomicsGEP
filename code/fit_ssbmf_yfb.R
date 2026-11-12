@@ -956,6 +956,13 @@ fit_ssbmf_yfb <- function(Y, time, status,
   }
 
   Tau <- if(is.null(posterior_init)) 1.0 / pmax(apply(Y, 2, var), 1e-8) else posterior_init$Tau
+  # Record the actual pre-sweep state for exact matched-start comparisons.
+  # Keep default fit objects unchanged when no full posterior start was supplied.
+  if (!is.null(posterior_init)) {
+    initial_state <- list(EL = EL, EL2 = EL2, EF = EF, EF2 = EF2,
+      EBeta = EBeta, EBeta2 = EBeta2, Tau = Tau,
+      prior_F = prior_F_state, g_beta = if (beta_prior_mode == "shared") g_beta else NULL)
+  }
   y_frob2 <- sum(Y^2)
 
   history <- list(
@@ -1482,6 +1489,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
   }
 
   if(prune_preserve_posterior || !is.null(posterior_init)) {
+    if (!is.null(posterior_init)) result$initial_state <- initial_state
     result$posterior_state <- list(EL=result$EL,EL2=result$EL2,EF=result$EF,EF2=result$EF2,
       EBeta=result$EBeta,EBeta2=result$EBeta2,Tau=result$Tau,
       prior_F=prior_F_state,g_beta=result$g_beta)

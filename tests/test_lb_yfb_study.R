@@ -44,6 +44,19 @@ run_test("Study concordance pools within-cohort pairs and freezes risk direction
   unequal <- lb_yfb_study_concordance(c(4, 3, 2, 1, 10, 20), 1:6,
                                      rep(1, 6), c(rep("a", 4), rep("b", 2)))
   assert_near(unequal$C_within, 6 / 7, tol = 1e-12)
+  assert_true(all(c("C_a", "C_b", "pairs_a", "pairs_b", "pairs_within", "pairs_pooled") %in% names(unequal)))
+  assert_near(unequal$C_a, 1)
+  assert_near(unequal$C_b, 0)
+  assert_equal(unequal$pairs_a, 6)
+  assert_equal(unequal$pairs_b, 1)
+  assert_equal(unequal$pairs_within, 7)
+  assert_equal(unequal$pairs_pooled, 15)
+  # Near-equal times must be treated as ties, matching task A's timefix.
+  tied <- lb_yfb_study_concordance(c(3, 1, 2), c(1, 1 + 1e-10, 2),
+                                  rep(1, 3), rep("a", 3))
+  assert_true("C_a" %in% names(tied))
+  assert_near(tied$C_a, .5)
+
   assert_true(is.na(lb_yfb_study_concordance(rep(0, 6), time, status, co)$C_within))
 })
 set.seed(20261112)
@@ -108,10 +121,26 @@ run_test("Study pair shares the complete starting state and uses fold-in predict
   f <- z$fits$LB
   assert_near(z$predictions$LB, predict_ssbmf_lb_foldin(.study_X, f)$risk_scores, tol = 1e-10)
   assert_equal(f$initial_state, z$start)
+  assert_equal(z$fits$YFB$initial_state, z$start)
   assert_near(z$predictions$YFB, predict_ssbmf_yfb(.study_X, z$fits$YFB$EF,
     z$fits$YFB$EBeta, z$fits$YFB$EF_norms,
     projection_center = z$fits$YFB$projection_center)$risk_scores, tol = 1e-10)
   assert_equal(nrow(z$program), 4L)
+})
+run_test("Study rejects a mutated recorded YFB start", {
+  local({
+    real_fit <- fit_ssbmf_yfb
+    assign("fit_ssbmf_yfb", function(...) {
+      fit <- real_fit(...)
+      fit$initial_state$EBeta[1] <- 1
+      fit
+    }, envir = .GlobalEnv)
+    on.exit(assign("fit_ssbmf_yfb", real_fit, envir = .GlobalEnv))
+    err <- tryCatch(lb_yfb_study_pair(.study_X, .study_time, .study_status,
+      .study_cohort, 2L, "point_exponential", "normal", 1, 1, 1e-5), error = identity)
+    assert_true(inherits(err, "error"))
+    assert_true(grepl("mismatch in state", conditionMessage(err)))
+  })
 })
 run_test("Study CV rejects outcomes that would otherwise be silently truncated", {
   err <- tryCatch(lb_yfb_study_cv(.study_X, c(.study_time, 1), .study_status,

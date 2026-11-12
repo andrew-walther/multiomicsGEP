@@ -88,6 +88,10 @@ The [matched LB/YFB runner](results/benchmark_sim/run_lb_yfb_study.R) compares
 LB fold-in with YFB projection using identical inputs and five training folds.
 Its [code findings and run commands](docs/findings/2026-11-12-lb-yfb-study-code-findings.md)
 describe the explicit prior/scaling arguments, synthetic smoke mode and private checkpoints.
+For the registered K = 5 comparison, pass `--K=5 --w_S=1` with
+`--scaling=zscore --prior_LF=point_laplace --prior_beta=normal`. The runner
+records rank and survival weight in `settings.txt`, and reports held-out
+concordance and comparable-pair counts for each cohort.
 
 ## Selected findings
 
