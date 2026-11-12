@@ -104,6 +104,8 @@ After both study modes finish, rebuild their aggregate summaries with
 It reads the saved checkpoints, applies the registered simulation gate and
 writes program-activity, gene-overlap and score-correlation tables without
 refitting either model.
+The [K = 5 study findings](docs/findings/2026-11-12-lb-yfb-study-findings.md)
+report the registered gate, gene comparisons, external intervals and numerical limits.
 
 
 
