@@ -163,4 +163,28 @@ run_test("MMYFB-Updates-T10: shared-score update refits its EB prior", {
 })
 
 
+run_test("MMYFB scalar variance KL includes every normalizer", {
+  source("code/compute_elbo.R")
+  x <- c(-1, 0.2, 2); s2 <- 0.7
+  mean <- c(-0.4, 0.1, 1); second <- mean^2 + 0.3
+  log_ml <- dnorm(x, 0, sqrt(1 + s2), log = TRUE)
+  assert_near(multimodal_yfb_coordinate_kl(x, s2, mean, second, log_ml),
+              -compute_ebnm_kl(sum(log_ml), 1 / s2, x, mean, second), tol = 1e-10)
+})
+
+run_test("MMYFB flat shared beta retains the prior moments", {
+  g <- ashr::normalmix(1, 0, 1)
+  result <- multimodal_yfb_update_beta_shared_k(rep(0, 4), rep(0, 4),
+                                                   rep(1, 4), rep(0, 4), g, "normal")
+  assert_near(result$mean, 0, tol = 1e-12)
+  assert_near(result$second, 1, tol = 1e-12)
+  assert_near(result$kl, 0, tol = 1e-12)
+  g_laplace <- ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 0.363))
+  laplace <- multimodal_yfb_update_beta_shared_k(rep(0, 4), rep(0, 4),
+                                                   rep(1, 4), rep(0, 4), g_laplace)
+  assert_near(laplace$second, 0.5 * 2 * 0.363^2, tol = 1e-12)
+  assert_near(laplace$kl, 0, tol = 1e-12)
+})
+
+
 if (sys.nframe() == 0L) report_results("test_multimodal_yfb_updates.R")

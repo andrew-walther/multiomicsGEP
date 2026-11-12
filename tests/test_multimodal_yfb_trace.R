@@ -102,3 +102,15 @@ run_test("MMTrace-T6: diagnostics also support fits without an intercept", {
     assert_near(x$full_reconstruction_change,x$reconstruction_change,tol=0,
       msg="with zero intercept the two molecular changes coincide")
 })
+
+run_test("MMTrace-T7: flat beta coordinates do not affect the shared prior refit", {
+  g <- ashr::normalmix(1, 0, 1)
+  x <- c(-1, 0.6, 0)
+  s <- c(0.3, 0.4, Inf)
+  expected <- ebnm::ebnm(x[1:2], s[1:2], prior_family = "normal", g_init = g)$fitted_g
+  actual <- multimodal_yfb_refit_beta_prior(x, s, g, "normal")
+  assert_true(isTRUE(all.equal(actual, expected, tolerance = 1e-12)),
+              msg = "flat coordinate must not enter prior fitting")
+  unchanged <- multimodal_yfb_refit_beta_prior(c(0, 0), c(Inf, Inf), g, "normal")
+  assert_true(identical(unchanged, g), msg = "all-flat likelihoods retain the prior")
+})

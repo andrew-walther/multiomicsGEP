@@ -30,6 +30,24 @@ multimodal_yfb_default_control <- function() {
   defaults
 }
 
+#' Refit a shared beta prior from informative likelihoods
+#'
+#' A flat coefficient likelihood has infinite pseudo-noise and contributes no
+#' information about the prior. Retain the current prior if all are flat.
+#' @param x,s Pseudo-observations and their standard deviations.
+#' @param g Current shared prior.
+#' @param prior_family EBNM prior family.
+#' @return The fitted prior, or `g` when all likelihoods are flat.
+#' @examples
+#' # multimodal_yfb_refit_beta_prior(0, Inf, ashr::normalmix(1, 0, 1), "normal")
+#' @family multimodal_yfb
+multimodal_yfb_refit_beta_prior <- function(x, s, g, prior_family) {
+  informative <- is.finite(s)
+  if (!any(informative)) return(g)
+  ebnm::ebnm(x[informative], s[informative], prior_family = prior_family,
+             g_init = g)$fitted_g
+}
+
 #' Combine posterior moments with a damping weight
 #'
 #' @param old_mean,old_second Current posterior moments.
@@ -592,7 +610,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         }
         if (shared_beta || trace_enabled) {
           beta_x[k] <- updated_beta$x
-          beta_s[k] <- if (updated_beta$A > 0) sqrt(1 / updated_beta$A) else 1e6
+          beta_s[k] <- if (updated_beta$A > 0) sqrt(1 / updated_beta$A) else Inf
         }
         if (trace_enabled) beta_A[k] <- updated_beta$A
         kl_beta[k] <- updated_beta$kl
@@ -619,8 +637,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
       # the warm-up (held fixed within the sweep, as for the loading priors)
       if (trace_enabled) sweep_prior_before <- g_beta
       if (shared_beta && !isTRUE(settings$beta_prior_fix) && outer > beta_warmup && K > 0L) {
-        g_beta <- ebnm::ebnm(beta_x, beta_s, prior_family = beta_family,
-                             g_init = g_beta)$fitted_g
+        g_beta <- multimodal_yfb_refit_beta_prior(beta_x, beta_s, g_beta, beta_family)
       }
       if (trace_enabled) prior_sweeps[[inner]] <- list(
         prior_before = sweep_prior_before, prior_after = g_beta,

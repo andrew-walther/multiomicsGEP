@@ -13,6 +13,11 @@ Two predictors are available: **YFB**, η = (YF)β, scores new patients by direc
 projection, and **LB**, η = Lβ, uses latent activities. Expression is the current
 single-modality application. A joint expression and methylation model is in development.
 
+The [one-modality equivalence audit](docs/findings/2026-11-12-multimodal-m1-equivalence-findings.md)
+records the remaining differences between the fitters and the KL regression checks.
+Run `Rscript tests/test_multimodal_m1_equivalence.R` for the acceptance test,
+which currently fails because the multimodal interface lacks required options.
+
 ## Getting started
 
 Developed with R 4.5. Install the core dependencies, then run code from the

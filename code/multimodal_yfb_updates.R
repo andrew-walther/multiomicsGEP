@@ -9,6 +9,7 @@
 if (!exists("multimodal_yfb_validate_moments")) {
   source("code/multimodal_yfb_helpers.R")
 }
+source("code/update_beta.R")
 
 #' Update a point-exponential posterior from one Gaussian pseudo-observation
 #'
@@ -233,6 +234,8 @@ multimodal_yfb_signed_posterior <- function(A, B, prior) {
 #' multimodal_yfb_coordinate_kl(1, 1, 0.5, 0.75, dnorm(1, 0, sqrt(2), log = TRUE))
 #' @family multimodal_yfb_updates
 multimodal_yfb_coordinate_kl <- function(x, s2, mean, second, log_ml) {
+  # A common variance contributes one Gaussian normalizer per observation.
+  if (length(s2) == 1L && length(x) > 1L) s2 <- rep_len(s2, length(x))
   ok <- is.finite(x) & is.finite(s2) & s2 > 0 & is.finite(log_ml)
   if (!any(ok)) return(0)
   expected_loglik <- -0.5 * log(2 * pi * s2[ok]) -
@@ -556,9 +559,16 @@ multimodal_yfb_update_beta_shared_k <- function(EZ_k, VZ_k, w, h_minus_k, g,
                                                 prior_family = "point_laplace") {
   A <- sum(w * (EZ_k^2 + pmax(VZ_k, 0)))
   B <- sum(EZ_k * h_minus_k)
-  if (!is.finite(A) || A <= 0) {
-    return(list(A = 0, B = B, x = 0, mean = 0, second = 0, variance = 0, kl = 0))
+  if (!is.finite(A)) stop("Non-finite beta likelihood precision.")
+  if (A == 0 && B == 0) {
+    # A flat likelihood leaves q(beta) equal to its fixed shared prior.
+    prior <- update_beta_k(1, 0, 0, 0, prior_family = prior_family,
+                           alpha = 1, g_fixed = g)
+    if (is.null(prior$neg_kl)) stop("Unsupported shared prior for flat beta likelihood.")
+    return(list(A = 0, B = 0, x = 0, mean = prior$mean,
+                second = prior$second, variance = prior$sd^2, kl = -prior$neg_kl))
   }
+  if (A <= 0) stop("Invalid beta likelihood precision or signal.")
   x <- B / A
   fit <- ebnm::ebnm(x, sqrt(1 / A), prior_family = prior_family,
                     g_init = g, fix_g = TRUE)
