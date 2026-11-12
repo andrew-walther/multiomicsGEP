@@ -18,7 +18,11 @@ that supported K = 7 are no longer used for selection. Results reported at K = 7
 on record and are labeled with that rank. Task A's prior choice holds at K = 5
 (point-exponential 0.519 against 0.655). `config/globals.yml` is not changed:
 `k_merged_yfb_desurv` drives historical runners, so whether to add a new key or change
-that one is left to Andrew. Findings:
+that one is left to Andrew. **Andrew adopted K = 5 the same day.** New work reads the new
+key `benchmark$k_working_yfb: 5`, and `k_merged_yfb_desurv` stays 7 so historical runners
+reproduce. In the K = 5 full fit, programs 2 (protective), 4 and 5 (adverse) are
+survival-active. At K = 7 the active set was 2, 3 and 5. Programs 3 and 4 sit near the
+activity threshold in both fits. Findings:
 [docs/findings/2026-11-12-training-cv-redo-findings.md](docs/findings/2026-11-12-training-cv-redo-findings.md).
 
 ## 2026-11-12 — Task B: Normal β stays

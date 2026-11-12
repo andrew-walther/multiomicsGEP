@@ -169,6 +169,9 @@ benchmark:
   k_merged_lb_desurv:  7   # LB  + per-platform z-std + combined_rank + top-3000 per-cohort
   k_merged_yfb_desurv: 7   # YFB + per-platform z-std + combined_rank + top-3000 per-cohort
   k_merged_yfb_desurv_cohort: 8   # YFB + per-platform z-std + combined_rank + top-3000 per-cohort + cohort_id
+  k_working_yfb: 5   # Working YFB model (D4, per-cohort z-score, point-Laplace L/F, Normal beta), chosen by
+                     # pooled training CV with the one-SE rule (task F, DECISIONS.md 2026-11-12). New work reads
+                     # this key; k_merged_yfb_desurv stays 7 so historical K = 7 runners reproduce.
   k_pdac_yfb_merged: 3   # K for YFB merged-cohort fits (rank_transform=FALSE).
                          # Diagnostic sweep (2026-05-06): K=3 gives highest median external C
                          # (0.644); K_eff=3 across K=3-14, all factors survive at K=3.

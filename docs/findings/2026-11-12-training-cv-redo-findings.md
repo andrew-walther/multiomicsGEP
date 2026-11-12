@@ -95,6 +95,30 @@ to 4 are clearly worse. K = 10 is 0.008 above K = 7 (paired SE 0.004). DeSurv us
 same unpaired one-SE rule. The rule picks the smallest rank on the plateau. It does not
 show that K = 5 predicts better than K = 7.
 
+## Programs in the K = 5 full-data fit
+
+Andrew adopted K = 5 on 2026-11-12. Every program reconstructs expression. Three also carry
+survival signal (survival-active: |E[β_k]| ≥ 1.96 posterior SD). β is per SD of the
+canonical score, and a positive β means higher scores carry higher hazard. Each K = 5 program is matched to
+the current K = 7 fit (S-11 full fit) by the largest absolute correlation of patient
+scores. The overlap counts the shared genes among each program's 100 largest |loadings|.
+
+| K = 5 program | E[β] (z) | Survival-active | Direction | Matched K = 7 program | Score correlation | Top-100 gene overlap | K = 7 E[β] (z) |
+|---|---|---|---|---|---|---|---|
+| 1 | 0.000 (0.0) | no | expression only | 1 | 0.995 | 76 | 0.000 (0.0) |
+| 2 | −0.372 (−4.5) | yes | protective | 2 | 0.993 | 64 | −0.405 (−4.8) |
+| 3 | 0.101 (1.5) | no | adverse direction | 3 | 0.944 | 59 | 0.218 (3.0) |
+| 4 | 0.209 (2.4) | yes | adverse | 4 | 0.924 | 92 | 0.154 (1.9) |
+| 5 | 0.230 (2.8) | yes | adverse | 5 | 0.988 | 87 | 0.230 (2.8) |
+
+The five programs map one-to-one onto the first five K = 7 programs. K = 7's programs 6
+(β 0) and 7 (β −0.05, z −0.9) are dropped, and neither was survival-active. Program 2, the
+strongest and protective, is stable. The survival-active label moves between programs 3
+and 4: at K = 7 the active set is {2, 3, 5}, at K = 5 it is {2, 4, 5}. Both are near the
+1.96 threshold (z 3.0 → 1.5 and 1.9 → 2.4), so the label is not stable for them.
+Interpretations that rely on program 3 being survival-active, such as the
+program-classification rule that names programs 2 and 3, need rechecking at K = 5.
+
 ## Task A rerun at K = 5
 
 | Arm | Mean within-cohort C | Difference (SE) | Folds converged | Survival-active per fold | Max \|cor\| with cohort |
@@ -106,13 +130,13 @@ Task A's criterion 4 fails again, so point-Laplace stays at the new rank.
 
 ## Consequences
 
-- K = 5 is adopted for new work under the registered rule. The external C screens of
+- K = 5 is adopted for new work under the registered rule, confirmed by Andrew on
+  2026-11-12. New work reads `benchmark$k_working_yfb: 5` in `config/globals.yml`. The external C screens of
   July and August that supported K = 7 are no longer used for selection.
 - Results already reported at K = 7 (S-11 to S-15, the S-12 external scores, and the
   task A, A2, B, C and E work this week) stay on record and are labeled with K = 7.
-- `config/globals.yml` (`benchmark$k_merged_yfb_desurv: 7`) is unchanged here. Many
-  historical runners read that key, so changing it would alter their reruns. Whether to
-  add a new key or change this one is a decision for Andrew.
+- `benchmark$k_merged_yfb_desurv` stays 7 so that historical K = 7 runners reproduce. The
+  methylation runner of task C also reads it and was running at the time.
 - Prelim Chapter 4 reports the fixed K = 7 fit, and its numbers stay. K = 5 is described as
   the training-CV choice for the next fit, as the week plan specifies.
 

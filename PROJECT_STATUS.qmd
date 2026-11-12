@@ -37,7 +37,8 @@ z-scored input, since task A (2026-11-12) kept point-Laplace L and F priors. Mul
 Task F made the gene screen, input scaling and rank choices from training CV alone. D4 and
 the per-cohort z-score were kept. Training CV is flat from K = 5 to 12 and lower below 5,
 and the one-SE rule selects K = 5 for new work (0.655 against 0.658 at K = 7, all folds
-converged). The fixed K = 7 fit stays the reported model until a K = 5 fit is reviewed. See the
+converged). Andrew adopted K = 5 on 2026-11-12 (`benchmark$k_working_yfb`). Results
+already reported at K = 7 keep that label. See the
 [findings](docs/findings/2026-11-12-training-cv-redo-findings.md).
 
 ## β prior comparison (2026-11-12)
