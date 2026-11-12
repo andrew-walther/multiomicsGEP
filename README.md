@@ -160,11 +160,16 @@ Documentation:
 
 ## Feature-group fitter tests
 
+`fit_ssbmf_yfb()` accepts `feature_group`, one label per column of a concatenated
+input matrix. Multiple groups fit separate F priors while sharing L, the joint
+survival projection and feature-specific noise precisions. NULL and a single
+group preserve the earlier numerical path. Standardize each block using its
+training rows before concatenation. Grouped fits return
+`prior_F[[group]][[program]]`; prediction uses the same concatenated column order.
 Run `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 Rscript tests/test_feature_groups_yfb.R`
-for the proposed feature-group extension. These tests currently include seven
-expected failures before implementation and are not yet in the master runner.
-The [findings](docs/findings/2026-11-12-feature-group-fitter-findings.md) describe
-the frozen baselines and the required wait for Part 1's committed results.
+for the focused tests, also registered in the full suite. The
+[findings](docs/findings/2026-11-12-feature-group-fitter-findings.md) explain
+supported options, KL accounting and the pending simulation recovery definition.
 
 ## License and author
 

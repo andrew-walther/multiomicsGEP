@@ -9,6 +9,7 @@
 if (!exists("run_test")) source("tests/test_helpers.R")
 if (!exists("fit_ssbmf_yfb")) source("code/fit_ssbmf_yfb.R")
 if (!exists("predict_ssbmf_yfb")) source("code/predict_ssbmf_yfb.R")
+if (!exists("update_F_k")) source("code/update_F.R")
 
 # Fixtures ----
 
@@ -205,6 +206,19 @@ run_test("Feature groups: noncanonical F prior equals ebnm within each group", {
               "fixture must separate the two sparsity estimates")
 })
 
+run_test("Feature groups: reconstruction-only F update uses the same separate priors", {
+  x <- c(rep(0, 18), -4, 4, seq(-6, 6, length.out = 20))
+  groups <- rep(c("sparse", "dense"), each = 20)
+  ref <- update_F_surv_YFB_k(rep(1, 40), 1, 1, matrix(x, 1),
+    prior_family = "point_laplace", alpha = 0, feature_group = groups)
+  actual <- update_F_k(rep(1, 40), 1, 1, matrix(x, 1),
+    prior_family = "point_laplace", alpha = 0, feature_group = groups)
+  assert_near(actual$mean, ref$mean, 0)
+  assert_near(actual$second, ref$second, 0)
+  assert_equal(actual$ebnm_result, ref$ebnm_result)
+  assert_near(actual$neg_kl, ref$neg_kl, 0)
+})
+
 run_test("Feature groups: canonical F refits use block observations and priors rescale", {
   d <- fg_fixture(); d$args$max_iter <- 1L
   groups <- rep(c("rna", "meth"), each = 12)
@@ -218,6 +232,11 @@ run_test("Feature groups: canonical F refits use block observations and priors r
     call <- observed$calls[[(k - 1L) * 2L + m]]
     # The block sweep must use its actual columns, with the joint EZ carried in.
     assert_near(call$args$Y_m, d$Y[, j, drop = FALSE], 0)
+    if (m == 2L) {
+      previous <- observed$calls[[(k - 1L) * 2L + 1L]]
+      assert_near(call$args$EZ_k, previous$result$EZ, 0)
+      assert_near(call$args$VZ_k, previous$result$VZ, 0)
+    }
     detail <- call$result$details
     prior <- call$result$prior
     ref <- ebnm::ebnm(detail$x, sqrt(detail$s2), prior_family = "point_laplace",
@@ -241,13 +260,17 @@ run_test("Feature groups: canonical F refits use block observations and priors r
               "at least one fitted prior must exercise rescaling")
 })
 
-run_test("Feature groups: last objective includes every group KL and returned moments", {
-  d <- fg_fixture(); d$args$max_iter <- 1L
+for (sweeps in c(1L, 4L)) local({
+  n_sweeps <- sweeps
+  run_test(paste("Feature groups: returned-prior objective after", n_sweeps, "sweeps"), {
+  d <- fg_fixture(); d$args$max_iter <- n_sweeps
   observed <- fg_observe(d, rep(c("rna", "meth"), each = 12))
   fit <- observed$fit
-  assert_length(observed$calls, 4L)
+  assert_length(observed$calls, 4L * n_sweeps)
   # L and per-program Normal beta each contribute one negative KL per program.
-  assert_length(observed$kls, 4L)
+  assert_length(observed$kls, 4L * n_sweeps)
+  observed$calls <- tail(observed$calls, 4L)
+  observed$kls <- tail(observed$kls, 4L)
   scale <- tail(observed$scales, 1)[[1]]$scale
   F_kl <- vapply(seq_along(observed$calls), function(i) {
     k <- (i - 1L) %/% 2L + 1L
@@ -265,6 +288,28 @@ run_test("Feature groups: last objective includes every group KL and returned mo
                              fit$EF, fit$EF2, fit$EBeta, fit$EBeta2,
                              neg_kl = neg_kl, w_S = 1)
   assert_near(tail(fit$history$elbo_full, 1), value, 1e-7)
+  })
+})
+
+run_test("Feature groups: Normal and exponential KL corrections match analytic values", {
+  old <- list(family = "normal", variance = 2, point_mass = FALSE)
+  new <- list(family = "normal", variance = 3, point_mass = FALSE)
+  second <- 0.2 + 0.4^2
+  old_kl <- 0.5 * (second / 2 - 1 + log(2 / 0.2))
+  update <- list(prior = new, kl = old_kl, details = list(second = second))
+  assert_near(yf_group_loading_kl(update, old),
+              0.5 * (second / 3 - 1 + log(3 / 0.2)), 1e-12)
+  old <- list(family = "point_exponential", pi = 0.6, rate = 1.3, point_mass = FALSE)
+  new <- list(family = "point_exponential", pi = 0.7, rate = 2.1, point_mass = FALSE)
+  update <- list(prior = new, kl = 0,
+                 details = list(slab_prob = old$pi, mean = old$pi / old$rate))
+  expected <- 0.4 * log(0.4 / 0.3) + 0.6 * log(0.6 * 1.3 / (0.7 * 2.1)) +
+    (2.1 - 1.3) * 0.6 / 1.3
+  assert_near(yf_group_loading_kl(update, old), expected, 1e-12)
+  update$prior <- list(family = "point_exponential", pi = 0, point_mass = TRUE)
+  error <- tryCatch(yf_group_loading_kl(update, old), error = identity)
+  assert_true(inherits(error, "error"))
+  assert_true(grepl("incompatible", conditionMessage(error), fixed = TRUE))
 })
 
 run_test("Feature groups: concatenated prediction equals sum of block projections", {
@@ -300,6 +345,17 @@ run_test("Feature groups: malformed labels and cohort offsets fail explicitly", 
   assert_true(inherits(error, "error"))
   assert_true(grepl("cohort_id", conditionMessage(error), fixed = TRUE))
   assert_false(grepl("unused argument", conditionMessage(error), fixed = TRUE))
+})
+
+run_test("Feature groups: unsupported posterior restart and pruning stop explicitly", {
+  d <- fg_fixture()
+  groups <- rep(c("a", "b"), each = 12)
+  for (extra in list(list(prune = TRUE), list(posterior_init = list()),
+                     list(N_frozen = 1L), list(loading_prior_update = "fixed_q_em"))) {
+    error <- tryCatch(fg_fit(d, c(list(feature_group = groups), extra)), error = identity)
+    assert_true(inherits(error, "error"))
+    assert_true(grepl("feature_group", conditionMessage(error), fixed = TRUE))
+  }
 })
 
 if (sys.nframe() == 0L) {

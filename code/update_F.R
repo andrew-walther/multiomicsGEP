@@ -32,6 +32,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages(library(ebnm))
+if (!exists("yf_feature_groups")) source("code/feature_groups_yfb.R")
 
 # =============================================================================
 # Core: single-factor update
@@ -73,6 +74,7 @@ suppressPackageStartupMessages(library(ebnm))
 #'                    Phase 1a objective normalization: keeps F's genomics scale
 #'                    consistent with L's (see DECISIONS.md). x_j is invariant to
 #'                    this divisor (cancels in the ratio); only s_j changes.
+#' @param feature_group NULL or one label per feature, for separate ebnm priors.
 #'
 #' @return Named list:
 #'   $mean        -- p-vector: posterior mean E_q[f_{jk}]
@@ -99,7 +101,10 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
                         prior_family = "point_exponential",
                         alpha        = 0.5,
                         A_floor      = 1e-10,
-                        genomics_divisor = 1) {
+                        genomics_divisor = 1,
+                        feature_group = NULL) {
+
+  groups <- yf_feature_groups(feature_group, length(Tau))
 
   # ------------------------------------------------------------------
   # Precision A_{jk}  (p-vector)
@@ -152,6 +157,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
   # Solve the p-dimensional EBNM problem
   # Each feature j provides one observation x_j with noise s_j.
   # ------------------------------------------------------------------
+  if (!is.null(groups)) return(c(yf_group_ebnm(x_F, s_F, groups, prior_family),
+    list(A = A_F, B = B_F, x = x_F, s = s_F, sum_EL2_k = sum_EL2_k)))
   res <- ebnm(x = x_F, s = s_F, prior_family = prior_family)
 
   f_mean   <- res$posterior$mean                       # p-vector

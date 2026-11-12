@@ -69,6 +69,7 @@ test_files <- c(
   "tests/test_yfb_joint_beta.R",
   "tests/test_survival_block_weight.R",
   "tests/test_projection_centering.R",
+  "tests/test_feature_groups_yfb.R",
   "tests/test_update_beta_cohort.R",
   "tests/test_update_L.R",
   "tests/test_update_F.R",

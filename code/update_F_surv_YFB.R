@@ -45,6 +45,7 @@
 # =============================================================================
 
 suppressPackageStartupMessages(library(ebnm))
+if (!exists("yf_feature_groups")) source("code/feature_groups_yfb.R")
 
 # =============================================================================
 # Core: single-factor update
@@ -78,6 +79,8 @@ suppressPackageStartupMessages(library(ebnm))
 #'                    B_F = B_gen + w_surv * B_surv. w_surv = 1 is the exact
 #'                    equal-weight posterior (alpha = 0.5 with both terms doubled).
 #'                    NULL keeps the alpha-weighted update unchanged.
+#' @param feature_group NULL or one label per feature. Multiple groups fit
+#'                    separate loading priors and return one ebnm result per group.
 #'
 #' @return Named list:
 #'   $mean        -- p-vector: posterior mean E_q[f_{jk}]
@@ -97,6 +100,9 @@ suppressPackageStartupMessages(library(ebnm))
 #' @export
 #' @family F_surv_YFB_update
 #' @seealso \code{\link{update_L_surv_YFB_k}} for the pure-genomics L update
+#' @examples
+#' update_F_surv_YFB_k(rep(1, 4), 1, 1, matrix(c(-2, 0, 3, 0), 1),
+#'   prior_family = "point_laplace", feature_group = c("rna", "rna", "meth", "meth"))
 update_F_surv_YFB_k <- function(Tau, EL_k, EL2_k, R_k,
                                  EBeta_k      = 0,
                                  EBeta2_k     = 0,
@@ -105,9 +111,11 @@ update_F_surv_YFB_k <- function(Tau, EL_k, EL2_k, R_k,
                                  prior_family = "point_exponential",
                                  alpha        = 0,        # alpha_F=0: pure genomics
                                  A_floor      = 1e-10,
-                                 w_surv       = NULL) {
+                                 w_surv       = NULL,
+                                 feature_group = NULL) {
 
   p <- length(Tau)
+  groups <- yf_feature_groups(feature_group, p)
 
   if (is.null(YtWY_diag)) YtWY_diag <- rep(0, p)
   if (is.null(YtWz_no_k)) YtWz_no_k <- rep(0, p)
@@ -159,6 +167,9 @@ update_F_surv_YFB_k <- function(Tau, EL_k, EL2_k, R_k,
   s_F[!is.finite(s_F) | s_F <= 0] <- 1e5
   s_F <- pmax(s_F, 1e-8)
 
+  if (!is.null(groups)) return(c(yf_group_ebnm(x_F, s_F, groups, prior_family),
+    list(A = A_F, B = B_F, A_gen = A_gen, A_surv = A_surv,
+         B_gen = B_gen, B_surv = B_surv, x = x_F, s = s_F, sum_EL2_k = sum_EL2_k)))
   res <- ebnm(x = x_F, s = s_F, prior_family = prior_family)
 
   f_mean   <- res$posterior$mean

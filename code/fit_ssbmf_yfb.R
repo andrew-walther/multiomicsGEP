@@ -41,6 +41,7 @@ real_status <- NULL
 # ==============================================================================
 
 source("code/profile_cox_intercept.R")
+source("code/feature_groups_yfb.R")
 library(survival)
 library(ebnm)
 
@@ -169,6 +170,7 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
 #' @param prior_F NULL or a length-K list of loading priors held across sweeps
 #'               (multimodal format: family, pi, rate or variance, point_mass);
 #'               rescaled with F so the prior describes the same loadings.
+#' @param feature_group NULL or grouped feature indices, indicating nested priors.
 #' @return list(EL, EL2, EF, EF2, EBeta, EBeta2, prior_F, scale): the rescaled moments
 #'   and the K-vector of applied scales c_k (1 for a program with sd 0).
 #' @examples
@@ -177,7 +179,7 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
 #'                         matrix(1, 2, 1), matrix(1, 2, 1), 0.5, 0.3, 1)$scale
 #' @family F_surv_YFB_update
 canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
-                                    prior_F = NULL) {
+                                    prior_F = NULL, feature_group = NULL) {
   scale <- vapply(seq_len(K), function(k) stats::sd(as.vector(Y %*% EF[, k])), numeric(1))
   # A program whose projection has collapsed (sd < 1e-6, against 1 for a live
   # canonical program) is dead: rescaling it would inflate numerical residue
@@ -190,6 +192,18 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
     # A loading prior held across sweeps moves with F_k -> F_k / c: an
     # exponential or Laplace rate is multiplied by c, a Normal variance by 1/c^2
     pk <- prior_F[[k]]
+    if (!is.null(feature_group)) {
+      for (g in names(pk)) {
+        pg <- pk[[g]]
+        if (!isTRUE(pg$point_mass)) {
+          if (identical(pg$family, "normal")) pg$variance <- pg$variance / scale[k]^2
+          else pg$rate <- pg$rate * scale[k]
+        }
+        pk[[g]] <- pg
+      }
+      prior_F[[k]] <- pk
+      next
+    }
     if (!is.null(pk) && !isTRUE(pk$point_mass)) {
       if (identical(pk$family, "normal")) pk$variance <- pk$variance / scale[k]^2
       else pk$rate <- pk$rate * scale[k]
@@ -476,6 +490,12 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 combined with profile_cox_intercept. The monitored ELBO uses a different surrogate
 #'                 than with the option off, so ELBO values are not comparable
 #'                 between the two settings.
+#' @param feature_group NULL or one label per column of Y. A single group uses
+#'                 the unchanged numerical path. Multiple groups fit one F prior
+#'                 per group and program while keeping joint Z = sum_m Y_m F_m.
+#'                 Returns prior_F[[group]][[program]] and feature_group.
+#'                 Cohort offsets are unsupported. Multiple groups also reject
+#'                 pruning, posterior restarts, frozen F and fixed_q_em.
 #' @param beta_cohort_id NULL (default) or an n-vector of cohort labels for
 #'                 COHORT-SPECIFIC SURVIVAL COEFFICIENTS beta_k^{c(i)}
 #'                 (code/update_beta_cohort.R). A third, independent grouping
@@ -541,7 +561,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            loading_prior_update = "historical",
                            survival_block_weight = FALSE,
                            beta_posterior = c("meanfield", "joint"),
-                           center_projection = FALSE) {
+                           center_projection = FALSE,
+                           feature_group = NULL) {
 
   # ---- S-13 options (derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/) ----------------
   # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
@@ -584,6 +605,14 @@ fit_ssbmf_yfb <- function(Y, time, status,
   record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
+  groups <- yf_feature_groups(feature_group, p)
+  F_group_priors <- if (!is.null(groups)) vector("list", K) else NULL
+  if (!is.null(feature_group) && !is.null(cohort_id))
+    stop("feature_group does not support cohort_id offsets.")
+  if (!is.null(groups) && (prune || prune_preserve_posterior || !is.null(posterior_init) ||
+                           N_frozen > 0 || loading_prior_update != "historical"))
+    stop("Multiple feature_group labels do not support prune, prune_preserve_posterior, ",
+         "posterior_init, N_frozen or loading_prior_update other than historical.")
   # Design of the Cox projection: Y itself unless center_projection = TRUE, in
   # which case Y - 1 ybar' with the training column means (fixed for the fit).
   # The reconstruction always uses Y. With the option off this is the same
@@ -1160,14 +1189,21 @@ fit_ssbmf_yfb <- function(Y, time, status,
         R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
         A_gen  <- Tau * sum(EL2_aug[, k])
         B_gen  <- Tau * as.vector(crossprod(R_k, EL_aug[, k]))
-        if (is.null(prior_F_state[[k]])) {
+        if (is.null(groups) && is.null(prior_F_state[[k]])) {
           prior_F_state[[k]] <- if (prior_LF == "point_exponential")
             multimodal_yfb_fit_exponential_prior_ebnm(B_gen / A_gen, 1 / A_gen)
           else multimodal_yfb_fit_signed_prior(B_gen / A_gen, 1 / A_gen, prior_LF)
         }
         VZ_k <- as.vector(survival_Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
         A_surv_k <- EBeta2[k] * as.vector(crossprod(w, survival_Y^2))
-        if (max(A_gen + w_S * A_surv_k) < 1e-8) {
+        if (!is.null(groups)) {
+          h_k <- if (joint_beta)
+            w_S * w * (EBeta[k] * z - as.vector(ZF[, -k, drop = FALSE] %*% Mbeta[k, -k]))
+          else w_S * w * z_no_k
+          upd <- yf_update_F_groups(Y, Tau, EL_aug[, k], EL2_aug[, k], R_k,
+            survival_Y, w_S * w, h_k, EF_aug[, k], EF2_aug[, k], EBeta[k], EBeta2[k],
+            prior_F_state[[k]], groups, prior_LF, h_beta_weighted = joint_beta)
+        } else if (max(A_gen + w_S * A_surv_k) < 1e-8) {
           # Dead program: neither likelihood carries information about F_k.
           # With the prior held fixed, its posterior would equal the prior
           # (zero mean, positive second moment), which revives L_k and beta_k
@@ -1212,13 +1248,17 @@ fit_ssbmf_yfb <- function(Y, time, status,
                                       YtWz_no_k    = YtWz_no_k,
                                       prior_family = prior_LF,
                                       alpha        = alpha_F,
-                                      w_surv       = w_S)
+                                      w_surv       = w_S,
+                                      feature_group = feature_group)
         EF[, k]      <- res_F$mean
         EF2[, k]     <- res_F$second
         EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
         EF2_aug[, k] <- res_F$second
-        kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
+        kl_F[k]  <- if (!is.null(groups)) sum(res_F$neg_kl) else
+          compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                      res_F$A, res_F$x, res_F$mean, res_F$second)
+        if (!is.null(groups)) F_group_priors[[k]] <-
+          lapply(res_F$ebnm_result, function(fit) fit$fitted_g)
       }
       if (!freeze_F) {
         if (trace_supervision) {
@@ -1343,7 +1383,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
     # next iteration's ZF.
     if (canonicalize) {
       cz <- canonicalize_yf_factors(projection_Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
-                                    prior_F = prior_F_state)
+                                    prior_F = prior_F_state, feature_group = groups)
       EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
       EBeta <- cz$EBeta; EBeta2 <- cz$EBeta2; prior_F_state <- cz$prior_F
       if (joint_beta) {
@@ -1497,6 +1537,13 @@ fit_ssbmf_yfb <- function(Y, time, status,
 
   if(profile_cox_intercept)result$profile_cox_intercept <- TRUE
   if (center_projection) result$projection_center <- projection_center
+  if (!is.null(groups)) {
+    result$feature_group <- as.character(feature_group)
+    result$prior_F <- stats::setNames(lapply(names(groups), function(g) {
+      if (canonicalize) lapply(prior_F_state, function(pk) pk[[g]]) else
+        lapply(seq_len(K), function(k) F_group_priors[[k]][[g]])
+    }), names(groups))
+  }
   if(identical(loading_prior_update,"fixed_q_em"))
     result$loading_prior_update <- loading_prior_update
 
