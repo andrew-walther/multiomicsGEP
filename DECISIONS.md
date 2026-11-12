@@ -3,6 +3,41 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task D: the M-modality fitter generalizes `fit_ssbmf_yfb()` (Andrew)
+
+**Decided.** The fitter for M data types is built by adding a feature-group argument
+to `fit_ssbmf_yfb()`, not by extending or rewriting `code/fit_multimodal_yfb.R`.
+
+**Why.** The M-modality model in the YFB derivation has shared scores L, a loading
+matrix F_m and a prior for each modality, feature-specific noise precisions, and
+Z = Σ_m Y_m F_m. It equals the single-modality model fitted to the column-concatenated
+matrix [Y_1 … Y_M], except that the F prior is fitted for each (modality, program) pair.
+The L, Z, V^Z and τ updates are already sums over features. With a single group the fit
+is the existing code path, so the multimodal model inherits the single-modality changes
+made since September: point-Laplace L, canonicalization, the survival weight w_S, the
+ELBO stopping rule and the dead-program rule. The older multimodal fitter predates these
+changes. Its M = 1 test (`2bfd61b5`) could not run, and it would not have been a fair test
+as written. The two fitters started from different initializations, used different
+stopping rules and ELBO terms, and the multimodal fitter allows only point-exponential L.
+
+**Traded away.** The step-1 test of task D changes meaning. The M = 1 equivalence holds
+by construction, so evidence for M > 1 comes from separate checks:
+
+- each group's fitted F prior equals `ebnm()` on that group's data;
+- the final objective, recomputed from the returned moments, matches the recorded value;
+- prediction on concatenated new data matches the projection formula;
+- the two-modality simulation meets its criteria.
+
+The older fitter's raw-scale intercept, damping, compiled sweep and chunked τ are not
+carried over. `code/fit_multimodal_yfb.R` stays in the repository as historical. The
+KL fixes from `2bfd61b5` remain in its helpers. Steps 3 and 4 use K = 5 (task F).
+Modality weights on the reconstruction terms are added only if the simulation shows
+methylation dominating L, and only after their own derivation.
+
+**Files.** The week plan's Task D notes, and Part 2 of
+[the Codex follow-up prompt](docs/prompts/2026-11-12-codex-d-e-followup-prompt.md). That
+part runs only after Part 1's E fits finish, because both use `code/fit_ssbmf_yfb.R`.
+
 ## 2026-11-12 — Task F: training CV keeps D4 and the z-score input, and selects K = 5
 
 Task F redid, on the 273 training patients alone, the three choices that external
