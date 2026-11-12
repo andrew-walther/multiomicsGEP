@@ -1,0 +1,9 @@
+"seed","feature_ratio","methylation_active_fraction","arm","p_expression","p_methylation","K","error","recovered","matched_program","loading_correlation","false_active","converged","n_iter","c_validation","elbo","elapsed_seconds","n_warnings"
+1,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,2.204,0
+1,1,0.15,"pooled",50,50,5,"",FALSE,4,0.357203070011822,2,TRUE,16,0.536282103546678,-6250.62680847044,0.35,0
+1,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.125,0
+1,1,0.03,"pooled",50,50,5,"",FALSE,5,0.0816978707702593,0,TRUE,34,0.531642960214389,-6271.94953096689,0.596,0
+1,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.236999999999999,0
+1,5,0.15,"pooled",50,250,5,"",FALSE,3,0.128907540483988,1,TRUE,17,0.604162415833503,-18116.083674,0.451,0
+1,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.265000000000001,0
+1,5,0.03,"pooled",50,250,5,"",FALSE,4,0.144380717906911,2,TRUE,32,0.539424770103698,-18161.2516327328,0.774,0

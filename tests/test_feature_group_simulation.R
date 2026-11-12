@@ -48,6 +48,10 @@ run_test("Feature-group simulation: methylation sparsity uses ceiling per progra
     seed = 11L, truncate = FALSE, methylation_active_fraction = 0.03)
   assert_equal(unname(colSums(data$truth$F$methylation != 0)), rep(8, 3))
   assert_equal(unname(colSums(data$truth$F$expression != 0)), rep(8, 3))
+  smaller <- simulate_multimodal_yfb_data("low_variance_prognostic_factor",
+    n_train = 8L, n_validation = 6L, p_methylation = 50L, seed = 11L,
+    methylation_active_fraction = 0.03)
+  assert_equal(unname(colSums(smaller$truth$F$methylation != 0)), rep(2, 3))
 })
 
 run_test("Feature-group simulation: shared truth and survival use training scaling", {
@@ -165,10 +169,12 @@ run_test("Feature-group simulation: selection follows registered stop and compar
 })
 
 run_test("Feature-group simulation: grouped fits expose K priors per modality", {
-  fit <- list(prior_F = list(expression = vector("list", 5),
-                             methylation = vector("list", 5)))
+  prior <- list(family = "point_laplace", pi = 0.5, rate = 1, point_mass = FALSE)
+  fit <- list(prior_F = list(expression = rep(list(prior), 5),
+                             methylation = rep(list(prior), 5)))
   fgsim_assert_priors(fit, 5L)
-  for (bad in list(list(expression = vector("list", 5)),
+  for (bad in list(list(expression = vector("list", 5), methylation = vector("list", 5)),
+                   list(expression = vector("list", 5)),
                    list(expression = vector("list", 5), methylation = vector("list", 4)))) {
     fit$prior_F <- bad
     err <- tryCatch({ fgsim_assert_priors(fit, 5L); NULL }, error = identity)
@@ -188,7 +194,7 @@ run_test("Feature-group simulation: pooled prior observer preserves fitter arith
   cfg$cavi$max_iter <- 2L
   before <- canonicalize_yf_factors
   observed <- fgsim_fit(x, NULL, cfg)
-  direct <- fit_ssbmf_yfb(x$Y, x$time, x$event, K = 2, max_iter = 2,
+  direct <- fit_ssbmf_yfb(x$Y, x$time, x$event, K = 2L, max_iter = 2L,
     tol = cfg$cavi$tol, prior_LF = "point_laplace", prior_beta = "normal",
     canonicalize = TRUE, w_S = 1, alpha = cfg$benchmark$alpha,
     EL_init = x$EL_init, EF_init = x$EF_init, verbose = FALSE)

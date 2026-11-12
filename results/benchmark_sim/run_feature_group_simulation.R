@@ -51,108 +51,287 @@ fgsim_precision <- function(fit, groups) {
   do.call(rbind, rows)
 }
 
-#' Score recovery of the third, shared prognostic program
-#'
-#' Uses the existing multimodal comparator's |loading correlation| ≥ 0.7 and
-#' survival-activity rule. Reconstruction truth is F_m / training_sd_m after
-#' z-scoring. Raw-truth correlations are also retained to expose scaling effects.
-#' @param fit Returned posterior moments.
-#' @param truth Named list of true loading matrices in generator units.
-#' @param sd Training feature SD vectors, with matching modality names.
-#' @param z_threshold Configured coefficient activity threshold.
-#' @return Recovery flag, match/correlations, false-active count and program table.
+#' Regenerate survival from one standardized reconstruction direction
+#' @param data Unchanged generator output, including Weibull settings and raw η.
+#' @param seed Simulation seed. Survival uses the fixed offset seed + 12000.
+#' @return Scaled matrices, unit g, multiplier a, outcomes and training statistics.
 #' @examples
-#' # fgsim_recovery(fit, data$truth$F, scaled$sd, cfg$multimodal_yfb$prognostic_z_threshold)
-fgsim_recovery <- function(fit, truth, sd, z_threshold) {
-  standardized <- do.call(rbind, Map(function(F, s) sweep(F, 1, s, "/"), truth, sd))
-  raw <- do.call(rbind, truth)
-  correlation <- raw_correlation <- rep(NA_real_, ncol(fit$EF))
-  for (k in seq_len(ncol(fit$EF))) {
-    if (stats::sd(fit$EF[, k]) > 0) {
-      correlation[k] <- abs(stats::cor(standardized[, 3], fit$EF[, k]))
-      raw_correlation[k] <- abs(stats::cor(raw[, 3], fit$EF[, k]))
-    }
+#' # x <- fgsim_prepare(simulate_multimodal_yfb_data(), 1)
+fgsim_prepare <- function(data, seed) {
+  scaled <- fgsim_scale(data$training$Y, data$validation$Y)
+  Y <- do.call(cbind, scaled$training)
+  Y_validation <- do.call(cbind, scaled$validation)
+  g <- unlist(Map(function(F, s) F[, 3] / s, data$truth$F, scaled$sd), use.names = FALSE)
+  g <- g / sqrt(sum(g^2))
+  training_center <- colMeans(Y)
+  projected <- drop(sweep(Y, 2, training_center) %*% g)
+  a <- stats::sd(data$training$eta) / stats::sd(projected)
+  if (!is.finite(a) || a <= 0) stop("Cannot preserve the registered survival signal SD.")
+  eta <- projected * a
+  eta_validation <- drop(sweep(Y_validation, 2, training_center) %*% g) * a
+  set.seed(seed + 12000L)
+  #' Draw Weibull outcomes and calibrate censoring as in the generator
+  #' @param risk Numeric Cox predictor, with larger values meaning greater hazard.
+  #' @return Time and event vectors.
+  #' @examples
+  #' # draw(eta)
+  draw <- function(risk) {
+    et <- (-log(runif(length(risk))) /
+      (data$truth$weibull_scale * exp(risk)))^(1 / data$truth$weibull_shape)
+    cb <- rexp(length(risk))
+    cs <- multimodal_yfb_calibrate_censoring(et, cb, data$truth$target_censoring)
+    list(time = pmin(et, cb * cs), event = as.integer(et <= cb * cs))
   }
-  beta_sd <- sqrt(pmax(fit$EBeta2 - fit$EBeta^2, 0))
-  active <- abs(fit$EBeta) > z_threshold * beta_sd
-  matched <- if (any(is.finite(correlation))) which.max(replace(correlation, is.na(correlation), -Inf)) else NA_integer_
-  loading_hit <- !is.na(matched) && correlation[matched] >= 0.7
-  recovered <- loading_hit && active[matched]
-  true_matches <- if (loading_hit) matched else integer()
+  tr <- draw(eta); va <- draw(eta_validation)
+  list(Y = Y, Y_validation = Y_validation, g = g, a = a, eta = eta,
+    eta_validation = eta_validation, time = tr$time, event = tr$event,
+    time_validation = va$time, event_validation = va$event, scaled = scaled,
+    training_center = training_center,
+    groups = rep(names(scaled$training), vapply(scaled$training, ncol, integer(1))))
+}
+
+#' Require identical observed data, outcomes and initialization in paired arms
+#' @param a,b Lists of prepared matrices, survival outcomes and initial moments.
+#' @return Invisible TRUE, or an error naming the mismatched field.
+#' @examples
+#' # fgsim_assert_inputs(grouped_input, pooled_input)
+fgsim_assert_inputs <- function(a, b) {
+  for (field in c("Y", "Y_validation", "time", "event", "time_validation",
+                  "event_validation", "EL_init", "EF_init")) {
+    if (is.null(a[[field]]) || !identical(a[[field]], b[[field]]))
+      stop("Paired arm input differs: ", field)
+  }
+  invisible(TRUE)
+}
+
+#' Require a separate F prior per modality and program
+#' @param fit Grouped fit object.
+#' @param K Registered program count.
+#' @return Invisible TRUE or an explicit metadata error.
+#' @examples
+#' # fgsim_assert_priors(fit, 5)
+fgsim_assert_priors <- function(fit, K) {
+  if (!identical(names(fit$prior_F), c("expression", "methylation")) ||
+      any(lengths(fit$prior_F) != K)) stop("Grouped fit lacks K priors per modality.")
+  for (priors in fit$prior_F) for (prior in priors) {
+    if (!identical(prior$family, "point_laplace") || is.null(prior$pi) ||
+        length(prior$pi) != 1L || !is.finite(prior$pi) || prior$pi < 0 || prior$pi > 1 ||
+        (!isTRUE(prior$point_mass) &&
+         (is.null(prior$rate) || length(prior$rate) != 1L ||
+          !is.finite(prior$rate) || prior$rate <= 0)))
+      stop("Grouped fit contains an invalid or missing fitted point-Laplace prior.")
+  }
+  invisible(TRUE)
+}
+
+#' Fit a fixed arm and observe final pooled priors without changing the fitter
+#' @param inputs Prepared data and common EL_init/EF_init matrices.
+#' @param groups NULL for pooled, otherwise modality labels per feature.
+#' @param cfg Parsed configuration with rank and stopping settings.
+#' @return A list containing the unchanged fit and its final canonical F priors.
+#' @examples
+#' # answer <- fgsim_fit(inputs, NULL, cfg)
+fgsim_fit <- function(inputs, groups, cfg) {
+  # A child environment confines the observer to this call. It delegates all
+  # arithmetic and captures the priors after their canonical scale adjustment.
+  observer <- new.env(parent = environment(fit_ssbmf_yfb))
+  original <- canonicalize_yf_factors
+  last_priors <- NULL
+  #' Observe canonicalization while preserving its returned value
+  #' @param ... Unchanged canonicalization arguments.
+  #' @return The original canonicalization result.
+  #' @examples
+  #' # Used only by the local fitter binding.
+  observer$canonicalize_yf_factors <- function(...) {
+    answer <- original(...)
+    last_priors <<- answer$prior_F
+    answer
+  }
+  fitter <- fit_ssbmf_yfb
+  environment(fitter) <- observer
+  fit <- fitter(inputs$Y, inputs$time, inputs$event,
+    K = cfg$benchmark$k_working_yfb, max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
+    prior_LF = "point_laplace", prior_beta = "normal", canonicalize = TRUE,
+    w_S = 1, alpha = cfg$benchmark$alpha, feature_group = groups,
+    EL_init = inputs$EL_init, EF_init = inputs$EF_init, verbose = FALSE)
+  if (!is.null(groups)) fgsim_assert_priors(fit, cfg$benchmark$k_working_yfb)
+  list(fit = fit, priors = if (is.null(groups)) last_priors else fit$prior_F)
+}
+
+#' Score a shared prognostic direction with the registered sign and activity rule
+#' @param fit Returned posterior moments, using VBeta when available.
+#' @param g Unit standardized reconstruction truth.
+#' @param groups Modality label for each feature.
+#' @param z_threshold Configured coefficient activity threshold.
+#' @return Recovery, matched program, false activity, program and block tables.
+#' @examples
+#' # fgsim_recovery(fit, x$g, x$groups, 1.96)
+fgsim_recovery <- function(fit, g, groups, z_threshold) {
+  correlation <- vapply(seq_len(ncol(fit$EF)), function(k) {
+    if (stats::sd(fit$EF[, k]) > 0) stats::cor(g, fit$EF[, k]) else NA_real_
+  }, numeric(1))
+  variance <- if (!is.null(fit$VBeta)) fit$VBeta else pmax(fit$EBeta2 - fit$EBeta^2, 0)
+  beta_sd <- sqrt(variance)
+  active <- abs(fit$EBeta) >= z_threshold * beta_sd & beta_sd > 0
+  matched <- if (any(is.finite(correlation)))
+    which.max(replace(abs(correlation), !is.finite(correlation), -Inf)) else NA_integer_
+  recovered <- !is.na(matched) && abs(correlation[matched]) >= 0.7 &&
+    active[matched] && fit$EBeta[matched] * correlation[matched] > 0
+  blocks <- do.call(rbind, lapply(unique(groups), function(m) {
+    j <- groups == m
+    r <- if (!is.na(matched) && stats::sd(fit$EF[j, matched]) > 0 && stats::sd(g[j]) > 0)
+      stats::cor(g[j], fit$EF[j, matched]) else NA_real_
+    data.frame(modality = m, correlation = r)
+  }))
   list(recovered = recovered, matched_program = matched,
-    loading_correlation = if (is.na(matched)) NA_real_ else correlation[matched],
-    raw_loading_correlation = if (any(is.finite(raw_correlation))) max(raw_correlation, na.rm = TRUE) else NA_real_,
-    false_active = as.integer(sum(active[setdiff(seq_along(active), true_matches)])),
+    loading_correlation = if (is.na(matched)) NA_real_ else abs(correlation[matched]),
+    false_active = as.integer(sum(active) - as.integer(recovered)), blocks = blocks,
     programs = data.frame(program = seq_along(active), beta = fit$EBeta,
-      beta_sd = beta_sd, active = active, loading_correlation = correlation,
-      raw_loading_correlation = raw_correlation))
+      beta_sd = beta_sd, active = active, loading_correlation = correlation))
 }
 
-#' Run one prespecified seed/feature-ratio cell and save its private checkpoint
-#' @param seed One of 1 through 10.
-#' @param ratio Methylation feature count divided by expression count, 1 or 5.
-#' @param cfg Parsed config/globals.yml.
-#' @param private Directory under ignored data/ for synthetic fits and warnings.
-#' @return Aggregate metrics, program and precision tables, and warning records.
+#' Evaluate the registered gate in each cell and arm, retaining failed seeds
+#' @param metrics Per-fit aggregate rows.
+#' @return Cell/arm recovery, false activity, convergence, defined C count and gate.
 #' @examples
-#' # fgsim_one(1, 1, yaml::read_yaml("config/globals.yml"), "data/feature_group_simulation_2026-11-12")
-fgsim_one <- function(seed, ratio, cfg, private) {
-  warnings <- character()
-  start <- proc.time()[["elapsed"]]
+#' # fgsim_gate(metrics)
+fgsim_gate <- function(metrics) {
+  cells <- split(metrics, interaction(metrics$feature_ratio,
+    metrics$methylation_active_fraction, metrics$arm, drop = TRUE))
+  do.call(rbind, lapply(cells, function(x) {
+    false <- mean(x$false_active)
+    data.frame(x[1, c("feature_ratio", "methylation_active_fraction", "arm")],
+      seeds = nrow(x), failed = sum(nzchar(x$error)), recovered = sum(x$recovered),
+      mean_false_active = false, converged = sum(x$converged),
+      c_defined = sum(is.finite(x$c_validation)),
+      mean_c = if (any(is.finite(x$c_validation))) mean(x$c_validation[is.finite(x$c_validation)]) else NA_real_,
+      passed = nrow(x) == 10L && !any(nzchar(x$error)) && sum(x$recovered) >= 8L &&
+        is.finite(false) && false <= 1 && sum(x$converged) >= 9L)
+  }))
+}
+
+#' Apply the registered prior selection and all-grouped-fail stop rule
+#' @param summary Cell/arm gate table.
+#' @return Selected prior, step4_allowed and a reason for the decision.
+#' @examples
+#' # fgsim_select(fgsim_gate(metrics))
+fgsim_select <- function(summary) {
+  grouped <- summary[summary$arm == "grouped", ]
+  pooled <- summary[summary$arm == "pooled", ]
+  #' Form a cell key from the registered design levels
+  #' @param x Cell summary rows.
+  #' @return Character keys.
+  #' @examples
+  #' # key(grouped)
+  key <- function(x) paste(x$feature_ratio, x$methylation_active_fraction)
+  pooled <- pooled[match(key(grouped), key(pooled)), ]
+  if (anyNA(pooled$passed)) stop("Missing paired arm gate.")
+  selected <- if (any(pooled$passed & !grouped$passed)) "pooled" else "grouped"
+  allowed <- any(grouped$passed) && any(summary$passed[summary$arm == selected])
+  list(selected_prior = selected, step4_allowed = allowed,
+    reason = if (!any(grouped$passed)) "Grouped fails every cell: stop before step 4."
+      else if (selected == "pooled") "Pooled passes a cell where grouped fails."
+      else "No cell passes pooled while failing grouped.")
+}
+
+#' Fit both prior arms on one shared seed/cell and save private synthetic fits
+#' @param seed Simulation seed, 1 through 10.
+#' @param ratio Methylation/expression feature ratio, 1 or 5.
+#' @param fraction Methylation nonzero loading fraction, 0.15 or 0.03.
+#' @param cfg Parsed global configuration.
+#' @param private Ignored checkpoint directory.
+#' @return Aggregate metrics, programs, blocks, precision, priors and warnings.
+#' @examples
+#' # fgsim_one(1, 1, 0.15, cfg, "data/feature_group_simulation_smoke")
+fgsim_one <- function(seed, ratio, fraction, cfg, private) {
   p <- eval(formals(simulate_multimodal_yfb_data)$p_expression)
-  base <- data.frame(seed = seed, feature_ratio = ratio, p_expression = p,
-                     p_methylation = p * ratio, K = cfg$benchmark$k_working_yfb)
-  result <- tryCatch(withCallingHandlers({
-    data <- simulate_multimodal_yfb_data("low_variance_prognostic_factor",
-      p_expression = p, p_methylation = p * ratio, seed = seed)
-    scaled <- fgsim_scale(data$training$Y, data$validation$Y)
-    Y <- do.call(cbind, scaled$training)
-    groups <- rep(names(scaled$training), vapply(scaled$training, ncol, integer(1)))
-    fit <- fit_ssbmf_yfb(Y, data$training$time, data$training$event,
-      K = cfg$benchmark$k_working_yfb, max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
-      prior_LF = "point_laplace", prior_beta = "normal", canonicalize = TRUE,
-      w_S = 1, alpha = cfg$benchmark$alpha, feature_group = groups, verbose = FALSE)
-    recovery <- fgsim_recovery(fit, data$truth$F, scaled$sd,
-                               cfg$multimodal_yfb$prognostic_z_threshold)
-    precision <- fgsim_precision(fit, groups)
-    new_Y <- do.call(cbind, scaled$validation)
-    score <- predict_ssbmf_yfb(new_Y, fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
-    c_index <- frozen_reverse_cindex(score, data$validation$time, data$validation$event)
-    saveRDS(list(fit = fit, data = data, scaled = scaled),
-            file.path(private, sprintf("ratio%d_seed%d.rds", ratio, seed)))
-    list(metrics = cbind(base, data.frame(error = "", recovered = recovery$recovered,
-      matched_program = recovery$matched_program, loading_correlation = recovery$loading_correlation,
-      raw_loading_correlation = recovery$raw_loading_correlation,
-      false_active = recovery$false_active, converged = isTRUE(fit$history$converged),
-      n_iter = fit$history$n_iter, c_validation = c_index,
-      elbo = tail(fit$history$elbo_full, 1))),
-      programs = cbind(base[rep(1, nrow(recovery$programs)), ], recovery$programs),
-      precision = cbind(base[rep(1, nrow(precision)), ], precision))
-  }, warning = function(w) {
-    warnings <<- c(warnings, conditionMessage(w))
-    # Warnings stay visible in the log and are retained individually below.
-  }), error = function(e) list(metrics = cbind(base, data.frame(error = conditionMessage(e),
-    recovered = FALSE, matched_program = NA_integer_, loading_correlation = NA_real_,
-    raw_loading_correlation = NA_real_, false_active = NA_integer_, converged = FALSE,
-    n_iter = NA_integer_, c_validation = NA_real_, elbo = NA_real_)),
-    programs = NULL, precision = NULL))
-  result$metrics$elapsed_seconds <- proc.time()[["elapsed"]] - start
-  result$metrics$n_warnings <- length(warnings)
-  result$warnings <- if (length(warnings)) cbind(base[rep(1, length(warnings)), ],
-    data.frame(warning = warnings)) else NULL
-  saveRDS(result, file.path(private, sprintf("ratio%d_seed%d_aggregate.rds", ratio, seed)))
-  result
+  data <- simulate_multimodal_yfb_data("low_variance_prognostic_factor",
+    p_expression = p, p_methylation = p * ratio, seed = seed,
+    methylation_active_fraction = fraction)
+  x <- fgsim_prepare(data, seed)
+  K <- cfg$benchmark$k_working_yfb
+  s <- svd(x$Y, nu = K, nv = K)
+  x$EL_init <- s$u %*% diag(sqrt(s$d[seq_len(K)]), K)
+  x$EF_init <- s$v %*% diag(sqrt(s$d[seq_len(K)]), K)
+  inputs <- list(grouped = x, pooled = x)
+  fgsim_assert_inputs(inputs$grouped, inputs$pooled)
+  results <- list()
+  for (arm in names(inputs)) {
+    warnings <- character()
+    start <- proc.time()[["elapsed"]]
+    base <- data.frame(seed = seed, feature_ratio = ratio,
+      methylation_active_fraction = fraction, arm = arm,
+      p_expression = p, p_methylation = p * ratio, K = K)
+    result <- tryCatch(withCallingHandlers({
+      answer <- fgsim_fit(inputs[[arm]], if (arm == "grouped") x$groups else NULL, cfg)
+      fit <- answer$fit
+      recovery <- fgsim_recovery(fit, x$g, x$groups, cfg$multimodal_yfb$prognostic_z_threshold)
+      precision <- fgsim_precision(fit, x$groups)
+      precision$feature_share <- ifelse(precision$modality == "expression", 1, ratio) / (1 + ratio)
+      precision$live <- colSums(fit$EF^2)[precision$program] > 0
+      precision$matched <- precision$program == recovery$matched_program
+      precision$dominant <- precision$share > precision$feature_share
+      prior_rows <- do.call(rbind, lapply(seq_len(K), function(k) {
+        do.call(rbind, lapply(unique(x$groups), function(m) {
+          prior <- if (arm == "grouped") answer$priors[[m]][[k]] else answer$priors[[k]]
+          if (is.null(prior$pi)) stop("Missing final fitted F prior.")
+          data.frame(program = k, modality = m, prior_scope = if (arm == "grouped") m else "pooled",
+            point_mass_weight = 1 - prior$pi,
+            laplace_scale = if (isTRUE(prior$point_mass)) NA_real_ else 1 / prior$rate,
+            true_nonzero_fraction = mean(data$truth$F[[m]][, 3] != 0))
+        }))
+      }))
+      score <- predict_ssbmf_yfb(x$Y_validation, fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+      c_index <- frozen_reverse_cindex(score, x$time_validation, x$event_validation)
+      # Private checkpoints retain the common input and the returned moments.
+      saveRDS(list(fit = fit, priors = answer$priors, data = data, inputs = x),
+        file.path(private, sprintf("ratio%d_fraction%s_seed%d_%s.rds", ratio, fraction, seed, arm)))
+      list(metrics = cbind(base, data.frame(error = "", recovered = recovery$recovered,
+        matched_program = recovery$matched_program, loading_correlation = recovery$loading_correlation,
+        false_active = recovery$false_active, converged = isTRUE(fit$history$converged),
+        n_iter = fit$history$n_iter, c_validation = c_index,
+        elbo = tail(fit$history$elbo_full, 1))),
+        programs = recovery$programs, blocks = recovery$blocks,
+        precision = precision, priors = prior_rows)
+    }, warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      # Keep each warning, even if repeated. Muffle only R's duplicate display.
+      invokeRestart("muffleWarning")
+    }), error = function(e) list(metrics = cbind(base, data.frame(error = conditionMessage(e),
+      recovered = FALSE, matched_program = NA_integer_, loading_correlation = NA_real_,
+      false_active = NA_integer_, converged = FALSE, n_iter = NA_integer_,
+      c_validation = NA_real_, elbo = NA_real_))))
+    for (type in c("programs", "blocks", "precision", "priors")) {
+      if (!is.null(result[[type]])) result[[type]] <- cbind(base[rep(1, nrow(result[[type]])), ], result[[type]])
+    }
+    result$metrics$elapsed_seconds <- proc.time()[["elapsed"]] - start
+    result$metrics$n_warnings <- length(warnings)
+    result$warnings <- if (length(warnings)) cbind(base[rep(1, length(warnings)), ],
+      data.frame(warning_number = seq_along(warnings), warning = warnings)) else NULL
+    if (length(warnings)) cat(sprintf("%s: %d warnings retained individually.\n", arm, length(warnings)))
+    cat(sprintf("ratio 1:%d methylation %.2f seed %d %s: recovered=%s converged=%s error=%s\n",
+      ratio, fraction, seed, arm, result$metrics$recovered, result$metrics$converged, result$metrics$error))
+    flush.console()
+    results[[arm]] <- result
+  }
+  # Recheck after both calls so accidental input mutation also fails loudly.
+  fgsim_assert_inputs(inputs$grouped, inputs$pooled)
+  lapply(c("metrics", "programs", "blocks", "precision", "priors", "warnings"), function(type)
+    do.call(rbind, lapply(results, `[[`, type))) |>
+    stats::setNames(c("metrics", "programs", "blocks", "precision", "priors", "warnings"))
 }
 
-#' Run the fixed 20-cell study sequentially and write aggregate results
-#' @param out Aggregate output directory. Existing directories are refused.
-#' @param private Ignored checkpoint directory. Existing directories are refused.
-#' @return Invisibly the per-cell aggregate results. Any failed cell yields a failing gate.
+#' Run the registered 80 fits, or an eight-fit smoke check, sequentially
+#' @param out Aggregate output directory, which must not exist.
+#' @param private Ignored checkpoint directory, which must not exist.
+#' @param seeds 1:10 for the study, or 1 for the smoke check.
+#' @return Invisible gate summary and selection. Smoke results cannot pass the gate.
 #' @examples
-#' # fgsim_run("results/benchmark_sim/outputs/feature_group_simulation_2026-11-12",
-#' #           "data/feature_group_simulation_2026-11-12")
-fgsim_run <- function(out, private) {
+#' # fgsim_run("results/benchmark_sim/outputs/feature_group_simulation_smoke",
+#' #           "data/feature_group_simulation_smoke", seeds = 1L)
+fgsim_run <- function(out, private, seeds = 1:10) {
   if (dir.exists(out) || dir.exists(private)) stop("Refusing to overwrite an existing study.")
+  if (!identical(seeds, 1:10) && !identical(seeds, 1L)) stop("Use all registered seeds or smoke seed 1.")
   cfg <- yaml::read_yaml("config/globals.yml")
   if (cfg$benchmark$k_working_yfb != 5L) stop("Task D requires K = 5.")
   dir.create(out, recursive = TRUE); dir.create(private, recursive = TRUE)
@@ -162,45 +341,47 @@ fgsim_run <- function(out, private) {
     "code/update_tau.R", "code/compute_elbo.R", "code/simulate_multimodal_yfb.R",
     "results/benchmark_sim/run_feature_group_simulation.R")
   write.csv(data.frame(path = sources, md5 = unname(tools::md5sum(sources))),
-            file.path(out, "source_hashes.csv"), row.names = FALSE)
-  writeLines(c("scenario=low_variance_prognostic_factor", "seeds=1:10", "feature_ratios=1:1,1:5",
-    "generator=defaults (120 training, 120 validation, 50 expression, noise_scale=1, truncate=TRUE)",
-    "scaling=training-only z-score within modality", "prior_LF=point_laplace",
-    "prior_beta=normal per-program", "canonicalize=TRUE", "w_S=1", "prune=FALSE",
-    "strata_id=NULL", "center_projection=FALSE", "workers=1",
+    file.path(out, "source_hashes.csv"), row.names = FALSE)
+  writeLines(c("registration=docs/prompts/2026-11-12-codex-d-finish-prompt.md",
+    paste0("seeds=", paste(seeds, collapse = ",")), "scenario=low_variance_prognostic_factor",
+    "feature_ratios=50:50,50:250", "methylation_active_fraction=0.15,0.03",
+    "expression_active_fraction=generator default 0.15", "arms=grouped,pooled",
+    "generator=defaults (120 training, 120 validation, noise_scale=1, truncate=TRUE)",
+    "scaling=training-only z-score within modality", "truth=g=unit stacked D^-1 F[,3]",
+    "eta=centered standardized X times g times a; a preserves original training eta SD",
+    "survival_seed_offset=12000", "initialization=identical common signed SVD matrices",
+    "prior_LF=point_laplace", "prior_beta=normal per-program", "canonicalize=TRUE",
+    "w_S=1", "prune=FALSE", "strata_id=NULL", "center_projection=FALSE", "workers=1",
     paste0("K=", cfg$benchmark$k_working_yfb), paste0("max_iter=", cfg$cavi$max_iter),
-    paste0("tol=", cfg$cavi$tol), "loading_recovery=absolute correlation >=0.7 on standardized reconstruction truth",
-    paste0("activity_z=", cfg$multimodal_yfb$prognostic_z_threshold)), file.path(out, "settings.txt"))
+    paste0("tol=", cfg$cavi$tol), paste0("alpha=", cfg$benchmark$alpha),
+    paste0("activity_z=", cfg$multimodal_yfb$prognostic_z_threshold),
+    "recovery=abs(cor(g,F_k))>=0.7 and active and beta_k*cor(g,F_k)>0",
+    "false_active=active programs other than a recovered match",
+    "gate=recovery>=8/10; mean false_active<=1; converged>=9/10; no failed fits",
+    "selection=grouped unless pooled passes a cell grouped fails; stop if grouped fails all",
+    "prior_pi=slab probability; reported point_mass_weight=1-pi",
+    "objectives=historical pooled incoming-prior KL vs grouped returned-prior KL; not comparable"),
+    file.path(out, "settings.txt"))
   results <- list()
-  for (ratio in c(1L, 5L)) for (seed in 1:10) {
-    cell <- fgsim_one(seed, ratio, cfg, private)
-    results[[length(results) + 1L]] <- cell
-    for (type in c("metrics", "programs", "precision", "warnings")) {
+  for (ratio in c(1L, 5L)) for (fraction in c(0.15, 0.03)) for (seed in seeds) {
+    results[[length(results) + 1L]] <- fgsim_one(seed, ratio, fraction, cfg, private)
+    for (type in c("metrics", "programs", "blocks", "precision", "priors", "warnings")) {
       rows <- do.call(rbind, lapply(results, `[[`, type))
       if (!is.null(rows)) write.csv(rows, file.path(out, paste0(type, ".csv")), row.names = FALSE)
     }
-    cat(sprintf("Completed ratio 1:%d seed %d/10: recovered=%s converged=%s error=%s\n",
-      ratio, seed, cell$metrics$recovered, cell$metrics$converged, cell$metrics$error))
-    flush.console()
   }
   metrics <- do.call(rbind, lapply(results, `[[`, "metrics"))
-  summary <- do.call(rbind, lapply(c(1L, 5L), function(ratio) {
-    x <- metrics[metrics$feature_ratio == ratio, ]
-    data.frame(feature_ratio = ratio, seeds = nrow(x), failed = sum(nzchar(x$error)),
-      recovered = sum(x$recovered), mean_false_active = mean(x$false_active),
-      converged = sum(x$converged),
-      passed = !any(nzchar(x$error)) && sum(x$recovered) >= 8 &&
-        mean(x$false_active) <= 1 && sum(x$converged) >= 9)
-  }))
+  summary <- fgsim_gate(metrics)
+  selection <- fgsim_select(summary)
   write.csv(summary, file.path(out, "summary.csv"), row.names = FALSE)
-  print(summary)
-  invisible(results)
+  write.csv(as.data.frame(selection), file.path(out, "selection.csv"), row.names = FALSE)
+  print(summary); print(selection)
+  invisible(list(summary = summary, selection = selection))
 }
 
 if (sys.nframe() == 0L) {
-  stop("Task D simulation is paused pending Andrew's choice of recovery target: prognostic D F or reconstruction D^-1 F.")
-  Sys.setenv(OPENBLAS_NUM_THREADS = "1", OMP_NUM_THREADS = "1", MKL_NUM_THREADS = "1")
-  run_date <- format(Sys.Date(), "%Y-%m-%d")
-  fgsim_run(paste0("results/benchmark_sim/outputs/feature_group_simulation_", run_date),
-             paste0("data/feature_group_simulation_", run_date))
+  smoke <- "--smoke" %in% commandArgs(trailingOnly = TRUE)
+  suffix <- if (smoke) "2026-11-12_smoke" else "2026-11-12"
+  fgsim_run(paste0("results/benchmark_sim/outputs/feature_group_simulation_", suffix),
+    paste0("data/feature_group_simulation_", suffix), seeds = if (smoke) 1L else 1:10)
 }

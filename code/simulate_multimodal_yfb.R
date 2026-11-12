@@ -148,6 +148,8 @@ simulate_multimodal_yfb_cohort <- function(parameters, n, id_prefix) {
 #' @param truncate If TRUE (default), truncate the molecular data at zero so it
 #'   meets the point-exponential (nonnegative) input requirement. FALSE keeps
 #'   the Gaussian data as generated, for signed loading priors and centering.
+#' @param methylation_active_fraction NULL preserves the existing 0.15 loading
+#'   fraction. Otherwise a fraction in (0, 1] for methylation only.
 #' @return Training/validation data plus true model parameters and scenario name.
 #' @examples
 #' simulate_multimodal_yfb_data("both_informative", n_train = 20, n_validation = 10)
@@ -157,7 +159,12 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
                                          p_expression = 50L, p_methylation = 50L,
                                          K_true = 3L, target_censoring = 0.30,
                                          seed = 1L, truncate = TRUE, noise_scale = 1,
-                                         beta = NULL) {
+                                         beta = NULL, methylation_active_fraction = NULL) {
+  if (!is.null(methylation_active_fraction) &&
+      (!is.numeric(methylation_active_fraction) || length(methylation_active_fraction) != 1L ||
+       !is.finite(methylation_active_fraction) || methylation_active_fraction <= 0 ||
+       methylation_active_fraction > 1))
+    stop("methylation_active_fraction must be NULL or a fraction in (0, 1].")
   scenarios <- multimodal_yfb_scenarios()
   if (!scenario %in% names(scenarios)) {
     stop("scenario must be one of: ", paste(names(scenarios), collapse = ", "), ".")
@@ -179,7 +186,9 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
   F <- list(
     expression = simulate_multimodal_yfb_loadings(p_expression, K_true),
     methylation = simulate_multimodal_yfb_loadings(p_methylation, K_true,
-                                                    scale = methylation_scale)
+      active_fraction = methylation_active_fraction %||%
+        eval(formals(simulate_multimodal_yfb_loadings)$active_fraction),
+      scale = methylation_scale)
   )
   for (m in seq_along(F)) {
     if (!setting$active_modalities[m]) F[[m]][, which(setting$beta != 0)] <- 0
