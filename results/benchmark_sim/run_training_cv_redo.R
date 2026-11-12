@@ -9,6 +9,7 @@
 #               results/benchmark_sim/benchmark_helpers.R
 # Run: Rscript results/benchmark_sim/run_training_cv_redo.R prepare
 #      Rscript results/benchmark_sim/run_training_cv_redo.R smoke|grid [cores]
+#      Rscript results/benchmark_sim/run_training_cv_redo.R brerun 3 5
 #      Rscript results/benchmark_sim/run_training_cv_redo.R summary
 # Registration: 2026-11-12 entry "F" in docs/plans/2026-10-16-round2-attempts-log.md.
 # ============================================================
@@ -76,12 +77,16 @@ f_prepare <- function() {
 #' @param center TRUE for uncentered input (X/sd), which needs center_projection.
 #' @param cfg Parsed config.
 #' @param prior_LF L/F prior; "point_exponential" only for the task A rerun at a new K.
+#' @param prior_beta Coefficient prior, default Normal.
+#' @param beta_prior_mode Per-program by default; shared for the task B rerun.
 #' @return fit_ssbmf_yfb() result.
 #' @examples
 #' # f_fit(Y, time, status, 7, FALSE, cfg)
-f_fit <- function(Y, time, status, K, center, cfg, prior_LF = "point_laplace") {
+f_fit <- function(Y, time, status, K, center, cfg, prior_LF = "point_laplace",
+                  prior_beta = "normal", beta_prior_mode = "per_program") {
   fit_ssbmf_yfb(Y, time, status, K = K, max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
-                prior_LF = prior_LF, prior_beta = "normal", canonicalize = TRUE, w_S = 1,
+                prior_LF = prior_LF, prior_beta = prior_beta, beta_prior_mode = beta_prior_mode,
+                canonicalize = TRUE, w_S = 1,
                 alpha = cfg$benchmark$alpha, verbose = FALSE, trace_supervision = TRUE,
                 center_projection = center)
 }
@@ -92,6 +97,8 @@ f_fit <- function(Y, time, status, K, center, cfg, prior_LF = "point_laplace") {
 #' programs (|E beta| >= 1.96 SD), held-out within-cohort, pooled and per-cohort
 #' concordance, held-out partial log-likelihood, and program correlations with the TCGA
 #' indicator and with each patient's mean log expression.
+#' Task B parts b_rerun_PLAP, b_rerun_PN and b_rerun_NSH use shared beta priors.
+#' Point-normal inclusion probabilities are saved with each checkpoint.
 #' @param task Row with part, input, K, fold. @param z Prepared inputs. @param cfg Config.
 #' @return Status string.
 #' @examples
@@ -104,9 +111,13 @@ f_task <- function(task, z, cfg) {
   te <- which(z$fold == task$fold)
   tr <- if (task$fold == 0L) seq_along(z$time) else which(z$fold != task$fold)
   set.seed(42L)
+  beta <- switch(task$part, b_rerun_PLAP = "point_laplace",
+                 b_rerun_PN = "point_normal", b_rerun_NSH = "normal", "normal")
+  shared <- startsWith(task$part, "b_rerun_")
   run <- lfp_try(f_fit(Y[tr, , drop = FALSE], z$time[tr], z$status[tr], task$K,
                        task$input == "D4_XSD", cfg,
-                       if (task$part == "a_rerun") "point_exponential" else "point_laplace"))
+                       if (task$part == "a_rerun") "point_exponential" else "point_laplace",
+                       prior_beta = beta, beta_prior_mode = if (shared) "shared" else "per_program"))
   row <- data.frame(part = task$part, input = task$input, K = task$K, fold = task$fold,
                     n_genes = ncol(Y), fit_sec = run$seconds, warnings = run$warnings,
                     error = NA_character_)
@@ -115,6 +126,7 @@ f_task <- function(task, z, cfg) {
     saveRDS(list(metrics = row), path); return(paste(key, "ERROR", row$error))
   }
   fit <- run$value
+  pip <- if (task$part == "b_rerun_PN") lfp_pip(fit) else NULL
   sdb <- sqrt(pmax(fit$EBeta2 - fit$EBeta^2, 0))
   alive <- colSums(fit$EF^2) > 1e-8
   active <- abs(fit$EBeta) >= 1.96 * sdb & sdb > 0 & alive
@@ -135,7 +147,7 @@ f_task <- function(task, z, cfg) {
                        calc_cox_taylor_yf(eta[tr], z$time[tr], z$status[tr])$logPL
   }
   saveRDS(list(metrics = row, te = te, risk = risk,
-               state = list(EF = fit$EF, EBeta = fit$EBeta, EBeta2 = fit$EBeta2)), path)
+               state = list(EF = fit$EF, EBeta = fit$EBeta, EBeta2 = fit$EBeta2), pip = pip), path)
   sprintf("%s ok %.0fs", key, run$seconds)
 }
 
@@ -186,6 +198,7 @@ f_run <- function(design, cores) {
 f_summary <- function() {
   rd <- function(files) lapply(files, function(f) readRDS(f)$metrics)
   fr <- lfp_bind(rd(list.files(F_PRIV, full.names = TRUE, pattern = "rds$")))
+  fr <- fr[!startsWith(fr$part, "b_rerun_"), , drop = FALSE]
   ref <- lfp_bind(rd(file.path(PRIV, "real", sprintf("real_PL_f%d.rds", 0:5))))
   ref <- data.frame(part = "reference", input = "D4_Z", K = 7L, fold = ref$fold, n_genes = 2218L,
                     ref[setdiff(names(ref), c("arm", "fold", "n_train", "n_test"))])
@@ -258,6 +271,54 @@ f_summary <- function() {
   invisible(NULL)
 }
 
+#' Summarize the real-data beta-prior rerun against saved rank-sweep Normal fits
+#'
+#' Pairs folds explicitly. Rule (c) passes if mean(C_arm - C_Normal) >= -SE of
+#' that paired difference. Simulation rules (a) and (b) are not evaluated here.
+#' Missing, failed or nonfinite fold results stop the summary rather than dropping folds.
+#' @param K Rerun rank.
+#' @return Data frame, also written to b_rerun_paired.csv. PIPs are full-fit values.
+#' @examples
+#' # f_b_summary(5)
+f_b_summary <- function(K) {
+  parts <- c("rank", "b_rerun_PLAP", "b_rerun_PN", "b_rerun_NSH")
+  runs <- lapply(parts, function(part) lapply(0:5, function(fold) {
+    path <- file.path(F_PRIV, sprintf("%s_D4_Z_K%02d_f%d.rds", part, K, fold))
+    x <- readRDS(path)
+    if (!is.na(x$metrics$error) || is.null(x$state)) stop("Failed fit: ", path)
+    stopifnot(x$metrics$fold == fold, x$metrics$K == K)
+    if (fold > 0L && !all(is.finite(unlist(x$metrics[c("C_within", "C_pooled")]))))
+      stop("Nonfinite concordance: ", path)
+    x
+  }))
+  ref <- do.call(rbind, lapply(runs[[1]][-1], function(x) x$metrics))
+  out <- do.call(rbind, lapply(seq_along(parts), function(i) {
+    cv <- do.call(rbind, lapply(runs[[i]][-1], function(x) x$metrics))
+    stopifnot(identical(cv$fold, ref$fold))
+    d <- cv$C_within - ref$C_within; dp <- cv$C_pooled - ref$C_pooled
+    se <- sd(d) / sqrt(5)
+    pip <- runs[[i]][[1]]$pip
+    if (parts[i] == "b_rerun_PN" && (length(pip) != K || any(!is.finite(pip))))
+      stop("Missing full-fit point-normal inclusion probabilities")
+    row <- data.frame(arm = parts[i], K = K, n_folds = nrow(cv),
+      mean_C_within = mean(cv$C_within), mean_C_pooled = mean(cv$C_pooled),
+      diff_within = mean(d), se_within = se, diff_pooled = mean(dp),
+      se_pooled = sd(dp) / sqrt(5), folds_converged = sum(cv$converged),
+      mean_active_cv = mean(cv$n_active), folds_all_beta_zero = sum(vapply(
+        runs[[i]][-1], function(x) all(x$state$EBeta == 0), TRUE)),
+      full_converged = runs[[i]][[1]]$metrics$converged,
+      full_active = runs[[i]][[1]]$metrics$n_active,
+      fit_warnings = sum(vapply(runs[[i]], function(x)
+        !is.na(x$metrics$warnings) && nzchar(x$metrics$warnings), TRUE)),
+      criterion_c_pass = mean(d) >= -se)
+    for (k in seq_len(K)) row[[paste0("full_pip_", k)]] <- if (is.null(pip)) NA_real_ else pip[k]
+    row
+  }))
+  write.csv(out, file.path(F_OUT, "b_rerun_paired.csv"), row.names = FALSE)
+  print(out)
+  invisible(out)
+}
+
 # Main ----
 if (sys.nframe() == 0L) {
   args <- commandArgs(TRUE); mode <- args[1]
@@ -277,6 +338,16 @@ if (sys.nframe() == 0L) {
     st <- f_run(data.frame(part = "a_rerun", input = "D4_XSD", K = k, fold = 0:5,
                            stringsAsFactors = FALSE), cores)
     writeLines(st, file.path(F_OUT, sprintf("task_status_arerun_K%d.txt", k))); print(st)
+  }
+  if (mode == "brerun") {
+    k <- if (length(args) > 2) as.integer(args[3]) else
+      yaml::read_yaml("config/globals.yml")$benchmark$k_working_yfb
+    stopifnot(length(k) == 1L, is.finite(k), k > 0L, cores >= 1L, cores <= 3L)
+    st <- f_run(expand.grid(part = c("b_rerun_PLAP", "b_rerun_PN", "b_rerun_NSH"),
+      input = "D4_Z", K = k, fold = 0:5, stringsAsFactors = FALSE), cores)
+    writeLines(st, file.path(F_OUT, sprintf("task_status_brerun_K%d.txt", k))); print(st)
+    if (any(grepl("ERROR", st, fixed = TRUE))) stop("Task B rerun contains failed fits")
+    f_b_summary(k)
   }
   if (mode == "summary") { lfp_load(); f_summary() }
 }

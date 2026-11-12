@@ -136,3 +136,14 @@ Documentation:
 
 [MIT](LICENSE). Patient data remain under their own terms of use.
 Author: Andrew Walther.
+
+## Training-only β-prior rerun at K = 5
+
+With the prepared local training inputs, run
+`OMP_NUM_THREADS=1 Rscript results/benchmark_sim/run_training_cv_redo.R brerun 3 5`.
+This fits three shared β priors on the full training data and five saved folds,
+then compares them with the existing per-program Normal rank-sweep checkpoints.
+Patient-level checkpoints remain under ignored `data/`. The aggregate
+`b_rerun_paired.csv` and the [β-prior findings](docs/findings/2026-11-12-beta-prior-comparison-findings.md)
+record paired concordance differences and the registered one-SE CV criterion.
+Run `Rscript tests/test_training_cv_brerun.R` for its synthetic regression checks.

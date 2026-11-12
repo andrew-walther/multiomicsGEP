@@ -133,3 +133,106 @@ between the priors is negligible.
 
 Recorded by this session in DECISIONS.md, PROJECT_STATUS.qmd, the attempts log and the
 week-plan checklist.
+
+## Rerun at K = 5
+
+This real-data rerun uses the adopted working rank from training CV. The K = 7
+results above remain the record for the original comparison. Only rule (c) is
+reevaluated at K = 5. Simulation criteria (a) and (b) were not rerun, so this
+comparison cannot establish that a sparse prior qualifies at K = 5 under the
+complete registered rule.
+
+The command is
+`OMP_NUM_THREADS=1 Rscript results/benchmark_sim/run_training_cv_redo.R brerun 3 5`.
+It fits shared point-Laplace, point-normal and Normal β on `D4_Z`, with folds
+0 to 5, using three PSOCK workers and one numerical-library thread per worker.
+Fold 0 is the full fit. The per-program Normal reference reuses
+`data/training_cv_redo_2026-11-12/rank_D4_Z_K05_f*.rds` without refitting.
+All fits retain point-Laplace L/F, canonicalization, unit survival weight,
+pooled TCGA and CPTAC without strata, no pruning, and config iteration,
+tolerance and α settings. No external outcomes enter the comparison.
+
+### Paired real-data results
+
+All 18 new fits converged, with no fit warnings or errors. All five Normal
+reference folds also converged. Every arm had three survival-active programs
+in the full fit, and no CV fold set every β to zero.
+
+| β prior at K = 5 | Mean within-cohort C | Difference (paired SE) | Mean pooled C | Pooled difference (paired SE) | Folds converged | Mean survival-active per fold | Rule (c) |
+|---|---|---|---|---|---|---|---|
+| Per-program Normal, reused | 0.654620 | 0 | 0.660322 | 0 | 5/5 | 2.6 | reference |
+| Shared point-Laplace | 0.648599 | −0.006021 (0.004924) | 0.658705 | −0.001617 (0.001812) | 5/5 | 2.0 | fails |
+| Shared point-normal | 0.647783 | −0.006837 (0.006578) | 0.657493 | −0.002830 (0.005189) | 5/5 | 3.0 | fails |
+| Shared Normal | 0.647783 | −0.006837 (0.006578) | 0.657493 | −0.002830 (0.005189) | 5/5 | 3.0 | fails |
+
+Both sparse priors fail part (c) at K = 5. Point-normal misses its one-SE
+boundary by only 0.000259 in C, so its pass/fail verdict is sensitive to small
+changes in fold estimates. At K = 7 it passed this CV criterion, although it
+failed the complete rule because of the S-14 simulation cell. This rerun
+provides no basis for replacing per-program Normal β. The broader registered
+recovery, false-activity and convergence gate still applies to scientific
+adoption.
+
+Full-fit point-normal inclusion probabilities, in program order, are
+0.999999700, 1.000000000, 0.999999920, 0.999999978 and 0.999999994.
+Shared point-normal and shared Normal have practically identical concordance
+here. These PIPs do not provide a useful sparse program selection rule on
+these data.
+
+Aggregate results are in
+`results/benchmark_sim/outputs/training_cv_redo_2026-11-12/b_rerun_paired.csv`.
+Private fits and scores remain in ignored `data/`. The initial driver wrote
+all results but exited with a trailing parser error after its source file
+was edited while R was reading it. A subsequent command reused all 18
+checkpoints, without refitting, to verify a clean exit.
+
+### Implementation and verification
+
+- `f_fit()` accepts optional `prior_beta` and `beta_prior_mode` arguments. Their
+  defaults preserve per-program Normal β. It takes a patient-by-gene matrix,
+  outcomes, rank, centering flag and parsed config, and returns the existing
+  fitter's result. No fitter or modular update code changes.
+- `f_task()` dispatches the three new arm names to shared priors. Existing
+  scoring and survival-activity definitions stay in use. It saves each fit's
+  metrics, coefficient moments, loadings and held-out risk scores under its own
+  `b_rerun_*_D4_Z_K05_f*` key in ignored `data/`. For point-normal it also saves
+  `lfp_pip()` values from the final prior trace. The activity threshold and
+  posterior inclusion probability are distinct summaries.
+- `f_b_summary()` reads six checkpoints per arm and six saved references. It
+  matches the five held-out folds, computes each fold's C difference from
+  Normal, and reports its mean and sample SD divided by √5. Rule (c) requires
+  the within-cohort mean difference to be at least minus its paired SE.
+  Full fits supply inclusion probabilities and full-fit activity, never CV C.
+  Missing checkpoints, failed fits or nonfinite concordances stop aggregation.
+  The current implementation also stops for undefined full-fit point-normal
+  PIPs. A flat coefficient likelihood can produce such a PIP in future runs.
+- The `brerun` command accepts rank from the command line, or reads
+  `benchmark$k_working_yfb` when omitted. It limits workers to three and writes
+  `b_rerun_paired.csv`. The original `summary` mode excludes these new arms
+  to preserve the existing screen, scaling and rank tables.
+- `tests/test_training_cv_brerun.R` uses a captured fitter call and synthetic
+  checkpoints to check prior dispatch, paired estimates, the one-SE rule,
+  zero-coefficient counts, PIPs and failure on a missing fold. It uses base R
+  assertions and the runner's existing yaml dependency. No patient data enter
+  the tests.
+
+Independent code review found no blocking issue for this rerun. Its optional
+flat-likelihood PIP concern is recorded above. All five PIPs in the current
+full fit are defined.
+
+The full suite, `Rscript tests/run_tests.R`, passed **816/816** with zero
+failures. The separate K = 5 runner regression script also passed.
+
+## Text for the shared status files (K = 5)
+
+The real-data β-prior comparison was repeated at the adopted K = 5 using
+five saved training folds. The 18 new shared-prior fits all converged without
+fit warnings. Per-program Normal had within-cohort C 0.654620. Shared
+point-Laplace had 0.648599, a paired difference of −0.006021 with SE 0.004924.
+Shared point-normal had 0.647783, a difference of −0.006837 with SE 0.006578.
+Both fail the registered CV criterion, although point-normal is close to
+the boundary. Simulation criteria were not rerun at K = 5. Normal β stays.
+The K = 7 results remain labeled and preserved. The methylation/expression
+K = 5 rerun is paused pending confirmation that the separate K = 7 study
+has finished. Its findings still says “in progress.” No shared status file
+was edited by this rerun.
