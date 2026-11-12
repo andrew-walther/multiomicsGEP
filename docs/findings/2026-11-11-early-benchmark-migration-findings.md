@@ -6,6 +6,8 @@ Status: complete and independently reviewed. Andrew approved the 267-file batch
 in the [navigation proposal](2026-11-11-results-navigation-findings.md), provided
 current results are preserved and old results are archived rather than lost.
 The source checkout before this batch is `2a696b7`.
+The approved migration and reference changes are committed in `872b92b0`;
+`e32a8a1` records the scope and pre-move preservation manifest.
 
 ## Scope and preservation baseline
 

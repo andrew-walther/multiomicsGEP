@@ -41,7 +41,7 @@ pointer. The results README now separates the pilot, current reported evidence,
 frozen evidence and indexed history. `results/history/README.md` indexes existing
 locations. Andrew subsequently approved the first physical archive batch:
 110 early figures and 157 tables now live under
-`results/history/early-benchmarks/`. The per-file preservation manifest and
+`results/history/early-benchmarks/` in `872b92b0`. The per-file preservation manifest and
 verification are in `docs/findings/2026-11-11-early-benchmark-migration-findings.md`.
 Current November results, the frozen benchmark and private checkpoints retain
 their paths and contents.

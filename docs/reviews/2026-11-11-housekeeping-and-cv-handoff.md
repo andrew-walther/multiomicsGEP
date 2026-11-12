@@ -22,7 +22,7 @@ The [results index](../../results/README.md) now separates the pilot, reported
 November evidence, frozen benchmark and historical studies. The
 [history index](../../results/history/README.md) links existing paths in place.
 The first physical batch was subsequently approved: 110 early figures and
-157 tables moved to `results/history/early-benchmarks/`. The
+157 tables moved to `results/history/early-benchmarks/`. The move is in `872b92b0`. The
 [migration findings and manifest](../findings/2026-11-11-early-benchmark-migration-findings.md)
 record preservation and path validation. Current reported results, frozen
 evidence and checkpoints remain in place. Further physical batches need
