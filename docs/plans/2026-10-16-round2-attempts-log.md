@@ -2870,3 +2870,45 @@ record the risk groups, program analyses, rank comparison and simulation.
 The full program rule could not be checked on the saved simulation
 checkpoints. Rank 40 returned scores with an iteration-limit warning.
 No model or rank was adopted.
+
+## 2026-11-12 — A: point-exponential vs point-Laplace priors on L and F (registered before execution)
+
+Task A of the [November 9 week plan](2026-11-09-week-plan.md), as revised on
+2026-11-12 (DECISIONS.md): pooled training data, no `strata_id`. Runner:
+`results/benchmark_sim/run_lf_prior_comparison.R`; outputs under
+`results/benchmark_sim/outputs/lf_prior_2026-11-09/`, patient-level files under `data/`.
+
+**Arms.** Both: `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)`, Normal β, K = 7, no
+pruning, 300 sweeps, tolerance 10⁻⁵ (the working-model call). PL: z-score within cohort,
+point-Laplace L and F. PE: X/sd within cohort (nonnegative), point-exponential L and F,
+`center_projection = TRUE` with one pooled center. Real data adds the task F fixed arm,
+"rank transform, per-gene SD scaling": within-patient ranks over the D4 genes, each gene
+divided by its within-cohort SD of the ranks without centering, point-exponential,
+`center_projection = TRUE`, pooled. It is descriptive and not part of A's decision.
+
+**Simulation.** `yfb_decision_data(seed, 2000, share, "shared")`, seeds 1 to 10, shares
+0.25%, 1% and 5%, plus the S-14 near-threshold cell (share 0.05%, strong survival),
+10 seeds: 40 datasets × 2 arms. PL is refitted in every dataset with the same scoring
+code. The refits double as the reuse spot check against the saved S-9 and S-14 fits
+(same recovery verdict, same false-active count, validation C equal to three decimals);
+any disagreement is reported.
+
+**Real data.** The 273 TCGA and CPTAC training patients, the D4 genes and the S-11 folds
+(cohort × event, seed 2026), five folds plus one full-data fit per arm. Primary metric:
+within-cohort concordance (pairs within TCGA or within CPTAC, pooled by pair count), with
+pooled and per-cohort concordance and the held-out partial log-likelihood beside it. The
+PL refits are compared with the saved S-11 fold fits.
+
+**Recorded per fit.** Simulation: recovery (best |r| ≥ 0.7, matched program
+survival-active with the correct sign), false-active programs, convergence, validation C,
+calibration slope (exact times). Real data: fold-wise concordances, convergence, programs
+with nonzero loadings, survival-active programs, and per program the correlation of its
+training scores with each patient's mean expression and with the cohort label; for the
+full-data fits, top-100 gene overlap with every program of the current S-11 fit.
+
+**Criteria (PE adopted if all hold).** (1) Recovery in every simulation cell at least
+PL's minus 1 of 10. (2) Mean false-active programs per fit at most 1 in every cell.
+(3) At least 9 of 10 fits converged in every cell. (4) Mean within-cohort CV concordance
+no lower than PL's by more than one SE of the paired fold difference, and every fold
+converges. Otherwise PL stays and the failed cell is recorded. A program absorbing the
+mean level is reported, not fixed by raising K.
