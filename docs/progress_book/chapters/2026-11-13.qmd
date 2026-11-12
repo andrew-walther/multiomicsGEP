@@ -381,12 +381,36 @@ the screen or K changes, the L/F prior comparison's training CV is rerun once at
 setting. Results already reported, such as the November external scores, stay on record
 labeled with the model state that produced them.
 
-**Result.** In progress.
+**Result.** The gene screen and z-score input stay, and the one-SE rule picks K = 5.
+Independent review was pending on November 12. Details are in the
+[findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-training-cv-redo-findings.md)
+and the training cross-validation results of Chapter 4.
 
-<!-- RESULT (training-CV redo): gene screen CV C per screen with SE and one-SE choice; input
-scaling CV C per input with SE, live and survival-active programs, convergence, mean-level
-check, and the rank-transform point-exponential arm; rank CV curve over K = 2 to 12 with
-nonzero and survival-active counts and the one-SE choice; any DECISIONS.md change. -->
+Of the May screens, only two remain once the LB-model and cohort-indicator variants are
+dropped: the current D4 screen and D2 (z-score each cohort, quantile-normalize the merged
+matrix, top 2,000 genes by variance). At K = 7, within-cohort concordance:
+
+| Input | Mean C (SE) | Difference from current (paired SE) | Folds converged |
+|---|---|---|---|
+| D4 screen, z-scores (current) | 0.658 (0.026) | | 3/5 |
+| D2 screen | 0.646 (0.030) | −0.012 (0.014) | 5/5 |
+| D4, X/sd with centered projection | 0.638 (0.023) | −0.020 (0.007) | 5/5 |
+| D4, within-patient ranks then z-scores | 0.641 (0.022) | −0.017 (0.009) | 5/5 |
+
+For the rank, CV concordance is flat from K = 5 to 12 (0.649 to 0.666) and lower from
+K = 2 to 4 (0.611 to 0.620). The best mean is at K = 10 (0.666, SE 0.027), so the one-SE
+threshold is 0.639 and the smallest K above it is 5. K = 5 is 0.003 below K = 7 (paired SE
+0.007), converges in all five folds against three at K = 7, and has three survival-active
+programs, as do K = 6 to 8. Every column keeps nonzero loadings at every K. On paired
+differences K = 5 to 8 are indistinguishable, so the rule picks the smallest rank on the
+plateau rather than showing that K = 5 predicts better. The comparison used one fold split,
+and this plateau is the case where the protocol repeats the split with four more seeds.
+At K = 5 the point-exponential prior still loses (0.519 against 0.655).
+
+K = 5 is adopted for new work. Results already reported at K = 7, including the November
+external scores and this week's prior comparisons, stay on record labeled with K = 7.
+Whether to change the rank key in `config/globals.yml` is Andrew's decision.
+
 
 ## External scoring of the fixed working model
 
