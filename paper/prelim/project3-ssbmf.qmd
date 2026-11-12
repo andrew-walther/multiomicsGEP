@@ -16,7 +16,6 @@ format:
       \usepackage{array}
       \usepackage{etoolbox}
       \usepackage{placeins}
-      \makeatletter\newcommand{\applabel}[2]{\def\@currentlabel{#1}\label{#2}}\makeatother
       \BeforeBeginEnvironment{tabular}{\begingroup\setstretch{1}}
       \AfterEndEnvironment{tabular}{\endgroup}
       \BeforeBeginEnvironment{longtable}{\begingroup\setstretch{1}}
@@ -600,11 +599,9 @@ We will develop a data-driven survival weight that lets survival affect the load
 
 <!-- Independent review of these two comparisons was pending on 2026-11-12. Sources: docs/findings/2026-11-12-lf-prior-comparison-findings.md, docs/findings/2026-11-12-lf-prior-followup-findings.md, docs/findings/2026-11-12-beta-prior-comparison-findings.md; aggregate CSVs in results/benchmark_sim/outputs/lf_prior_2026-11-09/. Gene screen, input scaling and rank results go in A3 onward. -->
 
-## A1. Priors on the Scores and Loadings
+## Priors on the Scores and Loadings
 
-\applabel{A1}{app:lf-prior}The reported fit uses point-Laplace priors on $\mathbf{L}$ and $\mathbf{F}$ with expression z-scored within each cohort. The alternative is a point-exponential prior, which keeps every score and loading nonnegative, as in a nonnegative matrix factorization. It needs nonnegative input, so expression is divided by each gene's within-cohort standard deviation without centering, and the Cox projection is centered on the training data. Everything else is the reported fit's: $w_S=1$, a Normal coefficient prior, $K=7$ without pruning, at most 300 sweeps and tolerance $10^{-5}$. The simulation uses the three variance cells of the fixed-weight study at 2,000 genes and the strong-survival cell of the near-threshold study at a planted share of 0.05%, with 10 datasets each. The planted scores and loadings are exponential, so the truth favors neither prior. The training comparison uses the five folds of @sec-res-cv on the pooled data and counts only pairs of patients from the same cohort.
-
-In simulation the point-exponential prior recovered the planted program as often as point-Laplace, and more often near the detection threshold, and every fit converged (Table \ref{tab:lf-prior-sim}). It also marked several other programs survival-active in every cell, with means of 2.6 to 4.3 false-active programs per fit against a limit of one. At planted shares of 1% and above, every point-exponential fit had at least two false-active programs, while point-Laplace had at most one in any fit. Near the threshold both priors exceeded the limit.
+\label{app:lf-prior}A point-exponential prior on $\mathbf{L}$ and $\mathbf{F}$ keeps every score and loading nonnegative, as in a nonnegative matrix factorization such as DeSurv. Tables \ref{tab:lf-prior-sim} and \ref{tab:lf-prior-real} compare it with the point-Laplace prior of the reported fit in simulation and in five-fold training cross-validation. The point-exponential fits need nonnegative input and a centered Cox projection, and three of the inputs remove or absorb the difference in mean expression between the two training cohorts. The point-exponential prior recovered the planted program as often as point-Laplace, but it averaged 2.6 to 4.3 false-active programs per fit. On the training data it lowered concordance by 0.023 to 0.085 under every input, and at most one of five folds converged. The reported fit keeps the point-Laplace prior.
 
 ```{=latex}
 \begin{table}[!htb]
@@ -625,12 +622,10 @@ Planted share & \shortstack{Recovered\\(of 10)} & \shortstack{False-active\\prog
 \end{table}
 ```
 
-On the training data the point-exponential fit lost concordance and described the difference between the cohorts (Table \ref{tab:lf-prior-real}). Dividing by the within-cohort standard deviation keeps each cohort's mean level, and the median gene mean was 11.0 in TCGA-PAAD and 15.5 in CPTAC against a within-cohort standard deviation of 1. In every fold one program's scores correlated 0.998 with cohort membership, and no program was survival-active. Three further setups removed or absorbed that difference. Cohort strata center the projection and the baseline hazard within each cohort. A shifted z-score adds to each gene's z-scores a constant equal to minus their minimum over the 273 patients, so the input is nonnegative and both cohorts have the same gene means. The within-patient rank transform used by DeSurv ranks the genes within each patient and divides each gene's ranks by their within-cohort standard deviation. Each setup recovered part of the lost concordance, but all stayed below point-Laplace by more than one standard error, and no more than one of five folds converged in 300 sweeps. The shifted z-score removed the association with cohort, but in simulation it behaved like the unshifted point-exponential fit, with 2.8 to 4.4 false-active programs per fit. Under strata the programs kept the same directions as without them ($|r|\ge0.9999$), so they still separate the two cohorts. The point-Laplace prior is kept.
-
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[Priors on the scores and loadings in five-fold training cross-validation]{Priors on the scores and loadings in five-fold training cross-validation (273 patients). Concordance counts only pairs of patients from the same cohort, and the difference is paired over folds with its standard error. Convergence is within 300 sweeps. Survival-active programs are counted per fold. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership. Under strata the cohort offset is absorbed by the stratified baseline.}
+\caption[Priors on the scores and loadings in five-fold training cross-validation]{Priors on the scores and loadings in five-fold training cross-validation (273 patients). Concordance counts only pairs of patients from the same cohort, and the difference is paired over folds with its standard error. Convergence is within 300 sweeps. Survival-active programs are counted per fold. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership. Divided by SD: expression divided by its within-cohort standard deviation without centering. Cohort strata: separate baseline hazards and projection centers for TCGA-PAAD and CPTAC. Shifted z-scores: z-scores plus a per-gene constant that makes each gene's minimum zero. Within-patient ranks: genes ranked within each patient, then divided by their within-cohort standard deviation.}
 \label{tab:lf-prior-real}
 \small
 \setlength{\tabcolsep}{3pt}
@@ -648,11 +643,9 @@ Point-exponential, within-patient ranks & 0.615 & $-$0.043 (0.016) & 0/5 & 2 & 1
 \end{table}
 ```
 
-## A2. Prior on the Survival Coefficients
+## Prior on the Survival Coefficients
 
-\applabel{A2}{app:beta-prior}The reported fit gives each coefficient its own Normal prior. The alternatives are a point-Laplace and a point-normal prior, either of which can set a coefficient exactly to zero. A prior with a point mass cannot be estimated from one coefficient, so both are shared across the seven programs. A shared Normal prior separates the effect of sharing from that of sparsity. All other settings, the simulation cells and the folds are those of Appendix \ref{app:lf-prior}, with point-Laplace priors on the scores and loadings.
-
-The four priors gave nearly the same fits (Table \ref{tab:beta-prior}). The sparse priors lowered false activity slightly where the planted program was clear, to 0.3 against 0.9 at a share of 0.25%. Near the detection threshold all four averaged three to four false-active programs per fit, so neither sparse prior met the false-activity condition, which the Normal prior also fails in that cell. Median calibration slopes differed by at most 0.03 between priors outside the 5% cell. In training cross-validation the shared point-Laplace prior lowered concordance by 0.008 (SE 0.002), and the shared point-normal prior by 0.002 (SE 0.004). Under the shared point-normal prior, the posterior probability that a coefficient is nonzero was between 0.94 and 1.00 for all seven programs in the full training fit, so it did not single out the three survival-active programs. In simulation it did pick out the planted program alone when that program was clear. The Normal prior is kept.
+\label{app:beta-prior}A sparse coefficient prior can set a program's coefficient exactly to zero, and the point-normal prior gives each program a posterior probability of a nonzero coefficient that could replace the activity threshold. Table \ref{tab:beta-prior} compares the Normal prior of the reported fit with point-Laplace and point-normal priors shared across programs, and with a shared Normal prior that separates sharing from sparsity. The four priors gave nearly the same fits. Concordance differed by at most 0.009, and near the detection threshold every prior averaged three to four false-active programs per fit. On the training data the point-normal inclusion probabilities were 0.94 to 1.00 for all seven programs, so they did not identify the survival-active programs. The reported fit keeps the Normal prior.
 
 ```{=latex}
 \begin{table}[!htb]
@@ -680,7 +673,7 @@ Survival-active programs per fold & 2.6 & 2.4 & 2.4 & 2.6 \\
 \end{table}
 ```
 
-<!-- APPENDIX C (gene screen and input scaling, rank): add "## A3. ..." subsections with \applabel{A3}{app:...} when the training-CV redo is reviewed. -->
+<!-- APPENDIX C (gene screen and input scaling, rank): add "## Heading" subsections with \label{app:...} when the training-CV redo is reviewed. -->
 
 \FloatBarrier
 

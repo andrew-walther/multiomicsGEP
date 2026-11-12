@@ -261,10 +261,10 @@ def transform(chapter_text, header_text, source_label):
     #     '## A1. Title' -> '## Title' (the class numbers it B.1). The
     #     \applabel anchors are redefined as plain \label in the header, so
     #     'Appendix \ref{...}' prints B.1 here and A1 in the standalone.
+    #     Hand-typed 'A<n>. ' prefixes are optional (Andrew, 2026-11-12: the
+    #     source headings carry no prefix; the class numbers them C.1, C.2).
     if appendix is not None:
-        appendix, n_app = re.subn(r"^## A\d+\. ", "## ", appendix, flags=re.M)
-        if n_app == 0:
-            die("found no '## A<n>. ' appendix subsection headings")
+        appendix = re.sub(r"^## A\d+\. ", "## ", appendix, flags=re.M)
 
     # T6: assemble. Header template (title substituted), generated-file notice,
     #     preview harness, chapter heading, body, appendix, References.
