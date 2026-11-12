@@ -309,11 +309,106 @@ scoring of the fixed model. -->
 <p><strong>Why it was reopened.</strong> The project set out to fit a nonnegative factorization, as DeSurv does, so that each program is an additive set of genes and each patient a nonnegative mix of programs. Point-Laplace replaced point-exponential on October 15 because, on z-scored input, the point-exponential fit collapsed to zero programs in 6 of 10 test datasets. The November 6 option that centers only the Cox projection keeps the input nonnegative and removes the term that shrank β to zero, so a like-for-like comparison is now possible.</p>
 <p><strong>Design.</strong> Both arms use the canonical fitter with <code>w_S = 1</code>, a Normal β prior, K = 7, no pruning, at most 300 sweeps and tolerance 10<sup>−5</sup>. The point-Laplace arm is the working model on z-scores within cohort. The point-exponential arm divides each gene by its within-cohort SD without centering and centers the Cox projection. The simulation uses the three planted variance shares of the fixed-weight study (0.25%, 1% and 5%) and the near-threshold cell (0.05% with strong survival), 10 datasets each, with planted L and F drawn from exponential distributions so the truth favors neither prior. The training data use the five cohort- and event-balanced folds, pooled without strata.</p>
 <p><strong>Decision rule.</strong> Point-exponential is adopted only if, in every cell, its recovery is at least point-Laplace’s minus one of ten, it averages at most one false-active program per fit, and at least 9 of 10 fits converge, and if its within-cohort CV concordance is no lower than point-Laplace’s by more than one SE of the paired difference, with every fold converged.</p>
-<p><strong>Result.</strong> In progress.</p>
-<!-- RESULT (L/F priors): recovery, mean false-active and converged counts per cell for each
-arm; mean within-cohort and pooled CV C per arm, paired difference with SE, folds converged,
-survival-active programs, program correlation with the cohort label; decision. Source:
-docs/findings/2026-11-12-lf-prior-comparison-findings.md once independently reviewed. -->
+<p><strong>Result.</strong> Point-Laplace stays. Independent review of this result was pending on November 12. Details are in the <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-lf-prior-comparison-findings.md">findings</a> and Appendix C of Chapter 4.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Planted share</th>
+<th>Recovered (of 10), PL / PE</th>
+<th>Mean false-active, PL / PE</th>
+<th>Converged, PL / PE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0.05% (near threshold)</td>
+<td>5 / 8</td>
+<td>3.0 / 2.6</td>
+<td>10 / 10</td>
+</tr>
+<tr class="even">
+<td>0.25%</td>
+<td>10 / 10</td>
+<td>0.9 / 3.0</td>
+<td>10 / 10</td>
+</tr>
+<tr class="odd">
+<td>1%</td>
+<td>10 / 10</td>
+<td>0.1 / 4.0</td>
+<td>10 / 10</td>
+</tr>
+<tr class="even">
+<td>5%</td>
+<td>10 / 10</td>
+<td>0.0 / 4.3</td>
+<td>10 / 10</td>
+</tr>
+</tbody>
+</table>
+<p>In simulation the point-exponential fit (PE) recovers the planted program as often as the point-Laplace fit (PL), and more often near the threshold, but it marks two to four other programs survival-active in every cell, against a limit of one. On the training data it does worse:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Prior and input</th>
+<th>Mean within-cohort C</th>
+<th>Difference from PL (SE)</th>
+<th>Folds converged</th>
+<th>Largest program correlation with cohort</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Point-Laplace, z-scores (working model)</td>
+<td>0.658</td>
+<td></td>
+<td>3/5</td>
+<td>0.05</td>
+</tr>
+<tr class="even">
+<td>Point-exponential, X/sd</td>
+<td>0.573</td>
+<td>−0.085 (0.031)</td>
+<td>0/5</td>
+<td>0.998</td>
+</tr>
+<tr class="odd">
+<td>Point-exponential, X/sd with cohort strata</td>
+<td>0.628</td>
+<td>−0.030 (0.015)</td>
+<td>0/5</td>
+<td>0.998</td>
+</tr>
+<tr class="even">
+<td>Point-exponential, shifted z-scores</td>
+<td>0.635</td>
+<td>−0.023 (0.008)</td>
+<td>1/5</td>
+<td>0.05</td>
+</tr>
+<tr class="odd">
+<td>Point-exponential, within-patient ranks</td>
+<td>0.615</td>
+<td>−0.043 (0.016)</td>
+<td>0/5</td>
+<td>1.000</td>
+</tr>
+</tbody>
+</table>
+<p>X/sd keeps each cohort’s mean level (median gene mean 11.0 in TCGA and 15.5 in CPTAC against a within-cohort SD of 1), so in the first point-exponential fit one program tracks TCGA versus CPTAC and no program is survival-active. A follow-up removed that difference in two ways. Cohort strata center the projection and the baseline hazard within cohort, and a shifted z-score adds each gene’s minus-minimum to its z-scores so the input is nonnegative with equal cohort means. Both recover part of the lost concordance but stay more than one SE below point-Laplace, and the shifted input still gives 2.8 to 4.4 false-active programs per fit in simulation. Point-exponential is not competitive on these data even with the cohort difference removed.</p>
 </section>
 <section id="prior-on-the-survival-coefficients" class="level2" data-number="15.6">
 <h2 data-number="15.6" class="anchored" data-anchor-id="prior-on-the-survival-coefficients"><span class="header-section-number">15.6</span> Prior on the survival coefficients</h2>
@@ -321,10 +416,57 @@ docs/findings/2026-11-12-lf-prior-comparison-findings.md once independently revi
 <p><strong>Background.</strong> The October 15 training CV compared point-Laplace with Normal only (mean C 0.651 and 0.653) and concluded that the point-Laplace choice stood. The November 4 fit then used Normal, and the working model has used it since without a decision entry. A dated correction is needed whatever the result. Point-normal set every β to zero before scores were standardized, which may no longer happen now that β is on the standardized-score scale.</p>
 <p><strong>Design.</strong> Three arms that differ only in the β prior, with the same simulation cells and training folds as the L/F comparison. For point-normal, each program’s posterior inclusion probability is recorded, since replacing the activity cutoff with that probability depends on it.</p>
 <p><strong>Decision rule.</strong> A sparse prior replaces Normal if it meets the L/F comparison’s recovery, false-activity and convergence rules in every cell, has a validation calibration slope closer to 1 than Normal in at least two of the four cells, and has CV concordance no lower than Normal’s by more than one SE. If both sparse priors qualify, the one with fewer false-active programs is chosen. A fit that sets every β to zero is reported as a failure.</p>
-<p><strong>Result.</strong> In progress.</p>
-<!-- RESULT (beta prior): per-cell recovery, false-active, convergence and calibration slope
-for the three arms; paired CV C differences with SE; survival-active counts; point-normal
-inclusion probabilities; decision and the DECISIONS.md correction. -->
+<p><strong>Result.</strong> Normal stays, and the choice makes little difference. Independent review was pending on November 12. Details are in the <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-beta-prior-comparison-findings.md">findings</a> and Appendix C of Chapter 4.</p>
+<p>A point-mass prior cannot be estimated from a single coefficient, so the sparse priors are shared across the seven programs. A shared Normal arm separates sharing from sparsity.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Prior</th>
+<th>Mean within-cohort C</th>
+<th>Difference from Normal (SE)</th>
+<th>Survival-active programs per fold</th>
+<th>False-active per fit, near-threshold cell</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Normal (working model)</td>
+<td>0.658</td>
+<td></td>
+<td>2.6</td>
+<td>3.0</td>
+</tr>
+<tr class="even">
+<td>Shared point-Laplace</td>
+<td>0.649</td>
+<td>−0.008 (0.002)</td>
+<td>2.4</td>
+<td>3.3</td>
+</tr>
+<tr class="odd">
+<td>Shared point-normal</td>
+<td>0.656</td>
+<td>−0.002 (0.004)</td>
+<td>2.4</td>
+<td>3.5</td>
+</tr>
+<tr class="even">
+<td>Shared Normal</td>
+<td>0.651</td>
+<td>−0.007 (0.004)</td>
+<td>2.6</td>
+<td>4.1</td>
+</tr>
+</tbody>
+</table>
+<p>The sparse priors lower false activity a little where the planted program is clear (0.3 against 0.9 at the 0.25% share). Near the threshold every prior has three to four false-active programs per fit, so neither sparse prior meets the limit, which Normal also misses there. Calibration slopes differ by at most 0.03. On the real data the shared point-normal prior gives inclusion probabilities of 0.94 to 1.00 for all seven programs, so it does not single out the three survival-active ones, and replacing the 1.96-SD activity rule with inclusion probabilities is not supported. The working model’s earlier record said point-Laplace β; DECISIONS.md now records that the working model uses Normal β and that this comparison keeps it.</p>
 </section>
 <section id="methylation-alone" class="level2" data-number="15.7">
 <h2 data-number="15.7" class="anchored" data-anchor-id="methylation-alone"><span class="header-section-number">15.7</span> Methylation alone</h2>
