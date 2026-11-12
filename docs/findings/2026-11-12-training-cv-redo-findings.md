@@ -68,7 +68,7 @@ cohort mean. The alternatives converge in more folds than the current input.
 | K | Mean within-cohort C (SE) | Difference from K = 7 (paired SE) | Folds converged | Survival-active per fold (mean) | Survival-active, full fit |
 |---|---|---|---|---|---|
 | 2 | 0.611 (0.022) | −0.047 (0.009) | 5/5 | 1.0 | 1 |
-| 3 | 0.617 (0.020) | −0.040 (0.010) | 5/5 | 1.0 | 1 |
+| 3 | 0.617 (0.019) | −0.040 (0.010) | 5/5 | 1.0 | 1 |
 | 4 | 0.620 (0.024) | −0.038 (0.009) | 5/5 | 1.6 | 2 |
 | **5** | **0.655 (0.029)** | −0.003 (0.007) | 5/5 | 2.6 | 3 |
 | 6 | 0.659 (0.022) | +0.001 (0.005) | 4/5 | 2.4 | 3 |
