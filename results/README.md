@@ -19,8 +19,9 @@ exports before reusing them in a new release.
 The [November 11 inventory](../docs/findings/2026-11-11-results-inventory-findings.md)
 maps scripts, saved locations and report references. It records path mismatches
 and unresolved writers. The [rebuild design](../docs/plans/2026-11-11-results-rebuild-design.md)
-and [migration proposal](../docs/findings/2026-11-11-results-navigation-findings.md)
-build on it. Existing scientific files remain in their original locations.
+and [completed early-artifact migration](../docs/findings/2026-11-11-early-benchmark-migration-findings.md)
+build on it. Current November evidence, frozen benchmark and checkpoints retain
+their existing paths. The 267 early artifacts now live under indexed history.
 
 ## November reported result families
 
@@ -54,7 +55,7 @@ be populated as scientific families are ported into the tested workflow.
 | `multi_cohort_sim/` | Simulation of shared and cohort-specific programs across cohorts |
 | `cohort_lmm_sim/` | Synthetic check of the cohort-effect model |
 | `benchmark_snapshot_2026-10-14/` | Read-only copy of the approved benchmark state; see its README and checksum manifest |
-| `figures/`, `tables/` | Per-cohort outputs from the May 2026 analyses |
+| `history/early-benchmarks/` | Archived early cohort figures/tables and prior/rank comparisons, with per-file preservation manifest |
 | `legacy/`, `benchmark_sim/archive/` | Retired runners and outputs, kept for reference and not re-run |
 
 ## Historical runners and supporting tools

@@ -1,5 +1,7 @@
 # fit_modular.R Implementation Plan
 
+> Artifact paths updated November 11: former `results/figures/` and `results/tables/` outputs are preserved under `results/history/early-benchmarks/`. This plan retains its original execution context. See [the migration record](../findings/2026-11-11-early-benchmark-migration-findings.md) before locating historical outputs.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Create `code/fit_modular.R` — a reusable `fit_supervised_mf_modular()` function implementing V3 Algorithm 1 (factor-wise Gauss-Seidel CAVI) using the four existing modular update functions — paired with a Quarto companion doc `docs/lb_walkthroughs/fit_modular.qmd`.

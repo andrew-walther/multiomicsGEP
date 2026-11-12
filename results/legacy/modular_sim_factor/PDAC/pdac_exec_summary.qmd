@@ -42,7 +42,7 @@ library(kableExtra)
 library(survival)
 library(dplyr)
 
-tables_root <- "../../tables"
+tables_root <- "../../../history/early-benchmarks/tables"
 
 ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
                   "Moffitt_GEO_array", "PACA_AU_array",
@@ -167,9 +167,9 @@ Puleo\_array (n=288, microarray) has the clearest factor structure: 3/5 GEPs are
 prognostically adverse; 2 are expression-coherent but survival-neutral.
 
 ::: {layout-ncol=2}
-![**Survival coefficients per GEP.** GEPs 2 and 5 are shrunk to $\hat\beta=0$ by the sparsity prior despite carrying expression signal — the model separates prognostic from non-prognostic structure.](../../figures/Puleo_array/fig3_beta_comparison.png)
+![**Survival coefficients per GEP.** GEPs 2 and 5 are shrunk to $\hat\beta=0$ by the sparsity prior despite carrying expression signal — the model separates prognostic from non-prognostic structure.](../../../history/early-benchmarks/figures/Puleo_array/fig3_beta_comparison.png)
 
-![**PVE scree (K selection).** Each bar = one factor's proportion of variance explained. The auto-prune threshold (dashed) identifies $K_\text{eff}=9$ for Puleo — four more active factors than the fixed $K=5$ baseline.](../../figures/Puleo_array/figK_pve_scree.png)
+![**PVE scree (K selection).** Each bar = one factor's proportion of variance explained. The auto-prune threshold (dashed) identifies $K_\text{eff}=9$ for Puleo — four more active factors than the fixed $K=5$ baseline.](../../../history/early-benchmarks/figures/Puleo_array/figK_pve_scree.png)
 :::
 
 Factor 2 (PVE 8.9%, the single largest expression axis) has $\hat\beta = 0$: the model

@@ -19,12 +19,12 @@
 # The only code taken from V2.R is calc_cox_taylor() (copied verbatim below).
 #
 # Outputs:
-#   results/tables/modular_sim/  -- 7 CSV tables
-#   results/figures/modular_sim/ -- 8 figures (PDF + PNG)
+#   results/history/early-benchmarks/tables/modular_sim/  -- 7 CSV tables
+#   results/history/early-benchmarks/figures/modular_sim/ -- 8 figures (PDF + PNG)
 #   results/modular_sim_report.md/.pdf
 #
 # Run from repo root:
-#   Rscript results/run_modular_simulation.R
+#   Rscript results/legacy/modular_sim_block/run_modular_simulation.R
 # ==============================================================================
 
 # Set working directory to repo root (portable: works locally and on Longleaf)
@@ -300,12 +300,12 @@ cat("\n=== PROPORTIONAL HAZARDS TEST ===\n")
 print(cox.zph(coxph(Surv(time, status) ~ EL)))
 
 # ==============================================================================
-# Save CSV Tables  -->  results/tables/modular_sim/
+# Save CSV Tables  -->  results/history/early-benchmarks/tables/modular_sim/
 # ==============================================================================
 
 # Factor summary
 write.csv(summary_tab,
-          "results/tables/modular_sim/factor_summary_table.csv",
+          "results/history/early-benchmarks/tables/modular_sim/factor_summary_table.csv",
           row.names = FALSE)
 
 # Beta comparison
@@ -320,7 +320,7 @@ beta_df <- data.frame(
   Sign_Match   = sign(EBeta) == sign(B_true) | B_true == 0
 )
 write.csv(beta_df,
-          "results/tables/modular_sim/beta_comparison_table.csv",
+          "results/history/early-benchmarks/tables/modular_sim/beta_comparison_table.csv",
           row.names = FALSE)
 
 # C-index comparison
@@ -329,7 +329,7 @@ cindex_df <- data.frame(
   C_Index = c(perf$c_original, perf$c_latent)
 )
 write.csv(cindex_df,
-          "results/tables/modular_sim/cindex_comparison.csv",
+          "results/history/early-benchmarks/tables/modular_sim/cindex_comparison.csv",
           row.names = FALSE)
 
 # Convergence history
@@ -339,21 +339,21 @@ history_df <- data.frame(
   ELBO_Proxy = history$elbo_proxy
 )
 write.csv(history_df,
-          "results/tables/modular_sim/convergence_history.csv",
+          "results/history/early-benchmarks/tables/modular_sim/convergence_history.csv",
           row.names = FALSE)
 
 # Top features per GEP
 top_feats <- get_top_features(EF, 10)
 for (k in seq_along(top_feats)) {
   write.csv(top_feats[[k]],
-            sprintf("results/tables/modular_sim/top_features_GEP%d.csv", k),
+            sprintf("results/history/early-benchmarks/tables/modular_sim/top_features_GEP%d.csv", k),
             row.names = FALSE)
 }
 
 # Loading correlations (true vs estimated)
 cors <- cor(L_true, EL)
 write.csv(round(cors, 4),
-          "results/tables/modular_sim/loading_correlation_matrix.csv")
+          "results/history/early-benchmarks/tables/modular_sim/loading_correlation_matrix.csv")
 
 # PH test
 ph_test <- cox.zph(coxph(Surv(time, status) ~ EL))
@@ -364,20 +364,20 @@ ph_df <- data.frame(
   P_Value = round(ph_test$table[, 3], 4)
 )
 write.csv(ph_df,
-          "results/tables/modular_sim/ph_test_results.csv",
+          "results/history/early-benchmarks/tables/modular_sim/ph_test_results.csv",
           row.names = FALSE)
 
-cat("\nCSV tables saved to results/tables/modular_sim/\n")
+cat("\nCSV tables saved to results/history/early-benchmarks/tables/modular_sim/\n")
 
 # ==============================================================================
-# Generate Figures  -->  results/figures/modular_sim/
+# Generate Figures  -->  results/history/early-benchmarks/figures/modular_sim/
 # ==============================================================================
 
 # --- Figure 1: RMSE Convergence Trace ---
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig1_rmse_trace.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig1_rmse_trace.pdf",
                         width = 8, height = 5)
-  else              png("results/figures/modular_sim/fig1_rmse_trace.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig1_rmse_trace.png",
                         width = 800, height = 500, res = 120)
   par(mar = c(5, 5, 4, 2))
   plot(history$rmse, type = "l", lwd = 2.5, col = "#1f77b4",
@@ -393,9 +393,9 @@ for (ext in c("pdf", "png")) {
 
 # --- Figure 2: ELBO Proxy Trace ---
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig2_elbo_proxy.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig2_elbo_proxy.pdf",
                         width = 8, height = 5)
-  else              png("results/figures/modular_sim/fig2_elbo_proxy.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig2_elbo_proxy.png",
                         width = 800, height = 500, res = 120)
   par(mar = c(5, 5, 4, 2))
   plot(history$elbo_proxy, type = "l", lwd = 2.5, col = "#2ca02c",
@@ -409,9 +409,9 @@ for (ext in c("pdf", "png")) {
 
 # --- Figure 3: Beta Comparison (True vs Estimated) ---
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig3_beta_comparison.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig3_beta_comparison.pdf",
                         width = 8, height = 5.5)
-  else              png("results/figures/modular_sim/fig3_beta_comparison.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig3_beta_comparison.png",
                         width = 800, height = 550, res = 120)
   par(mar = c(5, 5, 4, 2))
   x_pos <- 1:K
@@ -440,9 +440,9 @@ palette <- colorRampPalette(c("blue", "white", "red"))(100)
 max_val <- max(abs(F_sub))
 
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig4_gep_heatmap.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig4_gep_heatmap.pdf",
                         width = 10, height = 6)
-  else              png("results/figures/modular_sim/fig4_gep_heatmap.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig4_gep_heatmap.png",
                         width = 1000, height = 600, res = 120)
   layout(matrix(1:2, ncol = 2), widths = c(5, 1))
   par(mar = c(6, 4, 4, 1))
@@ -465,9 +465,9 @@ for (ext in c("pdf", "png")) {
 
 # --- Figure 5: Kaplan-Meier Survival Curves per Factor ---
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig5_kaplan_meier.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig5_kaplan_meier.pdf",
                         width = 12, height = 8)
-  else              png("results/figures/modular_sim/fig5_kaplan_meier.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig5_kaplan_meier.png",
                         width = 1200, height = 800, res = 120)
   par(mfrow = c(2, ceiling(K / 2)), mar = c(4, 4, 3, 1))
   for (k in 1:K) {
@@ -492,9 +492,9 @@ sign_corr   <- sign(cors_mat[target_true, target_est])
 r_val       <- cors_mat[target_true, target_est]
 
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig6_signal_recovery.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig6_signal_recovery.pdf",
                         width = 7, height = 7)
-  else              png("results/figures/modular_sim/fig6_signal_recovery.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig6_signal_recovery.png",
                         width = 700, height = 700, res = 120)
   par(mar = c(5, 5, 4, 2))
   plot(L_true[, target_true], EL[, target_est] * sign_corr,
@@ -518,9 +518,9 @@ cor_mat <- cor(L_true, EL)
 palette2 <- colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
 
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig7_loading_correlations.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig7_loading_correlations.pdf",
                         width = 7, height = 6)
-  else              png("results/figures/modular_sim/fig7_loading_correlations.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig7_loading_correlations.png",
                         width = 700, height = 600, res = 120)
   par(mar = c(5, 5, 4, 5))
   image(1:K, 1:K, abs(cor_mat),
@@ -539,9 +539,9 @@ for (ext in c("pdf", "png")) {
 
 # --- Figure 8: Tau (Noise Precision) Distribution ---
 for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim/fig8_tau_distribution.pdf",
+  if (ext == "pdf") pdf("results/history/early-benchmarks/figures/modular_sim/fig8_tau_distribution.pdf",
                         width = 8, height = 5)
-  else              png("results/figures/modular_sim/fig8_tau_distribution.png",
+  else              png("results/history/early-benchmarks/figures/modular_sim/fig8_tau_distribution.png",
                         width = 800, height = 500, res = 120)
   par(mar = c(5, 5, 4, 2))
   hist(Tau, breaks = 50, col = "#1f77b4AA", border = "white",
@@ -557,7 +557,7 @@ for (ext in c("pdf", "png")) {
   dev.off()
 }
 
-cat(sprintf("\nAll figures saved to results/figures/modular_sim/ (PDF + PNG)\n"))
+cat(sprintf("\nAll figures saved to results/history/early-benchmarks/figures/modular_sim/ (PDF + PNG)\n"))
 cat(sprintf("Total: %d CSVs + %d figure pairs\n",
-            length(list.files("results/tables/modular_sim", pattern = "\\.csv$")),
-            length(list.files("results/figures/modular_sim", pattern = "\\.pdf$"))))
+            length(list.files("results/history/early-benchmarks/tables/modular_sim", pattern = "\\.csv$")),
+            length(list.files("results/history/early-benchmarks/figures/modular_sim", pattern = "\\.pdf$"))))

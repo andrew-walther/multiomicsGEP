@@ -32,6 +32,14 @@ simulation support is incomplete. The open methods problem is stability at weigh
 move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study on the
 nonnegative input. Multimodal development stays deferred.
 
+## Early benchmark archive paths (2026-11-11)
+
+The approved [early-artifact migration](docs/findings/2026-11-11-early-benchmark-migration-findings.md)
+relocated 110 figures and 157 tables to `results/history/early-benchmarks/`
+without changing their contents. Source reader/writer paths and navigation were
+updated. Current November results, the frozen benchmark, the local pilot and
+private checkpoints remain in place. No scientific analysis was rerun.
+
 ## Local results workflow pilot (2026-11-11)
 
 A [small local software pilot](results/pilot/README.md) implements a synthetic
@@ -1291,7 +1299,7 @@ Only remove true duplicates or items added in error.
    - `results/legacy/modular_sim_factor/synthetic/` — factor-wise CAVI report (canonical)
    - `results/modular_sim_block/` — block-wise modular (deprecated)
    - `results/full_sim/` — V2 monolithic
-   - `results/tables/synthetic/` and `results/figures/synthetic/` for canonical outputs
+   - `results/history/early-benchmarks/tables/synthetic/` and `results/history/early-benchmarks/figures/synthetic/` for canonical outputs
 
 5. **Moved legacy code** to `code/legacy/`:
    - `code/legacy/Supervised_Bayesian_MF.R` — V1 original
@@ -1339,10 +1347,10 @@ pdac_data_root <- Sys.getenv("PDAC_DATA_ROOT", unset = ...)
 
 **Multi-dataset loop** (when `run_all = TRUE`):
 - Iterates over all 7 PDAC cohorts; accumulates per-dataset summary rows.
-- Writes `results/tables/PDAC_cross_dataset/cross_dataset_summary.csv`.
+- Writes `results/history/early-benchmarks/tables/PDAC_cross_dataset/cross_dataset_summary.csv`.
 - After loop: pools TCGA_PAAD + Dijk + PACA_AU_seq → fits one model →
-  outputs to `results/tables/PDAC_pooled_rnaseq/` and
-  `results/figures/PDAC_pooled_rnaseq/`.
+  outputs to `results/history/early-benchmarks/tables/PDAC_pooled_rnaseq/` and
+  `results/history/early-benchmarks/figures/PDAC_pooled_rnaseq/`.
 
 #### 10.2 — Critical bug fixes
 
@@ -1548,7 +1556,7 @@ New script: `results/legacy/modular_sim_factor/run_prior_k_comparison.R`.  Stand
 
 #### 12.2 — Results: prior comparison
 
-`results/tables/PDAC_cross_dataset/prior_comparison.csv`
+`results/history/early-benchmarks/tables/PDAC_cross_dataset/prior_comparison.csv`
 
 **point_laplace K=5 vs. point_normal K=5 (hold-out C-index):**
 
@@ -1568,7 +1576,7 @@ switching the default prior to `point_laplace` in future analyses.
 
 #### 12.3 — Results: K auto-prune
 
-`results/tables/PDAC_cross_dataset/k_selection_summary.csv`
+`results/history/early-benchmarks/tables/PDAC_cross_dataset/k_selection_summary.csv`
 
 | Dataset | K_max | K_effective |
 |---------|-------|-------------|

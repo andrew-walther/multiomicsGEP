@@ -16,6 +16,10 @@ The separate Gemini source-folder deletion is recorded under item 00.
 | [Folder table](2026-11-11-results-folders-inventory.csv) | 251 result/exhibit locations and the ignored-data boundary | Direct tracked-file counts and bytes, ignored-file metadata counts where inspected, and candidate writers. Includes 12 ignored-only directories under `results/`. |
 | [Report-source table](2026-11-11-results-report-consumers.csv) | All 82 tracked `.qmd` and `.Rmd` sources | Literal result/figure references and include/read expressions. Report output formats remain controlled by source YAML and enclosing projects. |
 
+The [November 11 migration record](2026-11-11-early-benchmark-migration-findings.md)
+maps the subsequent move of 267 early artifacts to indexed history. This dated
+inventory preserves the original paths at its source snapshot.
+
 The source snapshot is `47690aa`, after item 00 was closed. The script table
 covers all 155 tracked R/SLURM files under `results/`, including 113 in
 `results/benchmark_sim/` and 42 in its sibling folders. It adds 49 executable

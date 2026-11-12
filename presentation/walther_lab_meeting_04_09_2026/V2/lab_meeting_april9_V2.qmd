@@ -48,8 +48,8 @@ library(kableExtra)
 library(dplyr)
 
 # ── Path definitions (relative to V2/ subdirectory) ──
-figures_root <- "../../../../results/figures"
-tables_root  <- "../../../results/tables"
+figures_root <- "../../../results/history/early-benchmarks/figures"
+tables_root  <- "../../../results/history/early-benchmarks/tables"
 
 ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
                   "Moffitt_GEO_array", "PACA_AU_array",
@@ -522,13 +522,13 @@ initialisation to put the datasets on a comparable footing.
 
 ::: {.column width="50%"}
 
-![Loading correlations between true and estimated factors](../../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
+![Loading correlations between true and estimated factors](../../../results/legacy/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![True vs. estimated survival coefficients $\hat{\beta}$](../../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
+![True vs. estimated survival coefficients $\hat{\beta}$](../../../results/legacy/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
 
 :::
 
@@ -560,13 +560,13 @@ is correctly shrunk to zero. This is the EBNM prior doing its job.
 
 ::: {.column width="50%"}
 
-![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../../results/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../../results/history/early-benchmarks/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![RMSE trace — CPTAC proteomics ($n = 129$, up to 259 iterations in fixed-$K$ run)](../../../results/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE trace — CPTAC proteomics ($n = 129$, up to 259 iterations in fixed-$K$ run)](../../../results/history/early-benchmarks/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
@@ -762,7 +762,7 @@ and robustness, not to claim that every single condition improves in every cohor
 
 ::: {.column width="45%"}
 
-![PVE scree — Puleo ($K_\text{eff} = 10$)](../../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
+![PVE scree — Puleo ($K_\text{eff} = 10$)](../../../results/history/early-benchmarks/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
 
 :::
 
@@ -789,13 +789,13 @@ improves in every cohort.
 
 ::: {.column width="40%"}
 
-![Survival coefficients $\hat{\beta}$ per GEP](../../../results/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ per GEP](../../../results/history/early-benchmarks/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="60%"}
 
-![Kaplan-Meier survival curves by GEP activation](../../../results/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Kaplan-Meier survival curves by GEP activation](../../../results/history/early-benchmarks/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -824,13 +824,13 @@ factorisation buys you.
 
 ::: {.column width="40%"}
 
-![Survival coefficients $\hat{\beta}$ per GEP](../../../results/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ per GEP](../../../results/history/early-benchmarks/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="60%"}
 
-![Kaplan-Meier survival curves by GEP activation](../../../results/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Kaplan-Meier survival curves by GEP activation](../../../results/history/early-benchmarks/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -974,13 +974,13 @@ per-cohort results, ELBO traces, and technical details on EBNM.
 
 ::: {.column width="50%"}
 
-![RMSE convergence — pooled RNA-seq ($n = 286$)](../../../results/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE convergence — pooled RNA-seq ($n = 286$)](../../../results/history/early-benchmarks/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Survival coefficients $\hat{\beta}$ — pooled](../../../results/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ — pooled](../../../results/history/early-benchmarks/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1042,7 +1042,7 @@ safer than plugging in posterior means alone.
 
 ## GEP Heatmap: Puleo Array {visibility="uncounted" .smaller .hero-figure}
 
-![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../../results/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
+![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../../results/history/early-benchmarks/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
 
 Each column is a gene expression program. Distinct patient groups emerge from the loading patterns.
 
@@ -1060,13 +1060,13 @@ in biologically interpretable ways.
 
 ::: {.column width="50%"}
 
-![ELBO trace — Puleo array](../../../results/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+![ELBO trace — Puleo array](../../../results/history/early-benchmarks/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![ELBO trace — TCGA_PAAD](../../../results/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+![ELBO trace — TCGA_PAAD](../../../results/history/early-benchmarks/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1088,13 +1088,13 @@ main talk.
 
 ::: {.column width="50%"}
 
-![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../../results/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
+![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../../results/history/early-benchmarks/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../../results/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
+![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../../results/history/early-benchmarks/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1116,23 +1116,23 @@ features instead of treating every gene as equally reliable.
 
 ::: {.column width="33%"}
 
-![Dijk](../../../results/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Dijk](../../../results/history/early-benchmarks/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
-![PACA\_AU\_array](../../../results/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
-
-:::
-
-::: {.column width="33%"}
-
-![Moffitt](../../../results/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
-
-![PACA\_AU\_seq](../../../results/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![PACA\_AU\_array](../../../results/history/early-benchmarks/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="33%"}
 
-![CPTAC](../../../results/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Moffitt](../../../results/history/early-benchmarks/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../../results/history/early-benchmarks/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../../results/history/early-benchmarks/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1152,23 +1152,23 @@ separation between prognostic and expression-only structure appears repeatedly.
 
 ::: {.column width="33%"}
 
-![Dijk](../../../results/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Dijk](../../../results/history/early-benchmarks/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
-![PACA\_AU\_array](../../../results/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
-
-:::
-
-::: {.column width="33%"}
-
-![Moffitt](../../../results/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
-
-![PACA\_AU\_seq](../../../results/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![PACA\_AU\_array](../../../results/history/early-benchmarks/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="33%"}
 
-![CPTAC](../../../results/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Moffitt](../../../results/history/early-benchmarks/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../../results/history/early-benchmarks/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../../results/history/early-benchmarks/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1184,7 +1184,7 @@ stratification beyond the two highlighted cohorts in the main deck.
 
 ## Signal Recovery: Synthetic Detail {visibility="uncounted" .smaller .hero-figure}
 
-![Detailed signal recovery — true vs. estimated factor structure](../../../results/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
+![Detailed signal recovery — true vs. estimated factor structure](../../../results/legacy/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
 
 ::: {.notes}
 This is the backup for anyone who wants more detail on the simulation setup or

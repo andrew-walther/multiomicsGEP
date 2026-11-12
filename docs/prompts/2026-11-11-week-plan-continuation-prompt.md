@@ -39,7 +39,12 @@ The pilot is synthetic software validation, not a scientific result. It has not
 rebuilt the historical scientific analyses or changed a production results
 pointer. The results README now separates the pilot, current reported evidence,
 frozen evidence and indexed history. `results/history/README.md` indexes existing
-locations in place. No historical files or private checkpoints have moved.
+locations. Andrew subsequently approved the first physical archive batch:
+110 early figures and 157 tables now live under
+`results/history/early-benchmarks/`. The per-file preservation manifest and
+verification are in `docs/findings/2026-11-11-early-benchmark-migration-findings.md`.
+Current November results, the frozen benchmark and private checkpoints retain
+their paths and contents.
 
 Andrew will discuss how and where tasks A to F should be done before starting
 them. Begin by confirming the current Git/checklist state and giving a concise
@@ -50,9 +55,9 @@ interpret this handoff as authorization to run A to F or a results migration.
 For results work, use the tested pilot as a starting point. The full scientific
 workflow, real-data result families, richer figures, review/promotion contract,
 physical migration and private checkpoint storage are separate scoped tasks.
-The proposed first physical batch is described in
-`docs/findings/2026-11-11-results-navigation-findings.md`; it is not approved by
-this prompt. Preserve current report inputs and the frozen benchmark.
+The first physical batch is complete; do not repeat it. Future physical batches
+need their own approval and dependency/preservation checks. Preserve current
+report inputs and the frozen benchmark.
 
 Keep future jobs local where practical. Measure cost before starting a large
 grid. Longleaf requires a separate decision and practical setup guidance.

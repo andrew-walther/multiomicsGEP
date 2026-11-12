@@ -46,8 +46,8 @@ library(kableExtra)
 library(dplyr)
 
 # ── Path definitions (relative to presentation/) ──
-figures_root <- "../../results/figures"
-tables_root  <- "../../results/tables"
+figures_root <- "../../../results/history/early-benchmarks/figures"
+tables_root  <- "../../../results/history/early-benchmarks/tables"
 
 ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
                   "Moffitt_GEO_array", "PACA_AU_array",
@@ -511,13 +511,13 @@ global mean offset before SVD initialisation.
 
 ::: {.column width="50%"}
 
-![Loading correlations between true and estimated factors](../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
+![Loading correlations between true and estimated factors](../../../results/legacy/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![True vs. estimated survival coefficients $\hat{\beta}$](../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
+![True vs. estimated survival coefficients $\hat{\beta}$](../../../results/legacy/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
 
 :::
 
@@ -549,13 +549,13 @@ is correctly shrunk to zero. This is the EBNM prior doing its job.
 
 ::: {.column width="50%"}
 
-![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../results/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../../results/history/early-benchmarks/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![RMSE trace — CPTAC proteomics ($n = 129$, converges in 259 iterations)](../../results/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE trace — CPTAC proteomics ($n = 129$, converges in 259 iterations)](../../../results/history/early-benchmarks/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
@@ -737,7 +737,7 @@ the green and purple points are consistently higher regardless of prior.
 
 ::: {.column width="45%"}
 
-![PVE scree — Puleo ($K_\text{eff} = 10$)](../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
+![PVE scree — Puleo ($K_\text{eff} = 10$)](../../../results/history/early-benchmarks/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
 
 :::
 
@@ -762,13 +762,13 @@ more structure to discover.
 
 ::: {.column width="50%"}
 
-![Survival coefficients $\hat{\beta}$ per GEP](../../results/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ per GEP](../../../results/history/early-benchmarks/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Kaplan-Meier survival curves by GEP activation](../../results/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Kaplan-Meier survival curves by GEP activation](../../../results/history/early-benchmarks/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -797,13 +797,13 @@ factorisation buys you.
 
 ::: {.column width="50%"}
 
-![Survival coefficients $\hat{\beta}$ per GEP](../../results/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ per GEP](../../../results/history/early-benchmarks/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Kaplan-Meier survival curves by GEP activation](../../results/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Kaplan-Meier survival curves by GEP activation](../../../results/history/early-benchmarks/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -933,13 +933,13 @@ per-cohort results, ELBO traces, and technical details on EBNM.
 
 ::: {.column width="50%"}
 
-![RMSE convergence — pooled RNA-seq ($n = 286$)](../../results/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE convergence — pooled RNA-seq ($n = 286$)](../../../results/history/early-benchmarks/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Survival coefficients $\hat{\beta}$ — pooled](../../results/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ — pooled](../../../results/history/early-benchmarks/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
@@ -973,7 +973,7 @@ This prevents overfitting to uncertain parameter estimates — the error-in-vari
 
 ## GEP Heatmap: Puleo Array {visibility="uncounted" .smaller}
 
-![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../results/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
+![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../../results/history/early-benchmarks/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
 
 Each column is a gene expression program. Distinct patient groups emerge from the loading patterns.
 
@@ -984,13 +984,13 @@ Each column is a gene expression program. Distinct patient groups emerge from th
 
 ::: {.column width="50%"}
 
-![ELBO trace — Puleo array](../../results/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+![ELBO trace — Puleo array](../../../results/history/early-benchmarks/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![ELBO trace — TCGA_PAAD](../../results/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+![ELBO trace — TCGA_PAAD](../../../results/history/early-benchmarks/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1005,13 +1005,13 @@ ELBO (variational lower bound) increases monotonically, confirming valid CAVI co
 
 ::: {.column width="50%"}
 
-![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../results/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
+![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../../results/history/early-benchmarks/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../results/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
+![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../../results/history/early-benchmarks/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1026,23 +1026,23 @@ Heteroscedastic noise model: each gene has its own precision estimate. Some gene
 
 ::: {.column width="33%"}
 
-![Dijk](../../results/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Dijk](../../../results/history/early-benchmarks/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
-![PACA\_AU\_array](../../results/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
-
-:::
-
-::: {.column width="33%"}
-
-![Moffitt](../../results/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
-
-![PACA\_AU\_seq](../../results/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![PACA\_AU\_array](../../../results/history/early-benchmarks/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="33%"}
 
-![CPTAC](../../results/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Moffitt](../../../results/history/early-benchmarks/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../../results/history/early-benchmarks/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../../results/history/early-benchmarks/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1055,23 +1055,23 @@ Heteroscedastic noise model: each gene has its own precision estimate. Some gene
 
 ::: {.column width="33%"}
 
-![Dijk](../../results/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Dijk](../../../results/history/early-benchmarks/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
-![PACA\_AU\_array](../../results/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
-
-:::
-
-::: {.column width="33%"}
-
-![Moffitt](../../results/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
-
-![PACA\_AU\_seq](../../results/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![PACA\_AU\_array](../../../results/history/early-benchmarks/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="33%"}
 
-![CPTAC](../../results/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Moffitt](../../../results/history/early-benchmarks/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../../results/history/early-benchmarks/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../../results/history/early-benchmarks/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1080,7 +1080,7 @@ Heteroscedastic noise model: each gene has its own precision estimate. Some gene
 
 ## Signal Recovery: Synthetic Detail {visibility="uncounted" .smaller}
 
-![Detailed signal recovery — true vs. estimated factor structure](../../results/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
+![Detailed signal recovery — true vs. estimated factor structure](../../../results/legacy/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
 
 
 ## Method Comparison {visibility="uncounted" .smaller}

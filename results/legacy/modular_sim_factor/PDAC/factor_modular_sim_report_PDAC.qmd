@@ -46,8 +46,8 @@ library(kableExtra)
 library(survival)
 library(dplyr)
 
-tables_root <- "../../tables"
-figs_root   <- "../../figures"
+tables_root <- "../../../history/early-benchmarks/tables"
+figs_root   <- "../../../history/early-benchmarks/figures"
 
 # Helper: read a table for a given dataset
 tbl <- function(dataset, filename) {

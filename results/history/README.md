@@ -1,7 +1,8 @@
 # Historical results index
 
-This index organizes historical work at its existing paths. It does not move,
-delete or authorize rerunning a result. For reported November evidence and the
+This index organizes historical work. The approved early-benchmark batch has
+moved into `early-benchmarks/`; other studies retain their existing paths.
+The index does not authorize deleting or rerunning a result. For reported November evidence and the
 local software pilot, start at the [results index](../README.md).
 
 Historical means preserve the study with its original model, registration and
@@ -11,7 +12,7 @@ method can be important evidence without belonging in the default rebuild.
 | Existing location | Historical role and evidence |
 |---|---|
 | [October 14 benchmark snapshot](../benchmark_snapshot_2026-10-14/README.md) | Immutable benchmark reference with its own manifest and tag. Never a new-run destination. |
-| [Early aggregate tables](../tables/) and [figures](../figures/) | Early benchmark and prior/rank outputs. Some retired runners still write to these paths. These are the proposed first physical migration batch, pending approval and reader/writer checks. |
+| [Early benchmark archive](early-benchmarks/README.md) | 267 preserved figure/table artifacts. The migration manifest records their former top-level paths and checksums. Affected legacy writer/source paths were updated without running the studies. |
 | [Legacy runners and reports](../legacy/) | Original full, modular-block and factor-modular studies. Some scripts retain pre-archive destinations. Preserve provenance before any path change. |
 | [Cohort-indicator simulation](../cohort_lmm_sim/) | Earlier synthetic cohort-indicator runner. Its source and output registration are listed in the inventory. |
 | [Shared/cohort-specific simulations](../multi_cohort_sim/) | Earlier simulation studies and reusable helpers. The main test suite sources `fit_pca_cox.R` here, so the whole directory cannot be moved without updating that dependency. |

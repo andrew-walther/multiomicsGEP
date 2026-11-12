@@ -5,7 +5,7 @@
 #               dataset.  Results feed the Prior Comparison and K Selection
 #               sections of factor_modular_sim_report_PDAC.qmd.
 #
-#               Outputs (saved to results/tables/):
+#               Outputs (saved to results/history/early-benchmarks/tables/):
 #                 PDAC_cross_dataset/prior_comparison.csv    — all 7 × 3 rows
 #                 PDAC_cross_dataset/k_selection_summary.csv — all 7 × K_max cols
 #                 {dataset}_pl/factor_summary_table.csv      — per-dataset PL fit
@@ -328,7 +328,7 @@ for (dsname in ALL_DATASETS) {
   # 1. Read existing point_normal K=5 results
   #    (already computed in the main runner with holdout_eval=TRUE)
   # --------------------------------------------------------------------------
-  base_dir <- sprintf("results/tables/%s", dsname)
+  base_dir <- sprintf("results/history/early-benchmarks/tables/%s", dsname)
 
   pn_row <- tryCatch({
     ho   <- read.csv(file.path(base_dir, "holdout_cindex.csv"),
@@ -389,7 +389,7 @@ for (dsname in ALL_DATASETS) {
   # --------------------------------------------------------------------------
   # 2. Fit point_laplace K=5 with holdout
   # --------------------------------------------------------------------------
-  pl_dir <- sprintf("results/tables/%s_pl", dsname)
+  pl_dir <- sprintf("results/history/early-benchmarks/tables/%s_pl", dsname)
   cat(sprintf("  Fitting point_laplace K=%d...\n", K_FIXED))
 
   pl_row <- tryCatch(
@@ -451,7 +451,7 @@ for (dsname in ALL_DATASETS) {
     k_sel_rows[[length(k_sel_rows) + 1]] <- k_row
 
     # Save PVE scree figure
-    fig_dir <- sprintf("results/figures/%s", dsname)
+    fig_dir <- sprintf("results/history/early-benchmarks/figures/%s", dsname)
     dir.create(fig_dir, recursive = TRUE, showWarnings = FALSE)
     for (ext in c("pdf", "png")) {
       fpath <- file.path(fig_dir, paste0("figK_pve_scree.", ext))
@@ -477,7 +477,7 @@ for (dsname in ALL_DATASETS) {
 
     # Refit with K_effective and holdout
     if (K_eff != K_FIXED) {
-      keff_dir <- sprintf("results/tables/%s_Keff", dsname)
+      keff_dir <- sprintf("results/history/early-benchmarks/tables/%s_Keff", dsname)
       cat(sprintf("  Refitting with K_effective=%d...\n", K_eff))
       keff_row <- tryCatch(
         fit_and_evaluate(d, prior = "point_normal", K_val = K_eff, holdout = TRUE,
@@ -502,7 +502,7 @@ for (dsname in ALL_DATASETS) {
     # 4. Fit point_laplace at K_effective (the missing experiment:
     #    best prior family at the data-driven number of factors)
     # --------------------------------------------------------------------------
-    pl_keff_dir <- sprintf("results/tables/%s_pl_Keff", dsname)
+    pl_keff_dir <- sprintf("results/history/early-benchmarks/tables/%s_pl_Keff", dsname)
     cat(sprintf("  Fitting point_laplace K=%d (K_eff)...\n", K_eff))
     pl_keff_row <- tryCatch(
       fit_and_evaluate(d, prior = "point_laplace", K_val = K_eff, holdout = TRUE,
@@ -526,7 +526,7 @@ for (dsname in ALL_DATASETS) {
 # Save Combined Summary Tables
 # ==============================================================================
 
-cross_dir <- "results/tables/PDAC_cross_dataset"
+cross_dir <- "results/history/early-benchmarks/tables/PDAC_cross_dataset"
 dir.create(cross_dir, recursive = TRUE, showWarnings = FALSE)
 
 # --- Prior comparison table ---

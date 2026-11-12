@@ -6,8 +6,10 @@ The requested housekeeping, G design and item 0 are complete on main. After
 this handoff was first published, Andrew authorized the [combined independent
 CV review](2026-11-11-stratified-cv-independent-review.md). It approved `68e3646`
 and the new fold option on November 11. All 62 focused tests and additional
-independent checks passed. No analysis task A to F was started. No
-results folders were moved and no scientific default or saved result changed.
+independent checks passed. No analysis task A to F was started. The later
+approved move of 267 early artifacts is complete, with contents preserved.
+Current November results, frozen evidence and checkpoints remain in place.
+No scientific default changed.
 
 ## Current continuation prompt and results navigation
 
@@ -19,9 +21,12 @@ scope and location of A to F to Andrew's discussion with the next owner.
 The [results index](../../results/README.md) now separates the pilot, reported
 November evidence, frozen benchmark and historical studies. The
 [history index](../../results/history/README.md) links existing paths in place.
-The [first physical migration proposal](../findings/2026-11-11-results-navigation-findings.md)
-covers early figures and tables only and still needs approval. No result files
-have moved.
+The first physical batch was subsequently approved: 110 early figures and
+157 tables moved to `results/history/early-benchmarks/`. The
+[migration findings and manifest](../findings/2026-11-11-early-benchmark-migration-findings.md)
+record preservation and path validation. Current reported results, frozen
+evidence and checkpoints remain in place. Further physical batches need
+separate approval.
 
 ## Work and commits
 
@@ -47,8 +52,8 @@ approved the pilot after correcting the CLI/environment issues it exposed.
 
 The six original items and this added pilot are complete. This is ready to hand
 off. The next owner has a tested synthetic workflow to extend, not a migrated
-scientific results collection. No analysis task A to F or results relocation was
-started. Follow the week plan and obtain Andrew's approval for the next scoped
+scientific results collection. No analysis task A to F was started. The later approved early-artifact
+relocation is recorded above. Follow the week plan and obtain Andrew's approval for the next scoped
 analysis or workflow extension. The full results migration and private archive
 destination remain later decisions.
 
@@ -91,7 +96,7 @@ bounded check was followed by the separately authorized combined review linked a
 ## Left for Andrew and the independent reviewer
 
 Andrew can review G's proposed pilot, core release families, layout and retention
-rules. Implementing the pipeline, moving runners/results or selecting an external
+rules. Expanding the scientific pipeline, moving further runners/results or selecting an external
 checkpoint archive needs a later approved task. The broader cleanup of
 PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md remains on the ROADMAP.
 

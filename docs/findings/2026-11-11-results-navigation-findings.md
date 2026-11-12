@@ -24,7 +24,7 @@ This stage changes navigation, not analysis code, stored result contents or
 scientific status. The dated 0b inventory retains its original snapshot rather
 than being rewritten to imply a new analysis has run.
 
-## Proposed first physical batch, awaiting Andrew's approval
+## First physical batch, subsequently approved
 
 | Source | Proposed destination | Tracked files at this check |
 |---|---|---:|
@@ -34,7 +34,10 @@ than being rewritten to imply a new analysis has run.
 This would consolidate 267 early benchmark artifacts beneath indexed history.
 It would not move `benchmark_sim/outputs/`, the current reported November
 evidence, the frozen snapshot, the pilot or any ignored checkpoint.
-It is a proposal, not a performed or approved move.
+Andrew subsequently approved this batch. The [migration record](2026-11-11-early-benchmark-migration-findings.md)
+and [per-file manifest](2026-11-11-early-benchmark-migration-manifest.csv) record
+its implementation and preservation checks. The table above retains the original
+source/destination proposal.
 
 At `94c7a74`, before these navigation documents were added, a literal source
 scan for `results/figures/` and `results/tables/` found thirteen referencing source

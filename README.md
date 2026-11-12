@@ -76,6 +76,8 @@ Rscript tests/run_tests.R
 A [small local results pilot](results/pilot/README.md) demonstrates synthetic
 result rebuilding, versioned artifacts and freshness checks. It does not rebuild
 the historical analyses.
+Early benchmark tables and figures are preserved in the
+[history archive](results/history/early-benchmarks/README.md).
 
 ## Selected findings
 

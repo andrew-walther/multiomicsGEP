@@ -36,7 +36,7 @@ The project has two ways to run the same algorithm:
   equations, helpers, and visualization. This is the original implementation.
 
 - **Modular simulation** (`run_modular_simulation.sl`): Runs
-  `results/run_modular_simulation.R`, which builds the CAVI loop from the four
+  `results/legacy/modular_sim_block/run_modular_simulation.R`, which builds the CAVI loop from the four
   standalone update modules (`code/update_L.R`, `update_F.R`, `update_beta.R`,
   `update_tau.R`). Same algorithm, same math, but using the modular code that has
   its own test suite.
@@ -95,8 +95,8 @@ cd multiomicsGEP
 # 4. Create the directories that jobs will write into
 #    (git doesn't track empty directories, so we create them manually)
 mkdir -p longleaf_setup/logs \
-         results/tables/full_sim results/tables/modular_sim \
-         results/figures/full_sim results/figures/modular_sim
+         results/history/early-benchmarks/tables/full_sim results/history/early-benchmarks/tables/modular_sim \
+         results/history/early-benchmarks/figures/full_sim results/history/early-benchmarks/figures/modular_sim
 
 # 5. Install R packages in an interactive session
 #    srun gives you a shell on a compute node (the login node is not
@@ -184,10 +184,10 @@ cat longleaf_setup/logs/mgep_demos_*.out          # demo narrative output
 cat longleaf_setup/logs/mgep_v2sim_*.err
 
 # Verify output files were created
-ls results/tables/full_sim/       # should see 7 CSVs
-ls results/figures/full_sim/      # should see 8 PDF + 8 PNG files
-ls results/tables/modular_sim/    # should see 7 CSVs
-ls results/figures/modular_sim/   # should see 8 PDF + 8 PNG files
+ls results/history/early-benchmarks/tables/full_sim/       # should see 7 CSVs
+ls results/history/early-benchmarks/figures/full_sim/      # should see 8 PDF + 8 PNG files
+ls results/history/early-benchmarks/tables/modular_sim/    # should see 7 CSVs
+ls results/history/early-benchmarks/figures/modular_sim/   # should see 8 PDF + 8 PNG files
 ```
 
 ### Expected outputs per simulation
@@ -196,14 +196,14 @@ Each simulation produces:
 
 | Directory | Contents |
 |-----------|----------|
-| `results/tables/*/factor_summary_table.csv` | Per-factor beta, log-rank p, sparsity, PVE |
-| `results/tables/*/beta_comparison_table.csv` | Estimated vs. true betas with posterior SD |
-| `results/tables/*/cindex_comparison.csv` | C-index: supervised loadings vs. PCA |
-| `results/tables/*/convergence_history.csv` | RMSE and ELBO per iteration |
-| `results/tables/*/top_features_GEP[1-5].csv` | Top 10 features per factor |
-| `results/tables/*/loading_correlation_matrix.csv` | True vs. estimated loading correlations |
-| `results/tables/*/ph_test_results.csv` | Proportional hazards test |
-| `results/figures/*/fig[1-8]_*.pdf` + `.png` | RMSE trace, ELBO, beta comparison, heatmap, KM curves, signal recovery, correlation heatmap, tau distribution |
+| `results/history/early-benchmarks/tables/*/factor_summary_table.csv` | Per-factor beta, log-rank p, sparsity, PVE |
+| `results/history/early-benchmarks/tables/*/beta_comparison_table.csv` | Estimated vs. true betas with posterior SD |
+| `results/history/early-benchmarks/tables/*/cindex_comparison.csv` | C-index: supervised loadings vs. PCA |
+| `results/history/early-benchmarks/tables/*/convergence_history.csv` | RMSE and ELBO per iteration |
+| `results/history/early-benchmarks/tables/*/top_features_GEP[1-5].csv` | Top 10 features per factor |
+| `results/history/early-benchmarks/tables/*/loading_correlation_matrix.csv` | True vs. estimated loading correlations |
+| `results/history/early-benchmarks/tables/*/ph_test_results.csv` | Proportional hazards test |
+| `results/history/early-benchmarks/figures/*/fig[1-8]_*.pdf` + `.png` | RMSE trace, ELBO, beta comparison, heatmap, KM curves, signal recovery, correlation heatmap, tau distribution |
 
 ---
 

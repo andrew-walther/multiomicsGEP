@@ -6,7 +6,9 @@ Status: full-workflow design. At G delivery no pipeline was implemented and no
 result or runner was moved. Andrew subsequently authorized the
 [small local software pilot](../../results/pilot/README.md), now implemented and
 [verified](../findings/2026-11-11-local-results-pilot-findings.md). Full scientific
-workflow implementation and physical migration remain separate tasks.
+workflow implementation and broader migration remain separate tasks.
+The later approved [267-file early-artifact migration](../findings/2026-11-11-early-benchmark-migration-findings.md)
+is complete, with current November results, snapshot and checkpoints retained.
 Completing G meant delivering the design, not executing the cleanup.
 Revised November 11 after Andrew's feedback: local execution is the default,
 the collection must accept new studies, and external reproduction is an explicit

@@ -1022,8 +1022,8 @@ if (data_mode == "synthetic") {
   data <- list(Y = Y, time = time, status = status,
                L_true = L_true, F_true = F_true, B_true = B_true)
 
-  table_dir  <- "results/tables/synthetic/"
-  figure_dir <- "results/figures/synthetic/"
+  table_dir  <- "results/history/early-benchmarks/tables/synthetic/"
+  figure_dir <- "results/history/early-benchmarks/figures/synthetic/"
 
   cat("=== Factor-Wise Modular Supervised MF — Synthetic Simulation ===\n")
   cat(sprintf("  n=%d  p=%d  K=%d  seed=%d  (factor-wise CAVI, V3 Algorithm 1)\n",
@@ -1034,7 +1034,7 @@ if (data_mode == "synthetic") {
                run_label = "Synthetic (n=250, p=1000, K=5)",
                is_synthetic = TRUE)
 
-  cat(sprintf("\nTotal: %d CSVs + 8 figure pairs written to results/tables/synthetic/ and results/figures/synthetic/\n",
+  cat(sprintf("\nTotal: %d CSVs + 8 figure pairs written to results/history/early-benchmarks/tables/synthetic/ and results/history/early-benchmarks/figures/synthetic/\n",
               length(list.files(table_dir, pattern = "\\.csv$"))))
 
 } else if (data_mode == "real") {
@@ -1065,8 +1065,8 @@ if (data_mode == "synthetic") {
     cat(sprintf("  %s\n", real$preprocessing_notes))
 
     data_real  <- list(Y = real$Y, time = real$time, status = real$status)
-    table_dir  <- paste0("results/tables/", ds, "/")
-    figure_dir <- paste0("results/figures/", ds, "/")
+    table_dir  <- paste0("results/history/early-benchmarks/tables/", ds, "/")
+    figure_dir <- paste0("results/history/early-benchmarks/figures/", ds, "/")
 
     row <- run_pipeline(real$Y, real$time, real$status, real$gene_names,
                         data_real, table_dir, figure_dir,
@@ -1080,7 +1080,7 @@ if (data_mode == "synthetic") {
   # Cross-dataset summary table
   # --------------------------------------------------------------------------
   if (length(summary_rows) > 1) {
-    cross_dir <- "results/tables/PDAC_cross_dataset/"
+    cross_dir <- "results/history/early-benchmarks/tables/PDAC_cross_dataset/"
     dir.create(cross_dir, recursive = TRUE, showWarnings = FALSE)
     cross_df <- do.call(rbind, summary_rows)
     write.csv(cross_df, file.path(cross_dir, "cross_dataset_summary.csv"),
@@ -1123,8 +1123,8 @@ if (data_mode == "synthetic") {
       }
 
       data_pooled  <- list(Y = pooled$Y, time = pooled$time, status = pooled$status)
-      table_dir_p  <- "results/tables/PDAC_pooled_rnaseq/"
-      figure_dir_p <- "results/figures/PDAC_pooled_rnaseq/"
+      table_dir_p  <- "results/history/early-benchmarks/tables/PDAC_pooled_rnaseq/"
+      figure_dir_p <- "results/history/early-benchmarks/figures/PDAC_pooled_rnaseq/"
 
       # Add dataset label column to cross-dataset summary
       pool_row <- run_pipeline(pooled$Y, pooled$time, pooled$status,
@@ -1145,7 +1145,7 @@ if (data_mode == "synthetic") {
 
       # Append to cross-dataset summary
       if (length(summary_rows) > 1) {
-        cross_dir <- "results/tables/PDAC_cross_dataset/"
+        cross_dir <- "results/history/early-benchmarks/tables/PDAC_cross_dataset/"
         cross_df  <- rbind(cross_df, pool_row)
         write.csv(cross_df, file.path(cross_dir, "cross_dataset_summary.csv"),
                   row.names = FALSE)

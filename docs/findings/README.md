@@ -7,9 +7,9 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
-| 2026-11-11 | [early-benchmark-migration-findings](2026-11-11-early-benchmark-migration-findings.md) | Approved preservation-first archive move of 267 early figure/table artifacts and source-path updates | implementation in progress |
+| 2026-11-11 | [early-benchmark-migration-findings](2026-11-11-early-benchmark-migration-findings.md) | Approved preservation-first archive move of 267 early figure/table artifacts and source-path updates | complete; hashes preserved, 801 tests and independent review passed |
 | 2026-11-11 | [early-benchmark-migration-manifest](2026-11-11-early-benchmark-migration-manifest.csv) | Per-file source, destination, bytes and pre-move SHA-256 for the approved batch | preservation baseline |
-| 2026-11-11 | [results-navigation-findings](2026-11-11-results-navigation-findings.md) | Implemented current/historical navigation and continuation prompt, with a concrete 267-file early-output migration proposal | navigation complete; physical batch awaits approval |
+| 2026-11-11 | [results-navigation-findings](2026-11-11-results-navigation-findings.md) | Implemented current/historical navigation and continuation prompt, with a concrete 267-file early-output migration proposal | navigation complete; physical batch subsequently approved and completed |
 | 2026-11-11 | [local-results-pilot-findings](2026-11-11-local-results-pilot-findings.md) | Local synthetic workflow, 14 acceptance checks, 801-test suite and clean-checkout reproduction | complete software pilot; scientific migration remains future work |
 | 2026-03-31 | [pdac-data-audit/](2026-03-31-pdac-data-audit/PDAC_data_audit.qmd) | The seven PDAC expression cohorts (platform, survival, censoring, file layout) and whether the loader handles them | complete (corrected 2026-10-16: CPTAC is RNA-seq) |
 | 2026-04-29 | [ssbmf-summary-report](2026-04-29-ssbmf-summary-report.qmd) | Simulation validation and DeSurv-matched PDAC benchmark of the original LB model | superseded by 2026-05-05 |

@@ -1049,7 +1049,8 @@ The entries below retain dated implementation and evaluation history.
   Historical results remain in place and were not rerun.
   [Results navigation](results/README.md) and the [history index](results/history/README.md)
   now organize existing paths. The [267-file first migration proposal](docs/findings/2026-11-11-results-navigation-findings.md)
-  awaits Andrew's approval before physical moves or executable path changes.
+  was subsequently approved; the [migration record](docs/findings/2026-11-11-early-benchmark-migration-findings.md)
+  documents its 267 preserved artifacts. Broader migration remains open.
 
 - [x] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]` *(complete 2026-05-05)*
   The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and
