@@ -141,7 +141,8 @@ lb_yfb_external_main <- function(checkpoint, input, out, B = 2000L) {
     for (model in c('LB', 'YFB')) {
       ci <- bootstrap_concordance_ci(risk[[model]], raw$time, raw$status, B = B, seed = 1, flip = FALSE)
       rows[[length(rows) + 1L]] <- data.frame(cohort = co, model = model, n = raw$n,
-        events = sum(raw$status), missing_genes = aligned$missing, C = ci$estimate, lower = ci$lower, upper = ci$upper)
+        events = sum(raw$status), missing_genes = aligned$missing,
+        C = frozen_reverse_cindex(risk[[model]], raw$time, raw$status), lower = ci$lower, upper = ci$upper)
     }
     ci <- bootstrap_concordance_diff_ci(risk$YFB, risk$LB, raw$time, raw$status,
       B = B, seed = 1, flip_a = FALSE, flip_b = FALSE)
