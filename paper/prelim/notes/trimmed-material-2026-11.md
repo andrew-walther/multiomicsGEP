@@ -298,3 +298,15 @@ Andrew: the introduction must read like a journal-paper introduction (literature
 
 - History wording remains in the body: "earlier analyses" (Prediction in New Cohorts), "earlier unsupervised fit" (simulation results) and the alpha_F mention in Limitations. Present the current method and results only.
 - After the Methods/Results revamp, recheck the Introduction's current-versus-planned contributions and its outline paragraph against the new section structure.
+
+## 2026-11-11 — Introduction citation fixes after source check
+
+Reason: a citation check found that Collisson 2011 supports subtype-level (not
+patient-level) differences, that Willwerscheid 2025 (ebnm) is the prior-estimation
+solver rather than the variational fit, and that "series" was unclear. Old text:
+
+> Most cases are pancreatic ductal adenocarcinoma (PDAC), and patients with PDAC differ in survival and in response to treatment [@Collisson2011]. Expression studies have divided PDAC into molecular subtypes, but the taxonomies do not agree:
+
+> It is fitted by variational inference [@Wang2021; @Blei2017; @Willwerscheid2025] and uses the molecular data alone.
+
+> ... and scored once in five external series that were not used to choose the survival weight.
