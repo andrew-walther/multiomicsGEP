@@ -1,0 +1,6 @@
+"count","projected_both_setups_CV_seconds","PL_converged","PE_converged","timing_eligible"
+10000,1046.15,TRUE,FALSE,TRUE
+25000,2576.8,TRUE,FALSE,TRUE
+50000,4250.5,TRUE,FALSE,TRUE
+100000,5610.15,TRUE,TRUE,TRUE
+182934,10670.2,TRUE,TRUE,TRUE

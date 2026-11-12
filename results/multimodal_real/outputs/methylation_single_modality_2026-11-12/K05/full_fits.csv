@@ -1,0 +1,13 @@
+"modality","count","arm","fold","n_features","status","converged","iterations","seconds","nonzero","survival_active","C","error","peak_rss_MiB","process_seconds","memory_measured","warning_count","K"
+"methylation",10000,"PL",0,10000,"converged",TRUE,112,59.417,5,1,NA,NA,961.578125,66.76,TRUE,0,5
+"methylation",10000,"PE",0,10000,"capped",FALSE,300,135.115,5,0,NA,NA,880.421875,142.47,TRUE,0,5
+"methylation",25000,"PL",0,25000,"converged",TRUE,98,131.939,5,0,NA,NA,1160.953125,139.45,TRUE,0,5
+"methylation",25000,"PE",0,25000,"capped",FALSE,300,368.549,5,0,NA,NA,1183.09375,375.91,TRUE,0,5
+"methylation",50000,"PL",0,50000,"converged",TRUE,188,395.041,5,0,NA,NA,2022.875,403.78,TRUE,0,5
+"methylation",50000,"PE",0,50000,"capped",FALSE,300,440.496,5,0,NA,NA,2224.6875,446.32,TRUE,0,5
+"methylation",100000,"PL",0,100000,"converged",TRUE,122,432.062,5,0,NA,NA,3038.421875,438.12,TRUE,0,5
+"methylation",100000,"PE",0,100000,"converged",TRUE,243,678.2,5,0,NA,NA,3164.25,683.91,TRUE,0,5
+"methylation",182934,"PL",0,182934,"converged",TRUE,94,654.146,5,0,NA,NA,4036.53125,660.36,TRUE,0,5
+"methylation",182934,"PE",0,182934,"converged",TRUE,253,1467.555,5,0,NA,NA,4449.953125,1473.68,TRUE,0,5
+"expression",2218,"PL",0,2218,"converged",TRUE,212,29.922,5,1,NA,NA,846.265625,38.51,TRUE,0,5
+"expression",2218,"PE",0,2218,"capped",FALSE,300,34.066,5,1,NA,NA,917.0625,41.72,TRUE,0,5

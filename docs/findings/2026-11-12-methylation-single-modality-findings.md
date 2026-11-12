@@ -383,6 +383,46 @@ sample used in the β-prior comparison. The higher PE concordance does not
 make it a converged solution. Its capped full fit also prevents an assessable
 PE methylation-only program classification under the registered rule.
 
+### Methylation full fits at both ranks
+
+All five K = 5 PL full fits converged. PE converged at 100k and all CpGs,
+while the three smaller PE full fits capped. None returned a fitting error
+or fit warning. Every K = 5 full fit retains five programs with nonzero
+loadings. The nine completed K = 7 full fits retained seven. These are
+nonzero loading columns, rather than validated biological programs.
+
+| CpGs | Setup | K = 7 status | K = 7 active | K = 5 status | K = 5 iterations | K = 5 active | K = 5 process minutes | K = 5 peak RSS MiB |
+|---:|:---|:---|---:|:---|---:|---:|---:|---:|
+| 10,000 | PL | converged | 0 | converged | 112 | 1 | 1.11 | 962 |
+| 10,000 | PE | converged | 0 | capped | 300 | 0 | 2.37 | 880 |
+| 25,000 | PL | converged | 0 | converged | 98 | 0 | 2.32 | 1161 |
+| 25,000 | PE | converged | 0 | capped | 300 | 0 | 6.27 | 1183 |
+| 50,000 | PL | capped | 0 | converged | 188 | 0 | 6.73 | 2023 |
+| 50,000 | PE | capped | 0 | capped | 300 | 0 | 7.44 | 2225 |
+| 100,000 | PL | converged | 1 | converged | 122 | 0 | 7.30 | 3038 |
+| 100,000 | PE | capped | 2 | converged | 243 | 0 | 11.40 | 3164 |
+| 182,934 | PL | converged | 0 | converged | 94 | 0 | 11.01 | 4037 |
+| 182,934 | PE | stopped_by_user | NA | converged | 253 | 0 | 24.56 | 4450 |
+
+The K = 7 stopped row has no fitted-state activity count. At K = 5, only
+the 10k PL full fit is survival-active, with one program. Full-fit activity
+alone does not establish a stable methylation-only program. The CV and
+expression-correlation requirements still apply.
+
+| CpGs | K = 5 projected CV hours, both setups | Setups scheduled for CV |
+|---:|---:|:---|
+| 10,000 | 0.291 | PL |
+| 25,000 | 0.716 | PL |
+| 50,000 | 1.181 | PL |
+| 100,000 | 1.558 | PL, PE |
+| 182,934 | 2.964 | PL, PE |
+
+All counts passed the per-count screen. All CpGs passed by only 129.8
+seconds in the projected five-fold total. This is an eligibility forecast,
+not a guarantee that actual CV will finish within three hours. The scheduled
+work comprises 25 PL folds and ten PE folds, with no PE CV at 10k, 25k or
+50k because those full fits capped.
+
 ### Rebuild commands and implementation
 
 From the repository root:
