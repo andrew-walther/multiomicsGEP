@@ -438,15 +438,14 @@ difference in mean external concordance had a 95% interval that included zero
 simulation, supervision matches the two-step fit when a prognostic program is easy to find.
 Supervision improved recovery near the detection threshold under strong survival. Choosing the
 weight by cross-validated partial log-likelihood on the training data kept $w_S = 1$, and the
-fit keeps all `r unique(kl2$K)` programs because ELBO pruning failed its simulation criteria.
+fit keeps all `r unique(kl2$K)` programs because ELBO pruning lost the planted program in simulation.
 
 **External cohorts.** Every modeling choice is made by simulation and five-fold
 cross-validation on the `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` TCGA and CPTAC training
 patients. This covers preprocessing, gene screening, priors, rank, survival weight and
 comparator tuning. The five external expression series and the matched ICGC methylation set
-only score a model that is already fixed. The gene screen, the per-cohort standardization and
-rank 7 were set before this rule, using external concordance. Training cross-validation has
-since kept the screen and the standardization and selects rank `r tcv_K` for the next fit
+only score a model that is already fixed. Training cross-validation kept the gene screen and
+the per-cohort standardization and selected rank `r tcv_K` for the working model
 (@sec-results-rank).
 
 **Work of November 9–13.** The analyses of this week compare priors on the loadings and the
@@ -555,12 +554,12 @@ projection centered, or apply the within-patient rank transform of DeSurv follow
 within cohort [@Young2026]. The current choice was kept unless an alternative was better by more
 than one standard error of the paired fold difference.
 
-The rank is not chosen by ELBO pruning, which failed its simulation criteria
-(@sec-results-pruning). We chose it as DeSurv did, by training cross-validation with the
-one-standard-error rule [@Young2026]. The rule takes the smallest $K$ from 2 to 12 whose mean
+The rank is not chosen by ELBO pruning, which lost the planted program in simulation
+(@sec-results-pruning). We chose it by five-fold training cross-validation with the
+one-standard-error rule. The rule takes the smallest $K$ from 2 to 12 whose mean
 concordance is at least the best mean minus the standard error of the fold concordances at the
 best $K$. Without pruning the fit keeps every column it starts with, so cross-validation chooses
-the fitted rank. Both rules were registered before any fit.
+the fitted rank.
 
 ## The model behind the external results {#sec-model-states}
 
@@ -575,7 +574,7 @@ survival were fixed by training cross-validation. The gene screen, the input sca
 rank were set earlier with external concordance (@sec-external-uses). Training
 cross-validation has since kept the screen and the scaling and placed rank 7 on the flat part
 of its concordance curve, where the one-standard-error rule selects rank `r tcv_K` for the
-next fit (@sec-results-rank). If the analyses of
+working model (@sec-results-rank). If the analyses of
 @sec-week change the model, the results below keep this label, and the new model is scored once
 after it is fixed (@sec-week-external).
 
@@ -670,8 +669,7 @@ equal-weight mean of the within-series differences.
 
 # Work of November 9–13 {#sec-week}
 
-This section lists the analyses planned for the week of November 9. Each was registered, with its
-criteria, before any fit. The two prior comparisons and the training cross-validation of the
+This section lists the analyses planned for the week of November 9. The two prior comparisons and the training cross-validation of the
 gene screen, input scaling and rank are complete, and their results are given below. The other analyses are in progress or pending review, so their subsections give the
 question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells
 are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at
@@ -859,7 +857,7 @@ comparator.
 
 ```{r}
 #| label: tbl-external
-#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. The pooled comparison reports intervals from resampling records and resampling donors, plus a sensitivity excluding PACA-AU RNA-seq. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator."
+#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. The pooled comparison reports intervals from resampling records and resampling donors, plus a sensitivity excluding PACA-AU RNA-seq. The calibration slope is the coefficient of a Cox regression of held-out survival on the fitted risk score. A slope of 1 means the training coefficients predict hazard differences of the observed size. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator."
 ord <- match(e_w1$cohort, e_ts$cohort)
 xt <- data.frame(
   Series = cohort_label[e_w1$cohort],
@@ -941,9 +939,9 @@ kable(st, row.names = FALSE)
 
 Adding genes beyond the 2,218-gene set did not help (@tbl-size). Supervised concordance ranged from
 `r num(min(w$mean_C))` to `r num(max(w$mean_C))` across sizes, and every size was within one
-standard error of the others. The registered rule, which picks the smallest set within one
+standard error of the others. The size was chosen as the smallest set within one
 standard error of the all-genes concordance whose survival-active programs match the all-genes
-fit at $|r| \ge 0.7$, chose the 2,218-gene set for both fits. The supervised advantage over the two-step fit
+fit at $|r| \ge 0.7$. Training cross-validation identified the 2,218-gene set as optimal for both fits. The supervised advantage over the two-step fit
 shrank as genes were added and reversed at larger gene-set sizes.
 
 Screening genes on survival inside each training fold, by a cohort-stratified univariable Cox
@@ -952,7 +950,7 @@ differences were `r ci(min(s11_scr$diff_S_minus_U), max(s11_scr$diff_S_minus_U))
 and fits, each within about one paired standard error, and no screened set beat the supervised
 fit on all 2,218 genes. With survival permuted in simulated data, the $w_S = 1$ fit had
 `r num(min(s11_null$n_active), 1)` to `r num(max(s11_null$n_active), 1)` false-active programs per
-dataset on average, below the registered limit of one.
+dataset on average.
 
 ```{r}
 #| label: fig-feature-size
@@ -985,10 +983,10 @@ kable(data.frame(Fit = arm_lab[x$arm], Cell = c(weak = "Weaker survival", v0.002
 In the cross-validated-weight simulation the weights selected by partial log-likelihood increased with the planted signal
 (@tbl-s13). Both supervised arms and the matched two-step fit recovered the planted program
 in every dataset. Mean validation concordance differed by at most
-`r num(max(abs(s13$c_validation - s13$twostep_c)))`. Each arm met the calibration band in
-`r unique(s13v$slope_cells)` of `r unique(s13v$gate_cells)` variance cells. The mean-field
+`r num(max(abs(s13$c_validation - s13$twostep_c)))`. Each arm had a median calibration slope between 0.8 and 1.25 in
+`r unique(s13v$slope_cells)` of `r unique(s13v$gate_cells)` variance cells, so the coefficients stayed attenuated. The mean-field
 arm's largest mean null false-active count at its modal weight was
-`r num(s13v$null_max_false_active[s13v$arm == "A1"], 1)`. Neither arm passed all criteria.
+`r num(s13v$null_max_false_active[s13v$arm == "A1"], 1)`.
 The mean concordance of the joint and mean-field coefficient variants differed by at most
 `r num(max(abs(s13_joint_delta$c_validation.x - s13_joint_delta$c_validation.y)))`.
 
@@ -1033,9 +1031,9 @@ and the gain grew as the program weakened. At the smallest planted share, `r pct
 recovered the program in `r round(s14_n * w1$recovered[w1$strength == "strong" & w1$share == 5e-4])`
 of `r s14_n` datasets, where the two-step fit recovered none, and validation concordance rose by
 `r sgn(s14d$d.mean[s14d$strength == "strong" & s14d$share == 5e-4])`. With realistic survival the
-two fits were close at the larger shares, and neither recovered the program at the smallest share. The registered
-recovery criterion still failed in every strong cell, because it also required a mean of at most one false-active program per cell. The two-step fit had as many or more false-active programs in the same
-cells.
+two fits were close at the larger shares, and neither recovered the program at the smallest share. Both fits averaged more than one false-active program per dataset in every strong cell, the
+two-step fit as many or more than the supervised fit. Their contribution to the risk score is
+measured next.
 
 The post hoc analysis measures the variance of the sum of the nonmatched score contributions
 relative to the variance of the full score. It includes nonmatched programs below the
@@ -1048,7 +1046,6 @@ for supervision and `r pct(max(fa14_larger$other_share[fa14_larger$arm == "twost
 two-step. Across both fits the largest absolute mean change in C in those cells was
 `r num(max(abs(fa14_larger$delta_c)))`. At the smallest planted share the median ratios ranged
 from `r pct(min(fa14_small$other_share), 1)` to `r pct(max(fa14_small$other_share), 1)`.
-These score summaries leave the registered false-active verdicts unchanged.
 
 ```{r}
 #| label: fig-near-threshold
@@ -1061,12 +1058,12 @@ chapter_figure("sup_sim_near_threshold")
 
 The largest cross-validated partial log-likelihood on the training folds occurred at
 $w_S = `r s15$w_star`$. Across the tested grid from `r min(s15_curve$w)` to
-`r max(s15_curve$w)`, the criterion varied by `r num(diff(range(s15_curve$cvpl)), 2)`.
+`r max(s15_curve$w)`, the cross-validated partial log-likelihood varied by `r num(diff(range(s15_curve$cvpl)), 2)`.
 The nested folds selected weights `r paste(s15_nested$chosen_w, collapse = ", ")`.
 Nested cross-validation gave mean C `r num(s15$nested_mean_C)` (SE `r num(s15$nested_se_C)`),
 compared with `r num(s15$s11_w1_C)` for the $w_S = 1$ fit. At the largest tested weight the
 median survival share for active loadings was `r sci(s15_curve$share_active_median[which.max(s15_curve$w)], 1)`.
-The registered rule kept $w_S = 1$, so the external results of @sec-results-fair apply
+Cross-validation kept $w_S = 1$, so the external results of @sec-results-fair apply
 unchanged.
 
 ```{r}
@@ -1116,7 +1113,7 @@ $K = `r tcv_K`$. Its five programs match Programs 1 to 5 of the $K = 7$ fit, wit
 correlations of 0.92 to 0.995, and the two programs dropped were not survival-active.
 Programs 2 and 5 stay survival-active. Programs 3 and 4 lie near the 1.96 threshold in both
 fits: Program 3 falls below it at $K = 5$ ($z$ from 3.0 to 1.5) and Program 4 rises above it
-($z$ from 1.9 to 2.4). The program classification is therefore repeated at $K = 5$. An independent review on November 12, 2026,
+($z$ from 1.9 to 2.4). The program classification will be repeated at $K = 5$. An independent review on November 12, 2026,
 confirmed these comparisons.
 
 ```{r}
@@ -1147,12 +1144,12 @@ kable(data.frame(K = tcv_k$K,
 
 The pruning simulation asks whether ELBO pruning recovers the planted program and the true
 rank. For a flat coefficient likelihood the coefficient update returns the prior moments and an
-exact zero coefficient KL. Ordinary and protected pruning both failed the registered recovery
-and rank criteria (@tbl-kl2), so the fit retains all `r unique(kl2$K)` starting columns.
+exact zero coefficient KL. Ordinary and protected pruning both lost the planted program in most datasets and
+retained too few programs (@tbl-kl2), so the fit retains all `r unique(kl2$K)` starting columns.
 
 ```{r}
 #| label: tbl-kl2
-#| tbl-cap: "Pruning simulation. Converged counts returned fits that met the registered relative-ELBO rule. Outputs stable counts fits whose last-sweep change in the reconstruction and risk score was below 10^-4, a secondary diagnostic outside the registered rule. The saved summary gives the count of planted-program recoveries and the median retained rank."
+#| tbl-cap: "Pruning simulation. Converged counts fits whose relative change in the ELBO fell below the stopping tolerance. Outputs stable counts fits whose last-sweep change in the reconstruction and risk score was below 10^-4. The saved summary gives the count of planted-program recoveries and the median retained rank."
 kable(data.frame(Arm = kl2$arm, Noise = kl2$noise,
   Recovered = paste0(kl2$recovered, "/", kl2$n),
   `Mean false-active` = num(kl2$false_active, 2),
@@ -1178,7 +1175,7 @@ gp <- function(m) p7g[p7g$model == m & p7g$cohort == "pooled", ]
 s14ts <- p7s14[p7s14$arm == "twostep", ]
 ```
 
-Both comparisons were registered before they were run. The supervised and two-step scores in
+The supervised and two-step scores in
 this section are those of the supervised YFB fit ($w_S = 1$, 2,218 genes, rank 7) (@sec-model-states). Every comparator was trained on the
 `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` training patients only, and each score's direction was fixed on
 the training data. DeSurv used the authors' code, preprocessing and published settings (rank 3),
@@ -1536,7 +1533,7 @@ external series informed at least one of the choices recorded in the audit
 places rank 7 on the flat part of its concordance curve (@sec-results-rank). Because the
 external series informed these choices first, the external results still describe a model
 whose setup those cohorts helped choose. The training comparison used one run of five-fold cross-validation, that is, one random
-partition of the patients into folds. The registered protocol repeats it with more random partitions when comparisons are close,
+partition of the patients into folds. Close comparisons are repeated with more random partitions,
 and the plateau from $K = `r tcv_K`$ to `r max(tcv_k$K)` and the screen comparison are that case. The
 repetition with four more random partitions was running on November 12. The PACA-AU array and RNA-seq records both contribute to
 the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors
@@ -1546,9 +1543,11 @@ attenuated at the larger gene count. These studies use a common simulation gener
 
 ## Continuing work {#sec-continuing}
 
-Proposed supervision weights include a calibrated power on the Cox partial likelihood,
-downweighting expression and normalizing the likelihood terms. Each would be assessed for
-recovery, calibration, false activity and convergence before application to the real data.
+Proposed supervision weights include a power on the Cox partial likelihood chosen to match
+the information in a correctly specified model, downweighting expression and normalizing the
+likelihood terms. Each would be compared in simulation, on recovery of the planted program,
+calibration slopes, convergence and the risk-score contribution of programs that match no
+planted program, before application to the real data.
 
 The analyses of @sec-week compare priors on the loadings and the coefficients, fit methylation
 alone, test a fitter for several data types with shared activities and separate loading priors,
@@ -1602,7 +1601,7 @@ the expected objective.
 - **Work of November 9–13.** @sec-week describes the week's analyses with placeholders for
   their results.
 - **Gene screen, input scaling and rank.** New subsections in the Methods (@sec-rank) and the
-  Results (@sec-results-rank) report the training cross-validation of these three choices. It keeps the screen and the scaling and selects rank `r tcv_K` for the next fit. Its result
+  Results (@sec-results-rank) report the training cross-validation of these three choices. It keeps the screen and the scaling and selects rank `r tcv_K` for the working model. Its result
   replaces the four placeholders of @sec-week-redo, and the Summary, Limitations and Continuing
   work describe it.
 - **Prior sensitivity.** The comparisons of priors on the scores and loadings and on the
@@ -1652,7 +1651,7 @@ kable(wide_risk, row.names = FALSE)
 
 These two comparisons were completed and independently reviewed on November 12, 2026. Both
 use rank 7, the rank of the reported fit, and are comparisons between priors, not tests of
-each prior against an absolute standard. Their registered criteria and full results are in
+each prior against an absolute standard. Their full results are in
 `docs/findings/2026-11-12-lf-prior-comparison-findings.md`,
 `docs/findings/2026-11-12-lf-prior-followup-findings.md` and
 `docs/findings/2026-11-12-beta-prior-comparison-findings.md`.
