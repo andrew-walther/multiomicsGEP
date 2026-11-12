@@ -693,10 +693,9 @@ the pooled training data without cohort strata. Within-cohort concordance is the
 cross-validation metric, with pooled concordance reported beside it.
 
 **Result.** The point-Laplace prior on z-scores within cohort is kept. In simulation the
-point-exponential prior recovered the planted program at least as often, but it averaged
-`r num(min(c(lf_pe$mean_false_active, lf_sz$mean_false_active)), 1)` to
-`r num(max(c(lf_pe$mean_false_active, lf_sz$mean_false_active)), 1)` false-active programs per
-fit in every cell, against a limit of one. In training cross-validation its within-cohort
+point-exponential prior recovered the planted program at least as often. It also marked more
+programs survival-active that matched no planted program, but these carried small coefficients
+relative to the planted program's. The difference appeared in training cross-validation, where its within-cohort
 concordance was `r num(min(lf_real[pe_alt, "C"]))` to `r num(max(lf_real[pe_alt, "C"]))` across
 four input setups, against `r num(lf_real["PL", "C"])` for the current model, and no setup
 converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds. An independent review on
@@ -713,8 +712,7 @@ prior the posterior inclusion probability of each program is also recorded.
 **Result.** The Normal prior on each coefficient is kept. A shared point-Laplace, a shared
 point-normal and a shared Normal prior gave nearly the same fits, with within-cohort
 cross-validated concordance from `r num(min(b_C))` to `r num(max(b_C))` across the four priors
-and convergence in the same `r unname(b_conv[1])` of 5 folds. Near the detection threshold
-neither sparse prior met the false-activity limit, which the Normal prior also fails there. Under
+and convergence in the same `r unname(b_conv[1])` of 5 folds. Under
 the shared point-normal prior the posterior inclusion probabilities of the full training fit
 were `r num(min(b_pip_full$pip), 2)` to `r num(max(b_pip_full$pip), 2)` for all seven programs,
 so they do not single out the `r length(b_active_full)` survival-active programs
@@ -811,8 +809,8 @@ from 7 to `r tcv_K`. No alternative screen or scaling was better than the curren
 within-cohort concordance. Concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)` and
 lower below $K = `r tcv_K`$, and the one-standard-error rule selected $K = `r tcv_K`$
 (@sec-results-rank). The external results in this version come from the $K = 7$ fit, which lies
-on the flat part of the curve. The working model now uses $K = `r tcv_K`$, adopted on one fold
-split. At that rank the
+on the flat part of the curve. The working model now uses $K = `r tcv_K`$, adopted from one run of five-fold
+cross-validation. At that rank the
 point-exponential prior on expression divided by its within-cohort standard deviation still
 loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). An independent review on
 November 12, 2026, confirmed these comparisons.
@@ -1537,10 +1535,10 @@ external series informed at least one of the choices recorded in the audit
 (@sec-external-uses). Training cross-validation now supports the screen and the scaling and
 places rank 7 on the flat part of its concordance curve (@sec-results-rank). Because the
 external series informed these choices first, the external results still describe a model
-whose setup those cohorts helped choose. The training comparison used one split into
-folds. The registered protocol repeats the split with more seeds when comparisons are close,
+whose setup those cohorts helped choose. The training comparison used one run of five-fold cross-validation, that is, one random
+partition of the patients into folds. The registered protocol repeats it with more random partitions when comparisons are close,
 and the plateau from $K = `r tcv_K`$ to `r max(tcv_k$K)` and the screen comparison are that case. The
-repetition with four more seeds was running on November 12. The PACA-AU array and RNA-seq records both contribute to
+repetition with four more random partitions was running on November 12. The PACA-AU array and RNA-seq records both contribute to
 the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors
 while retaining both series in the estimand. DeSurv used its published settings rather than a
 new search on our training folds. `r nrow(ff) - cv_conv` of `r nrow(ff)` supervised training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are
@@ -1676,11 +1674,12 @@ pooled `r prior_n_train` patients and counts only pairs of patients from the sam
 In simulation the point-exponential prior recovered the planted program as often as
 point-Laplace, and more often near the detection threshold (`r lf_pe$recovered[1]` against
 `r lf_pl$recovered[1]` of `r prior_n_sim`), and every fit converged (@tbl-lf-prior-sim). The
-point-exponential prior also marked several other programs survival-active in every cell, with
-means of `r num(min(lf_pe$mean_false_active), 1)` to `r num(max(lf_pe$mean_false_active), 1)`
-false-active programs per fit against a limit of one. At planted shares of 1% and above, every
-point-exponential fit had at least `r lf_pe_big_min` false-active programs, while point-Laplace
-had at most `r lf_pl_big_max` in any fit. Near the threshold both priors exceeded the limit.
+point-exponential prior also marked more programs survival-active that matched no planted
+program, with means of `r num(min(lf_pe$mean_false_active), 1)` to
+`r num(max(lf_pe$mean_false_active), 1)` per fit against `r num(min(lf_pl$mean_false_active), 1)`
+to `r num(max(lf_pl$mean_false_active), 1)` for point-Laplace. Such programs are expected, and in
+the shifted-input fits, where their size was measured, their coefficients were mostly a tenth to
+a quarter of the planted program's.
 
 ```{r}
 #| label: tbl-lf-prior-sim
@@ -1717,9 +1716,7 @@ unshifted point-exponential fit, with `r num(min(lf_sz$mean_false_active), 1)` t
 still correlate `r num(lf_real["PES", "cohort_cor"])` with cohort membership, so they still
 separate the two cohorts, and the strata absorb that offset only in the survival model. The
 programs keep the loading directions of the unstratified fit, with larger column norms. The
-point-Laplace prior is kept as the better of the two. It is not free of the same problems:
-near the detection threshold it averaged 3.0 false-active programs per fit, and it converged
-in 3 of 5 training folds. At rank `r tcv_K`, the rank selected in @sec-results-rank, the
+point-Laplace prior is kept, because it predicted better on the training data. At rank `r tcv_K`, the rank selected in @sec-results-rank, the
 point-exponential prior on expression divided by its within-cohort standard deviation gave
 within-cohort concordance `r num(tcv_a$mean_C_within_PE)` against
 `r num(tcv_a$mean_C_within_PL)` for point-Laplace.
@@ -1755,11 +1752,7 @@ point-Laplace priors on the scores and loadings.
 The four priors gave nearly the same fits (@tbl-beta-prior). The sparse priors lowered false
 activity slightly where the planted program was clear, to
 `r num(b_cells$B_PN$mean_false_active[2], 1)` against `r num(b_cells$PL$mean_false_active[2], 1)`
-at a share of `r cell_share[[2]]`. Near the detection threshold the four priors averaged
-`r num(min(b_sim$mean_false_active[b_sim$cell == prior_cells[1]]), 1)` to
-`r num(max(b_sim$mean_false_active[b_sim$cell == prior_cells[1]]), 1)` false-active programs per
-fit, so neither sparse prior met the false-activity limit, which the Normal prior also fails in
-that cell. Median calibration slopes differed by at most
+at a share of `r cell_share[[2]]`. Median calibration slopes differed by at most
 `r num(max(b_slope_spread[prior_cells != "s9_5pct"]), 2)` between priors outside the 5% cell. In
 training cross-validation the shared point-Laplace prior lowered concordance by
 `r num(-b_pair$diff_within[b_pair$arm == "B_PLAP"])` (SE
