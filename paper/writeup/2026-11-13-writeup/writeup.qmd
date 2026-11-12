@@ -811,7 +811,7 @@ from 7 to `r tcv_K`. No alternative screen or scaling was better than the curren
 within-cohort concordance. Concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)` and
 lower below $K = `r tcv_K`$, and the one-standard-error rule selected $K = `r tcv_K`$
 (@sec-results-rank). The external results in this version come from the $K = 7$ fit, which lies
-on the flat part of the curve. The next fit uses $K = `r tcv_K`$. At that rank the
+on the flat part of the curve. The working model now uses $K = `r tcv_K`$. At that rank the
 point-exponential prior on expression divided by its within-cohort standard deviation still
 loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). These comparisons were awaiting independent
 review on November 12, 2026.
@@ -1112,7 +1112,12 @@ loadings at every rank, so the priors did not remove programs. The paired differ
 more precise than the fold standard error used by the rule, and on that scale ranks
 `r min(tcv_flat)` to `r max(tcv_flat)` cannot be told apart. The rule picks the smallest rank on
 the plateau. It does not show that $K = `r tcv_K`$ predicts better than $K = 7$. The external
-results in this version come from the $K = 7$ fit, and the next fit uses $K = `r tcv_K`$. These
+results in this version come from the $K = 7$ fit, and the working model now uses
+$K = `r tcv_K`$. Its five programs match Programs 1 to 5 of the $K = 7$ fit, with score
+correlations of 0.92 to 0.995, and the two programs dropped were not survival-active.
+Programs 2 and 5 stay survival-active. Programs 3 and 4 lie near the 1.96 threshold in both
+fits: Program 3 falls below it at $K = 5$ ($z$ from 3.0 to 1.5) and Program 4 rises above it
+($z$ from 1.9 to 2.4). The program classification is therefore repeated at $K = 5$. These
 comparisons were awaiting independent review on November 12, 2026.
 
 ```{r}
@@ -1548,7 +1553,7 @@ recovery, calibration, false activity and convergence before application to the 
 
 The analyses of @sec-week compare priors on the loadings and the coefficients, fit methylation
 alone, test a fitter for several data types with shared activities and separate loading priors,
-and compare the model with the $\eta = L\beta$ parameterization. The next fit uses rank
+and compare the model with the $\eta = L\beta$ parameterization. The working model now uses rank
 `r tcv_K`, selected by the one-standard-error rule (@sec-results-rank). Once the results of
 @sec-week are reviewed, the working model is fixed on training data and scored once on the
 external cohorts (@sec-week-external). Every later choice follows the training-only rule of
