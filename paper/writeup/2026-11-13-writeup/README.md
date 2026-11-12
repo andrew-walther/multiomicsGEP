@@ -1,7 +1,7 @@
 # paper/writeup/2026-11-13-writeup/
 
-Version of the project writeup dated November 13, 2026. **Draft. Results of the November 9–13
-tasks pending.** The previous version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md),
+Version of the project writeup dated November 13, 2026. **Draft. The two prior comparisons of November 9–13 are reported
+in Appendix D. The other results of that week are pending.** The previous version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md),
 which is not edited.
 
 This version presents the current model, the supervised YFB fit ($w_S$ = 1, 2,218 genes,
@@ -54,13 +54,14 @@ November 6 version remains the circulated record.
 | Summary | Aim, model, training and external comparison with the two-step fit, other comparators, simulation results |
 | 1 Methods | Notation, model, fitting and prediction, the two-step comparator, choice of the survival weight, the model behind the external results |
 | 2 Evaluation | Data, uses of the external cohorts, simulation designs, metrics |
-| 3 Work of November 9–13 | Registered analyses of the week with result placeholders A1 to F4 and EXT |
+| 3 Work of November 9–13 | Registered analyses of the week: outcomes of the two prior comparisons, result placeholders C1 to F4 and EXT for the rest |
 | 4 Results | Supervised fit against the rank-7 two-step fit, real-data loadings, the three simulation studies, the weight refit, pruning, comparison with other prognostic models, risk groups, program stability, mixed-signal and cross-design simulations |
 | 5 Programs | Programs of the supervised fit, enrichment and published signatures, individual programs, external associations and Kaplan–Meier curves |
 | 6 Discussion | Interpretation, limitations, continuing work |
 | Appendix A | Summary of the model derivation |
 | Appendix B | Changes since the November 6 version |
 | Appendix C | Comparator calibration by series and numbers at risk |
+| Appendix D | Sensitivity to the priors on the scores and loadings and on the survival coefficients, in simulation and training cross-validation |
 
 ## Manuscript-planning extension
 

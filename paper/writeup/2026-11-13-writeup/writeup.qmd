@@ -244,6 +244,98 @@ stopifnot(all(s9_fixed_share$recovered), all(s9_fixed_share$converged),
           nrow(s9_choices) == nrow(s9_design))
 s13_joint_delta <- merge(subset(s13, arm == "A1", select = c(cell, c_validation)),
                          subset(s13, arm == "A2", select = c(cell, c_validation)), by = "cell")
+
+# ---- Priors on the scores, loadings and survival coefficients (Appendix D) ----
+# Arm codes in the CSVs: PL = point-Laplace L and F on per-cohort z-scores (current
+# model); PE = point-exponential on X/sd; RANK = point-exponential on within-patient
+# ranks; SZ = point-exponential on shifted z-scores; PES = PE input with cohort strata.
+# Coefficient arms: PL = per-program Normal; B_PLAP, B_PN, B_NSH = shared
+# point-Laplace, point-normal and Normal priors. Fold 0 is the full training fit.
+lfp <- "lf_prior_2026-11-09"
+lf_sim   <- rd(lfp, "sim_cells.csv")
+lf_simf  <- rd(lfp, "sim_fits.csv")
+lf_fits  <- rd(lfp, "real_fits.csv")
+lf_pair  <- rd(lfp, "real_paired.csv")
+lf_prog  <- rd(lfp, "real_programs.csv")
+lf_audit <- rd(lfp, "real_input_audit.csv")
+a2_sim   <- rd(lfp, "a2", "a2_sim_cells.csv")
+a2_fits  <- rd(lfp, "a2", "a2_real_fits.csv")
+a2_pair  <- rd(lfp, "a2", "a2_real_paired.csv")
+b_sim    <- rd(lfp, "beta_sim_cells.csv")
+b_simf   <- rd(lfp, "beta_sim_fits.csv")
+b_fits   <- rd(lfp, "beta_real_fits.csv")
+b_pair   <- rd(lfp, "beta_real_paired.csv")
+b_prog   <- rd(lfp, "beta_real_programs.csv")
+
+prior_cells <- c("s14_0.05pct", "s9_0.25pct", "s9_1pct", "s9_5pct")
+cell_share <- setNames(paste0(sub(".*_([0-9.]+)pct$", "\\1", prior_cells), "%"), prior_cells)
+# Cell rows of one arm, in the order of prior_cells; stops if a cell is missing.
+cell_rows <- function(d, a, col = "arm") {
+  r <- d[d[[col]] == a, ][match(prior_cells, d$cell[d[[col]] == a]), ]
+  stopifnot(nrow(r) == length(prior_cells), !anyNA(r$cell))
+  r
+}
+lf_pl <- cell_rows(lf_sim, "PL"); lf_pe <- cell_rows(lf_sim, "PE")
+lf_sz <- cell_rows(a2_sim, "SZ")
+stopifnot(all(lf_sim$converged == lf_sim$n), all(a2_sim$converged == a2_sim$n),
+          all(b_sim$converged == b_sim$n), all(b_simf$converged),
+          length(unique(c(lf_sim$n, a2_sim$n, b_sim$n))) == 1)
+prior_n_sim <- unique(lf_sim$n)
+
+# Fold summaries (folds 1-5) of one arm: within-cohort C, convergence, active
+# programs and the largest absolute correlation of a program with cohort.
+fold_summary <- function(d, a, col = "arm") {
+  f <- d[d[[col]] == a & d$fold > 0, ]
+  stopifnot(nrow(f) == 5)
+  data.frame(C = mean(f$C_within), conv = sum(f$converged),
+             act_lo = min(f$n_active), act_hi = max(f$n_active),
+             cohort_cor = max(f$max_abs_cor_cohort))
+}
+lf_real <- rbind(PL = fold_summary(lf_fits, "PL"), PE = fold_summary(lf_fits, "PE"),
+                 PES = fold_summary(a2_fits, "PES", "setup"),
+                 SZ = fold_summary(a2_fits, "SZ", "setup"),
+                 RANK = fold_summary(lf_fits, "RANK"))
+lf_diff <- rbind(PE = lf_pair[lf_pair$arm == "PE", c("diff_within", "se_within")],
+                 PES = a2_pair[a2_pair$setup == "PES" & a2_pair$reference == "PL", c("diff_within", "se_within")],
+                 SZ = a2_pair[a2_pair$setup == "SZ" & a2_pair$reference == "PL", c("diff_within", "se_within")],
+                 RANK = lf_pair[lf_pair$arm == "RANK", c("diff_within", "se_within")])
+# The saved paired means must agree with the fold-level files.
+stopifnot(isTRUE(all.equal(lf_real["PL", "C"], unique(lf_pair$mean_C_within_PL))),
+          isTRUE(all.equal(lf_real[c("PE", "RANK"), "C"], lf_pair$mean_C_within[match(c("PE", "RANK"), lf_pair$arm)])),
+          sum(lf_prog$active[lf_prog$arm == "PE"]) == 0)
+pe_alt <- c("PE", "PES", "SZ", "RANK")
+stopifnot(all(-lf_diff$diff_within > lf_diff$se_within))
+# False-active counts per fit at planted shares of 1% and above.
+lf_big <- subset(lf_simf, cell %in% c("s9_1pct", "s9_5pct"))
+lf_pe_big_min <- min(lf_big$false_active[lf_big$arm == "PE"])
+lf_pl_big_max <- max(lf_big$false_active[lf_big$arm == "PL"])
+gene_mean_xsd <- setNames(lf_audit$median_gene_mean[lf_audit$arm == "PE"],
+                          lf_audit$cohort[lf_audit$arm == "PE"])
+prior_n_train <- lf_fits$n_train[lf_fits$arm == "PL" & lf_fits$fold == 0]
+
+# Coefficient priors: per-program Normal (current) and three shared priors.
+b_arms <- c(PL = "Normal", B_PLAP = "Shared point-Laplace",
+            B_PN = "Shared point-normal", B_NSH = "Shared Normal")
+b_cells <- lapply(names(b_arms), function(a) cell_rows(b_sim, a))
+names(b_cells) <- names(b_arms)
+b_C <- c(PL = unique(b_pair$mean_C_within_Normal),
+         setNames(b_pair$mean_C_within, b_pair$arm))[names(b_arms)]
+b_active <- c(PL = unique(b_pair$mean_active_Normal),
+              setNames(b_pair$mean_active, b_pair$arm))[names(b_arms)]
+b_conv <- sapply(names(b_arms), function(a) sum(b_fits$converged[b_fits$arm == a & b_fits$fold > 0]))
+stopifnot(isTRUE(all.equal(unname(b_C["PL"]), lf_real["PL", "C"])), all(b_conv == b_pair$folds_converged[1]))
+# Spread of median calibration slopes across priors, by cell.
+b_slope_spread <- sapply(prior_cells, function(cc) diff(range(b_sim$median_cal_slope[b_sim$cell == cc])))
+b_pip_full <- subset(b_prog, arm == "B_PN" & fold == 0)
+b_active_full <- b_pip_full$program[b_pip_full$active]
+# Simulation: programs per fit with inclusion probability above 0.5 (saved as "p1;...;p7").
+b_pn_fits <- subset(b_simf, arm == "B_PN")
+# "NA" marks a program with no nonzero loadings (one per fit with six live programs);
+# it counts as not included. Any other non-numeric entry stops the render.
+b_pn_split <- strsplit(b_pn_fits$pip, ";")
+stopifnot(all(sapply(b_pn_split, function(z) sum(z == "NA")) == 7 - b_pn_fits$n_alive))
+b_pn_fits$n_incl <- sapply(b_pn_split, function(z) sum(as.numeric(z[z != "NA"]) > 0.5))
+b_pn_incl <- tapply(b_pn_fits$n_incl, b_pn_fits$cell, mean)[prior_cells]
 ```
 
 ```{=latex}
@@ -292,7 +384,9 @@ training cross-validation (@sec-week).
 survival coefficients, fit methylation alone, test one fitter for several data types, compare
 two ways of linking survival to the programs, and reselect the gene screen, input scaling and
 rank on training data.
-Their results are in progress or pending review and appear as marked placeholders in @sec-week.
+The two prior comparisons are complete. The current model keeps point-Laplace priors on the
+scores and loadings and a Normal prior on each survival coefficient ([Appendix D](#sec-appendix-d)). The other
+results are in progress or pending review and appear as marked placeholders in @sec-week.
 
 # Methods {#sec-methods}
 
@@ -483,8 +577,9 @@ equal-weight mean of the within-series differences.
 # Work of November 9–13 {#sec-week}
 
 This section lists the analyses planned for the week of November 9. Each was registered, with its
-criteria, before any fit. Their results are in progress or pending review, so each subsection gives the question and a
-marked placeholder for the result. Unless a subsection says otherwise, the simulation cells
+criteria, before any fit. The two prior comparisons are complete and their results are given
+below. The other analyses are in progress or pending review, so their subsections give the
+question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells
 are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at
 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data
 comparisons use the five training folds of @sec-results-fair, balanced by cohort and event.
@@ -503,16 +598,15 @@ the Cox model. The point-Laplace fit takes the working z-scored input. Both arms
 the pooled training data without cohort strata. Within-cohort concordance is the primary
 cross-validation metric, with pooled concordance reported beside it.
 
-::: {.callout-note}
-**Result pending.** [RESULT A1: recovery, mean false-active count and convergence for each
-prior in each of the four simulation cells.]
-
-[RESULT A2: fold-wise and mean within-cohort cross-validated concordance and pooled
-concordance for each prior, and the paired point-exponential minus point-Laplace difference
-with its standard error.]
-
-[RESULT A3: the decision on the $L$ and $F$ prior for the working model.]
-:::
+**Result.** The point-Laplace prior on z-scores within cohort is kept. In simulation the
+point-exponential prior recovered the planted program at least as often, but it averaged
+`r num(min(c(lf_pe$mean_false_active, lf_sz$mean_false_active)), 1)` to
+`r num(max(c(lf_pe$mean_false_active, lf_sz$mean_false_active)), 1)` false-active programs per
+fit in every cell, against a limit of one. In training cross-validation its within-cohort
+concordance was `r num(min(lf_real[pe_alt, "C"]))` to `r num(max(lf_real[pe_alt, "C"]))` across
+four input setups, against `r num(lf_real["PL", "C"])` for the current model, and no setup
+converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds. These comparisons were
+awaiting independent review on November 12. Tables and details are in [Appendix D](#sec-appendix-d).
 
 ## Prior on the survival coefficients {#sec-week-beta}
 
@@ -522,15 +616,15 @@ Normal prior without a comparison that chose it. The three arms differ only in
 the $\beta$ prior and use the same simulation cells and training folds. For the point-normal
 prior the posterior inclusion probability of each program is also recorded.
 
-::: {.callout-note}
-**Result pending.** [RESULT B1: table by $\beta$ prior of recovery, false-active count,
-convergence, validation concordance and calibration slope in each simulation cell, with paired
-cross-validated concordance and the number of survival-active programs on the training data.]
-
-[RESULT B2: posterior inclusion probabilities of the programs under the point-normal prior.]
-
-[RESULT B3: the decision on the $\beta$ prior for the working model.]
-:::
+**Result.** The Normal prior on each coefficient is kept. A shared point-Laplace, a shared
+point-normal and a shared Normal prior gave nearly the same fits, with within-cohort
+cross-validated concordance from `r num(min(b_C))` to `r num(max(b_C))` across the four priors
+and convergence in the same `r unname(b_conv[1])` of 5 folds. Near the detection threshold
+neither sparse prior met the false-activity limit, which the Normal prior also fails there. Under
+the shared point-normal prior the posterior inclusion probabilities of the full training fit
+were `r num(min(b_pip_full$pip), 2)` to `r num(max(b_pip_full$pip), 2)` for all seven programs,
+so they do not single out the `r length(b_active_full)` survival-active programs
+([Appendix D](#sec-appendix-d)).
 
 ## Methylation fitted alone {#sec-week-methylation}
 
@@ -1352,6 +1446,9 @@ the expected objective.
   appendix.
 - **Work of November 9–13.** @sec-week describes the week's analyses with placeholders for
   their results.
+- **Prior sensitivity.** The comparisons of priors on the scores and loadings and on the
+  survival coefficients are complete. Their results replace two placeholders in @sec-week, and
+  [Appendix D](#sec-appendix-d) gives the tables.
 
 No number retained from the November 6 version has changed.
 
@@ -1388,6 +1485,143 @@ wide_risk$cohort <- unname(cohort_label[wide_risk$cohort])
 names(wide_risk) <- sub("^counts\\.", "", names(wide_risk))
 names(wide_risk)[1:2] <- c("Model", "Series")
 kable(wide_risk, row.names = FALSE)
+```
+
+{{< pagebreak >}}
+
+# Appendix D. Sensitivity to the priors {#sec-appendix-d .unnumbered}
+
+These two comparisons were completed on November 12, 2026, and were awaiting independent review
+on that date. Their registered criteria and full results are in
+`docs/findings/2026-11-12-lf-prior-comparison-findings.md`,
+`docs/findings/2026-11-12-lf-prior-followup-findings.md` and
+`docs/findings/2026-11-12-beta-prior-comparison-findings.md`.
+
+## Priors on the scores and loadings {.unnumbered}
+
+The current model uses point-Laplace priors on $L$ and $F$ with expression z-scored within each
+cohort. The alternative is a point-exponential prior, which keeps every score and loading
+nonnegative, as in a nonnegative matrix factorization. It needs nonnegative input, so expression
+is divided by each gene's within-cohort standard deviation without centering, and the Cox
+projection is centered on the training data. Everything else is the current model's: $w_S = 1$,
+a Normal coefficient prior, $K = 7$ without pruning, at most 300 sweeps and tolerance $10^{-5}$.
+The simulation uses the three variance cells of the fixed-weight simulation at 2,000 genes and
+the strong-survival cell of the near-threshold simulation at a planted share of 0.05%, with
+`r prior_n_sim` datasets each. The planted scores and loadings are exponential, so the truth
+favors neither prior. The training comparison uses the five folds of @sec-results-fair on the
+pooled `r prior_n_train` patients and counts only pairs of patients from the same cohort.
+
+In simulation the point-exponential prior recovered the planted program as often as
+point-Laplace, and more often near the detection threshold (`r lf_pe$recovered[1]` against
+`r lf_pl$recovered[1]` of `r prior_n_sim`), and every fit converged (@tbl-lf-prior-sim). The
+point-exponential prior also marked several other programs survival-active in every cell, with
+means of `r num(min(lf_pe$mean_false_active), 1)` to `r num(max(lf_pe$mean_false_active), 1)`
+false-active programs per fit against a limit of one. At planted shares of 1% and above, every
+point-exponential fit had at least `r lf_pe_big_min` false-active programs, while point-Laplace
+had at most `r lf_pl_big_max` in any fit. Near the threshold both priors exceeded the limit.
+
+```{r}
+#| label: tbl-lf-prior-sim
+#| tbl-cap: "Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Awaiting independent review on November 12, 2026."
+pair_cell <- function(a, b, d) paste(num(a, d), num(b, d), sep = " / ")
+kable(data.frame(`Planted share` = unname(cell_share),
+  Recovered = paste(lf_pl$recovered, lf_pe$recovered, sep = " / "),
+  `False-active programs` = pair_cell(lf_pl$mean_false_active, lf_pe$mean_false_active, 1),
+  Converged = paste(lf_pl$converged, lf_pe$converged, sep = " / "),
+  `Validation C` = pair_cell(lf_pl$median_c_validation, lf_pe$median_c_validation, 3),
+  `Calibration slope` = pair_cell(lf_pl$median_cal_slope, lf_pe$median_cal_slope, 2),
+  check.names = FALSE), row.names = FALSE, align = "lccccc")
+```
+
+On the training data the point-exponential fit lost concordance and described the difference
+between the cohorts (@tbl-lf-prior-real). Dividing by the within-cohort standard deviation keeps
+each cohort's mean level. The median gene mean was `r num(gene_mean_xsd[["TCGA_PAAD"]], 1)` in
+TCGA-PAAD and `r num(gene_mean_xsd[["CPTAC"]], 1)` in CPTAC, against a within-cohort standard
+deviation of 1. In every fold one program's scores correlated at least
+`r num(min(lf_fits$max_abs_cor_cohort[lf_fits$arm == "PE" & lf_fits$fold > 0]))` with cohort
+membership, and no program was survival-active. Three further setups removed or absorbed that
+difference. Cohort strata center the projection and the baseline hazard within each cohort. A
+shifted z-score adds to each gene's z-scores a constant equal to minus their minimum over the
+`r prior_n_train` patients, so the input is nonnegative and both cohorts have the same gene means.
+The within-patient rank transform used by DeSurv ranks the genes within each patient and divides
+each gene's ranks by their within-cohort standard deviation. Each setup recovered part of the
+lost concordance, but all stayed below point-Laplace by more than one standard error, and no
+setup converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds within 300 sweeps. The
+shifted z-score removed the association with cohort, but in simulation it behaved like the
+unshifted point-exponential fit, with `r num(min(lf_sz$mean_false_active), 1)` to
+`r num(max(lf_sz$mean_false_active), 1)` false-active programs per fit. Under strata the programs
+still correlate `r num(lf_real["PES", "cohort_cor"])` with cohort membership, so they still
+separate the two cohorts, and the strata absorb that offset only in the survival model. The
+point-Laplace prior is kept.
+
+```{r}
+#| label: tbl-lf-prior-real
+#| tbl-cap: "Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Awaiting independent review on November 12, 2026."
+lf_lab <- c(PL = "Point-Laplace, z-scores within cohort (current model)",
+            PE = "Point-exponential, divided by within-cohort SD",
+            PES = "Point-exponential, divided by within-cohort SD, cohort strata",
+            SZ = "Point-exponential, shifted z-scores",
+            RANK = "Point-exponential, within-patient ranks")
+lf_tab <- lf_real[names(lf_lab), ]
+kable(data.frame(`Prior and input` = unname(lf_lab), `Mean C` = num(lf_tab$C),
+  `Difference (SE)` = c("", paste0(num(lf_diff[names(lf_lab)[-1], "diff_within"]), " (",
+                                   num(lf_diff[names(lf_lab)[-1], "se_within"]), ")")),
+  `Folds converged` = paste0(lf_tab$conv, "/5"),
+  `Survival-active programs` = ifelse(lf_tab$act_lo == lf_tab$act_hi, lf_tab$act_lo,
+                                      paste(lf_tab$act_lo, "to", lf_tab$act_hi)),
+  `Cohort correlation` = sapply(lf_tab$cohort_cor, function(x) num(x, if (x < 0.5) 2 else 3)),
+  check.names = FALSE), row.names = FALSE, align = "lccccc")
+```
+
+## Prior on the survival coefficients {.unnumbered}
+
+The current model gives each coefficient its own Normal prior. The alternatives are a
+point-Laplace and a point-normal prior, either of which can set a coefficient exactly to zero. A
+prior with a point mass cannot be estimated from one coefficient, so both are shared across the
+seven programs. A shared Normal prior separates the effect of sharing from that of sparsity. All
+other settings, the simulation cells and the folds are those of the comparison above, with
+point-Laplace priors on the scores and loadings.
+
+The four priors gave nearly the same fits (@tbl-beta-prior). The sparse priors lowered false
+activity slightly where the planted program was clear, to
+`r num(b_cells$B_PN$mean_false_active[2], 1)` against `r num(b_cells$PL$mean_false_active[2], 1)`
+at a share of `r cell_share[[2]]`. Near the detection threshold the four priors averaged
+`r num(min(b_sim$mean_false_active[b_sim$cell == prior_cells[1]]), 1)` to
+`r num(max(b_sim$mean_false_active[b_sim$cell == prior_cells[1]]), 1)` false-active programs per
+fit, so neither sparse prior met the false-activity limit, which the Normal prior also fails in
+that cell. Median calibration slopes differed by at most
+`r num(max(b_slope_spread[prior_cells != "s9_5pct"]), 2)` between priors outside the 5% cell. In
+training cross-validation the shared point-Laplace prior lowered concordance by
+`r num(-b_pair$diff_within[b_pair$arm == "B_PLAP"])` (SE
+`r num(b_pair$se_within[b_pair$arm == "B_PLAP"])`), and the shared point-normal prior by
+`r num(-b_pair$diff_within[b_pair$arm == "B_PN"])` (SE
+`r num(b_pair$se_within[b_pair$arm == "B_PN"])`). Under the shared point-normal prior, the
+posterior probability that a coefficient is nonzero was between `r num(min(b_pip_full$pip), 2)`
+and `r num(max(b_pip_full$pip), 2)` for all seven programs in the full training fit, so it did
+not single out the `r length(b_active_full)` survival-active programs. In simulation the mean
+number of programs per fit with an inclusion probability above 0.5 was
+`r num(b_pn_incl[["s9_0.25pct"]], 1)` at a share of 0.25% and
+`r num(b_pn_incl[["s9_1pct"]], 1)` at the larger shares, so the prior picked out the planted
+program alone when that program was clear. Near the threshold it was
+`r num(b_pn_incl[["s14_0.05pct"]], 1)`. The Normal prior is kept.
+
+```{r}
+#| label: tbl-beta-prior
+#| tbl-cap: "Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Awaiting independent review on November 12, 2026."
+stopifnot(isTRUE(all.equal(b_cells$B_PN$mean_false_active[2], b_cells$B_PLAP$mean_false_active[2])),
+          isTRUE(all.equal(b_pn_incl[["s9_1pct"]], b_pn_incl[["s9_5pct"]])))
+sim_rows <- t(sapply(names(b_arms), function(a)
+  paste0(b_cells[[a]]$recovered, ", ", num(b_cells[[a]]$mean_false_active, 1))))
+b_d <- c(PL = "", setNames(paste0(num(b_pair$diff_within), " (", num(b_pair$se_within), ")"),
+                           b_pair$arm))[names(b_arms)]
+b_tab <- rbind(t(sim_rows), num(b_C), b_d, num(b_active, 1), paste0(b_conv, "/5"))
+b_tab <- data.frame(Measure = c(paste0("Simulation, ", cell_share, " share: recovered, false-active"),
+                                "Training CV: mean C", "Difference from Normal (SE)",
+                                "Survival-active programs per fold", "Folds converged"),
+                    b_tab, check.names = FALSE, row.names = NULL)
+names(b_tab)[-1] <- unname(b_arms)
+names(b_tab)[2] <- "Normal (current model)"
+kable(b_tab, row.names = FALSE, align = "lcccc")
 ```
 
 # References {.unnumbered}

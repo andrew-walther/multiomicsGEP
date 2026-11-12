@@ -2410,6 +2410,11 @@ window.Quarto = {
   <li><a href="#sec-appendix-a" id="toc-sec-appendix-a" class="nav-link" data-scroll-target="#sec-appendix-a">Appendix A. Model derivation</a></li>
   <li><a href="#sec-appendix-b" id="toc-sec-appendix-b" class="nav-link" data-scroll-target="#sec-appendix-b">Appendix B. Changes since the November 6 version</a></li>
   <li><a href="#sec-appendix-c" id="toc-sec-appendix-c" class="nav-link" data-scroll-target="#sec-appendix-c">Appendix C. Comparator and risk-group details</a></li>
+  <li><a href="#sec-appendix-d" id="toc-sec-appendix-d" class="nav-link" data-scroll-target="#sec-appendix-d">Appendix D. Sensitivity to the priors</a>
+  <ul class="collapse">
+  <li><a href="#priors-on-the-scores-and-loadings" id="toc-priors-on-the-scores-and-loadings" class="nav-link" data-scroll-target="#priors-on-the-scores-and-loadings">Priors on the scores and loadings</a></li>
+  <li><a href="#prior-on-the-survival-coefficients" id="toc-prior-on-the-survival-coefficients" class="nav-link" data-scroll-target="#prior-on-the-survival-coefficients">Prior on the survival coefficients</a></li>
+  </ul></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="writeup.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
@@ -2453,7 +2458,7 @@ window.Quarto = {
 <p><strong>Method.</strong> The model factorizes expression into patient activities and gene loadings and links survival through a Cox model on the projection of each patient’s expression onto the loadings. A survival weight <span class="math inline">\(w_S\)</span> sets how much the Cox partial likelihood is weighted relative to the expression likelihood. The primary comparator uses the same factorization at the same rank fitted without survival, followed by a Cox model on its program scores.</p>
 <p><strong>Results.</strong> On 273 training patients, five-fold cross-validated concordance was 0.663 for the supervised fit and 0.652 for the two-step fit. The external results in this version come from the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) and its two-step comparator (<a href="#sec-model-states" class="quarto-xref">Section 1.6</a>). Scored once on 5 external series, their mean concordance was 0.620 against 0.613, a pooled paired difference of +0.007 (95% donor-bootstrap interval −0.003 to 0.017). Across the gene sets, the median survival share of the loading precision of the nonempty programs was at most <span class="math inline">\(8 \times 10^{-7}\)</span>, and the supervised and unsupervised loadings correlate at 1.000. The difference is consistent with joint coefficient estimation under a shrinkage prior. That explanation was not tested separately. Against DeSurv, elastic-net Cox and PurIST, all trained on the same patients, every paired difference in mean external concordance had a 95% interval that included zero (<a href="#sec-results-comparators" class="quarto-xref">Section 4.7</a>). In simulation, supervision matches the two-step fit when a prognostic program is easy to find. Supervision improved recovery near the detection threshold under strong survival. Choosing the weight by cross-validated partial log-likelihood on the training data kept <span class="math inline">\(w_S = 1\)</span>, and the fit keeps all 7 programs because ELBO pruning failed its simulation criteria.</p>
 <p><strong>External cohorts.</strong> Every modeling choice is made by simulation and five-fold cross-validation on the 273 TCGA and CPTAC training patients. This covers preprocessing, gene screening, priors, rank, survival weight and comparator tuning. The five external expression series and the matched ICGC methylation set only score a model that is already fixed. The gene screen, the per-cohort standardization and rank 7 were set before this rule, using external concordance, and are being reselected on training cross-validation (<a href="#sec-week" class="quarto-xref">Section 3</a>).</p>
-<p><strong>Work of November 9–13.</strong> The analyses of this week compare priors on the loadings and the survival coefficients, fit methylation alone, test one fitter for several data types, compare two ways of linking survival to the programs, and reselect the gene screen, input scaling and rank on training data. Their results are in progress or pending review and appear as marked placeholders in <a href="#sec-week" class="quarto-xref">Section 3</a>.</p>
+<p><strong>Work of November 9–13.</strong> The analyses of this week compare priors on the loadings and the survival coefficients, fit methylation alone, test one fitter for several data types, compare two ways of linking survival to the programs, and reselect the gene screen, input scaling and rank on training data. The two prior comparisons are complete. The current model keeps point-Laplace priors on the scores and loadings and a Normal prior on each survival coefficient (<a href="#sec-appendix-d">Appendix D</a>). The other results are in progress or pending review and appear as marked placeholders in <a href="#sec-week" class="quarto-xref">Section 3</a>.</p>
 </section>
 <section id="sec-methods" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Methods</h1>
@@ -2613,44 +2618,16 @@ Table 1: Training and validation cohorts. Patient and death counts are read fro
 </section>
 <section id="sec-week" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Work of November 9–13</h1>
-<p>This section lists the analyses planned for the week of November 9. Each was registered, with its criteria, before any fit. Their results are in progress or pending review, so each subsection gives the question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data comparisons use the five training folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a>, balanced by cohort and event. All fits keep rank 7 and the unit survival weight unless the subsection varies them. None of these analyses uses an external cohort to make a choice.</p>
+<p>This section lists the analyses planned for the week of November 9. Each was registered, with its criteria, before any fit. The two prior comparisons are complete and their results are given below. The other analyses are in progress or pending review, so their subsections give the question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data comparisons use the five training folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a>, balanced by cohort and event. All fits keep rank 7 and the unit survival weight unless the subsection varies them. None of these analyses uses an external cohort to make a choice.</p>
 <section id="sec-week-lf" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="sec-week-lf"><span class="header-section-number">3.1</span> Priors on the scores and loadings</h2>
 <p>A nonnegative factorization, as in DeSurv, makes each program an additive set of genes. This comparison asks whether point-exponential priors on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> recover a planted prognostic program as well as the working point-Laplace fit, with false activity and convergence under control, and whether they predict as well under training cross-validation. The point-exponential fit takes nonnegative input, each gene divided by its within-cohort standard deviation without centering, and centers the program scores that enter the Cox model. The point-Laplace fit takes the working z-scored input. Both arms are fitted to the pooled training data without cohort strata. Within-cohort concordance is the primary cross-validation metric, with pooled concordance reported beside it.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Result pending.</strong> [RESULT A1: recovery, mean false-active count and convergence for each prior in each of the four simulation cells.]</p>
-<p>[RESULT A2: fold-wise and mean within-cohort cross-validated concordance and pooled concordance for each prior, and the paired point-exponential minus point-Laplace difference with its standard error.]</p>
-<p>[RESULT A3: the decision on the <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> prior for the working model.]</p>
-</div>
-</div>
+<p><strong>Result.</strong> The point-Laplace prior on z-scores within cohort is kept. In simulation the point-exponential prior recovered the planted program at least as often, but it averaged 2.6 to 4.4 false-active programs per fit in every cell, against a limit of one. In training cross-validation its within-cohort concordance was 0.573 to 0.635 across four input setups, against 0.658 for the current model, and no setup converged in more than 1 of 5 folds. These comparisons were awaiting independent review on November 12. Tables and details are in <a href="#sec-appendix-d">Appendix D</a>.</p>
 </section>
 <section id="sec-week-beta" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="sec-week-beta"><span class="header-section-number">3.2</span> Prior on the survival coefficients</h2>
 <p>Under the <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> prior chosen above, this comparison asks which prior on <span class="math inline">\(\beta\)</span> the working model should use: point-Laplace, point-normal or Normal. The working fit has used a Normal prior without a comparison that chose it. The three arms differ only in the <span class="math inline">\(\beta\)</span> prior and use the same simulation cells and training folds. For the point-normal prior the posterior inclusion probability of each program is also recorded.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Result pending.</strong> [RESULT B1: table by <span class="math inline">\(\beta\)</span> prior of recovery, false-active count, convergence, validation concordance and calibration slope in each simulation cell, with paired cross-validated concordance and the number of survival-active programs on the training data.]</p>
-<p>[RESULT B2: posterior inclusion probabilities of the programs under the point-normal prior.]</p>
-<p>[RESULT B3: the decision on the <span class="math inline">\(\beta\)</span> prior for the working model.]</p>
-</div>
-</div>
+<p><strong>Result.</strong> The Normal prior on each coefficient is kept. A shared point-Laplace, a shared point-normal and a shared Normal prior gave nearly the same fits, with within-cohort cross-validated concordance from 0.649 to 0.658 across the four priors and convergence in the same 3 of 5 folds. Near the detection threshold neither sparse prior met the false-activity limit, which the Normal prior also fails there. Under the shared point-normal prior the posterior inclusion probabilities of the full training fit were 0.94 to 1.00 for all seven programs, so they do not single out the 3 survival-active programs (<a href="#sec-appendix-d">Appendix D</a>).</p>
 </section>
 <section id="sec-week-methylation" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="sec-week-methylation"><span class="header-section-number">3.3</span> Methylation fitted alone</h2>
@@ -4122,6 +4099,7 @@ Figure 12: External Kaplan–Meier curves by tertile of the Program 5 score ori
 <li><strong>Model names.</strong> The model behind the external results is named by its configuration, and every external table and figure names it in the caption (<a href="#sec-model-states" class="quarto-xref">Section 1.6</a>).</li>
 <li><strong>Historical comparisons removed.</strong> This version compares the current model only with the rank-matched two-step fit, EBMF at ranks 15 and 40 followed by Cox, DeSurv, elastic-net Cox and PurIST. Removed: the pre-registered October 15 supervision check, the <span class="math inline">\(\alpha_F = 0\)</span> benchmark and its single-log refit, the 40-factor LASSO comparator, the matches with historical loadings, the table of past external-cohort uses and the earlier multimodal appendix.</li>
 <li><strong>Work of November 9–13.</strong> <a href="#sec-week" class="quarto-xref">Section 3</a> describes the week’s analyses with placeholders for their results.</li>
+<li><strong>Prior sensitivity.</strong> The comparisons of priors on the scores and loadings and on the survival coefficients are complete. Their results replace two placeholders in <a href="#sec-week" class="quarto-xref">Section 3</a>, and <a href="#sec-appendix-d">Appendix D</a> gives the tables.</li>
 </ul>
 <p>No number retained from the November 6 version has changed.</p>
 <div style="page-break-after: always;"></div>
@@ -4502,6 +4480,253 @@ Table 17: Numbers at risk for the fixed-cutpoint curves. Entries are low-risk /
 </figure>
 </div>
 </div>
+<div style="page-break-after: always;"></div>
+</section>
+<section id="sec-appendix-d" class="level1 unnumbered">
+<h1 class="unnumbered">Appendix D. Sensitivity to the priors</h1>
+<p>These two comparisons were completed on November 12, 2026, and were awaiting independent review on that date. Their registered criteria and full results are in <code>docs/findings/2026-11-12-lf-prior-comparison-findings.md</code>, <code>docs/findings/2026-11-12-lf-prior-followup-findings.md</code> and <code>docs/findings/2026-11-12-beta-prior-comparison-findings.md</code>.</p>
+<section id="priors-on-the-scores-and-loadings" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="priors-on-the-scores-and-loadings">Priors on the scores and loadings</h2>
+<p>The current model uses point-Laplace priors on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> with expression z-scored within each cohort. The alternative is a point-exponential prior, which keeps every score and loading nonnegative, as in a nonnegative matrix factorization. It needs nonnegative input, so expression is divided by each gene’s within-cohort standard deviation without centering, and the Cox projection is centered on the training data. Everything else is the current model’s: <span class="math inline">\(w_S = 1\)</span>, a Normal coefficient prior, <span class="math inline">\(K = 7\)</span> without pruning, at most 300 sweeps and tolerance <span class="math inline">\(10^{-5}\)</span>. The simulation uses the three variance cells of the fixed-weight simulation at 2,000 genes and the strong-survival cell of the near-threshold simulation at a planted share of 0.05%, with 10 datasets each. The planted scores and loadings are exponential, so the truth favors neither prior. The training comparison uses the five folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a> on the pooled 273 patients and counts only pairs of patients from the same cohort.</p>
+<p>In simulation the point-exponential prior recovered the planted program as often as point-Laplace, and more often near the detection threshold (8 against 5 of 10), and every fit converged (<a href="#tbl-lf-prior-sim" class="quarto-xref">Table 18</a>). The point-exponential prior also marked several other programs survival-active in every cell, with means of 2.6 to 4.3 false-active programs per fit against a limit of one. At planted shares of 1% and above, every point-exponential fit had at least 2 false-active programs, while point-Laplace had at most 1 in any fit. Near the threshold both priors exceeded the limit.</p>
+<div class="cell">
+<div id="tbl-lf-prior-sim" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lf-prior-sim-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 18: Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Awaiting independent review on November 12, 2026.
+</figcaption>
+<div aria-describedby="tbl-lf-prior-sim-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 11%">
+<col style="width: 24%">
+<col style="width: 11%">
+<col style="width: 16%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Planted share</th>
+<th style="text-align: center;">Recovered</th>
+<th style="text-align: center;">False-active programs</th>
+<th style="text-align: center;">Converged</th>
+<th style="text-align: center;">Validation C</th>
+<th style="text-align: center;">Calibration slope</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0.05%</td>
+<td style="text-align: center;">5 / 8</td>
+<td style="text-align: center;">3.0 / 2.6</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.832 / 0.839</td>
+<td style="text-align: center;">1.58 / 1.26</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">0.25%</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.9 / 3.0</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.947 / 0.940</td>
+<td style="text-align: center;">1.45 / 1.39</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">1%</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.1 / 4.0</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.974 / 0.971</td>
+<td style="text-align: center;">2.16 / 1.82</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">5%</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.0 / 4.3</td>
+<td style="text-align: center;">10 / 10</td>
+<td style="text-align: center;">0.987 / 0.982</td>
+<td style="text-align: center;">3.23 / 2.07</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>On the training data the point-exponential fit lost concordance and described the difference between the cohorts (<a href="#tbl-lf-prior-real" class="quarto-xref">Table 19</a>). Dividing by the within-cohort standard deviation keeps each cohort’s mean level. The median gene mean was 11.0 in TCGA-PAAD and 15.5 in CPTAC, against a within-cohort standard deviation of 1. In every fold one program’s scores correlated at least 0.998 with cohort membership, and no program was survival-active. Three further setups removed or absorbed that difference. Cohort strata center the projection and the baseline hazard within each cohort. A shifted z-score adds to each gene’s z-scores a constant equal to minus their minimum over the 273 patients, so the input is nonnegative and both cohorts have the same gene means. The within-patient rank transform used by DeSurv ranks the genes within each patient and divides each gene’s ranks by their within-cohort standard deviation. Each setup recovered part of the lost concordance, but all stayed below point-Laplace by more than one standard error, and no setup converged in more than 1 of 5 folds within 300 sweeps. The shifted z-score removed the association with cohort, but in simulation it behaved like the unshifted point-exponential fit, with 2.8 to 4.4 false-active programs per fit. Under strata the programs still correlate 0.998 with cohort membership, so they still separate the two cohorts, and the strata absorb that offset only in the survival model. The point-Laplace prior is kept.</p>
+<div class="cell">
+<div id="tbl-lf-prior-real" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lf-prior-real-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 19: Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program’s training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Awaiting independent review on November 12, 2026.
+</figcaption>
+<div aria-describedby="tbl-lf-prior-real-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 41%">
+<col style="width: 5%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 17%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Prior and input</th>
+<th style="text-align: center;">Mean C</th>
+<th style="text-align: center;">Difference (SE)</th>
+<th style="text-align: center;">Folds converged</th>
+<th style="text-align: center;">Survival-active programs</th>
+<th style="text-align: center;">Cohort correlation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Point-Laplace, z-scores within cohort (current model)</td>
+<td style="text-align: center;">0.658</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">3/5</td>
+<td style="text-align: center;">2 to 4</td>
+<td style="text-align: center;">0.05</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Point-exponential, divided by within-cohort SD</td>
+<td style="text-align: center;">0.573</td>
+<td style="text-align: center;">−0.085 (0.031)</td>
+<td style="text-align: center;">0/5</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0.998</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Point-exponential, divided by within-cohort SD, cohort strata</td>
+<td style="text-align: center;">0.628</td>
+<td style="text-align: center;">−0.030 (0.015)</td>
+<td style="text-align: center;">0/5</td>
+<td style="text-align: center;">3 to 4</td>
+<td style="text-align: center;">0.998</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Point-exponential, shifted z-scores</td>
+<td style="text-align: center;">0.635</td>
+<td style="text-align: center;">−0.023 (0.008)</td>
+<td style="text-align: center;">1/5</td>
+<td style="text-align: center;">2 to 4</td>
+<td style="text-align: center;">0.05</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Point-exponential, within-patient ranks</td>
+<td style="text-align: center;">0.615</td>
+<td style="text-align: center;">−0.043 (0.016)</td>
+<td style="text-align: center;">0/5</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1.000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="prior-on-the-survival-coefficients" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="prior-on-the-survival-coefficients">Prior on the survival coefficients</h2>
+<p>The current model gives each coefficient its own Normal prior. The alternatives are a point-Laplace and a point-normal prior, either of which can set a coefficient exactly to zero. A prior with a point mass cannot be estimated from one coefficient, so both are shared across the seven programs. A shared Normal prior separates the effect of sharing from that of sparsity. All other settings, the simulation cells and the folds are those of the comparison above, with point-Laplace priors on the scores and loadings.</p>
+<p>The four priors gave nearly the same fits (<a href="#tbl-beta-prior" class="quarto-xref">Table 20</a>). The sparse priors lowered false activity slightly where the planted program was clear, to 0.3 against 0.9 at a share of 0.25%. Near the detection threshold the four priors averaged 3.0 to 4.1 false-active programs per fit, so neither sparse prior met the false-activity limit, which the Normal prior also fails in that cell. Median calibration slopes differed by at most 0.03 between priors outside the 5% cell. In training cross-validation the shared point-Laplace prior lowered concordance by 0.008 (SE 0.002), and the shared point-normal prior by 0.002 (SE 0.004). Under the shared point-normal prior, the posterior probability that a coefficient is nonzero was between 0.94 and 1.00 for all seven programs in the full training fit, so it did not single out the 3 survival-active programs. In simulation the mean number of programs per fit with an inclusion probability above 0.5 was 1.3 at a share of 0.25% and 1.0 at the larger shares, so the prior picked out the planted program alone when that program was clear. Near the threshold it was 4.2. The Normal prior is kept.</p>
+<div class="cell">
+<div id="tbl-beta-prior" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-beta-prior-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 20: Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Awaiting independent review on November 12, 2026.
+</figcaption>
+<div aria-describedby="tbl-beta-prior-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 37%">
+<col style="width: 18%">
+<col style="width: 16%">
+<col style="width: 15%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Measure</th>
+<th style="text-align: center;">Normal (current model)</th>
+<th style="text-align: center;">Shared point-Laplace</th>
+<th style="text-align: center;">Shared point-normal</th>
+<th style="text-align: center;">Shared Normal</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Simulation, 0.05% share: recovered, false-active</td>
+<td style="text-align: center;">5, 3.0</td>
+<td style="text-align: center;">5, 3.3</td>
+<td style="text-align: center;">4, 3.5</td>
+<td style="text-align: center;">4, 4.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Simulation, 0.25% share: recovered, false-active</td>
+<td style="text-align: center;">10, 0.9</td>
+<td style="text-align: center;">10, 0.3</td>
+<td style="text-align: center;">10, 0.3</td>
+<td style="text-align: center;">10, 1.5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Simulation, 1% share: recovered, false-active</td>
+<td style="text-align: center;">10, 0.1</td>
+<td style="text-align: center;">10, 0.0</td>
+<td style="text-align: center;">10, 0.0</td>
+<td style="text-align: center;">10, 0.4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Simulation, 5% share: recovered, false-active</td>
+<td style="text-align: center;">10, 0.0</td>
+<td style="text-align: center;">10, 0.0</td>
+<td style="text-align: center;">10, 0.0</td>
+<td style="text-align: center;">10, 0.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Training CV: mean C</td>
+<td style="text-align: center;">0.658</td>
+<td style="text-align: center;">0.649</td>
+<td style="text-align: center;">0.656</td>
+<td style="text-align: center;">0.651</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Difference from Normal (SE)</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">−0.008 (0.002)</td>
+<td style="text-align: center;">−0.002 (0.004)</td>
+<td style="text-align: center;">−0.007 (0.004)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Survival-active programs per fold</td>
+<td style="text-align: center;">2.6</td>
+<td style="text-align: center;">2.4</td>
+<td style="text-align: center;">2.4</td>
+<td style="text-align: center;">2.6</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Folds converged</td>
+<td style="text-align: center;">3/5</td>
+<td style="text-align: center;">3/5</td>
+<td style="text-align: center;">3/5</td>
+<td style="text-align: center;">3/5</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
 </section>
 <section id="references" class="level1 unnumbered">
 <h1 class="unnumbered">References</h1>
