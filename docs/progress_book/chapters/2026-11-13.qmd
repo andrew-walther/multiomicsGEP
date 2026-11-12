@@ -407,9 +407,17 @@ plateau rather than showing that K = 5 predicts better. The comparison used one 
 and this plateau is the case where the protocol repeats the split with four more seeds.
 At K = 5 the point-exponential prior still loses (0.519 against 0.655).
 
-K = 5 is adopted for new work. Results already reported at K = 7, including the November
-external scores and this week's prior comparisons, stay on record labeled with K = 7.
-Whether to change the rank key in `config/globals.yml` is Andrew's decision.
+Andrew adopted K = 5 for the working model on November 12 (new key
+`benchmark$k_working_yfb: 5` in `config/globals.yml`, while the historical key stays 7).
+Results already reported at K = 7, including the November external scores and this week's
+prior comparisons, stay on record labeled with K = 7.
+
+The five K = 5 programs match K = 7 programs 1 to 5 (score correlations 0.92 to 0.995).
+K = 7 programs 6 and 7 are dropped, and neither was survival-active. Program 2 (protective,
+z −4.5) and program 5 (adverse, z 2.8) stay survival-active. Programs 3 and 4 sit near the
+1.96 threshold in both fits: program 3 falls from z 3.0 to 1.5 and program 4 rises from 1.9
+to 2.4, so the active set changes from {2, 3, 5} to {2, 4, 5}. The program-classification
+rule that named programs 2 and 3 needs rechecking at K = 5.
 
 
 ## External scoring of the fixed working model
