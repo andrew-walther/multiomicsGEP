@@ -3,6 +3,47 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task A fits pooled training data; methylation study design for task C
+
+**Pooled training, revising the 2026-11-09 strata line (Andrew).** The working model
+and every current result built on it (the S-11 training CV, the S-15 survival-weight
+choice and the S-12 external scores) pool the 273 TCGA and CPTAC patients after
+z-scoring each cohort, with no `strata_id` and no `center_projection`
+(`results/benchmark_sim/run_yfb_supervised_real.R`). Stratified fitting was added on
+2026-11-06 but has not been evaluated on real data. To avoid taking on that risk this
+week, task A fits both arms pooled without strata. The point-Laplace arm is then the
+working model itself. The point-exponential arm (X/sd within cohort,
+`center_projection = TRUE` with one pooled center) keeps each cohort's mean level, so
+part of a patient's score could reflect cohort membership. To keep that from raising
+its apparent accuracy, the primary CV metric for both arms is within-cohort
+concordance (only TCGA–TCGA and CPTAC–CPTAC pairs, pooled by pair count), with pooled
+concordance reported beside it. Each program's correlation with the cohort label is
+recorded next to the plan's mean-level check. The stratified scale check in the week
+plan applies only to stratified fits and is dropped. The same treatment applies to
+task F's rank-transform point-exponential arm. A stratified (multi-cohort) version of
+the model is a later follow-up.
+
+**Methylation for task C (Andrew).** The 10,000-CpG screen was a prototype setting,
+not a decision. Eligible CpGs are those with mean β between 0.1 and 0.9 on the TCGA
+training patients (182,934 of the 305,352-probe universe), which removes sites that
+are always methylated or always unmethylated. Within that set, CpGs are ranked by
+variance, and the study fits the top 10k, 25k, 50k, 100k and all 182,934. Both are
+outcome-free and computed once before the folds. Inputs are β values (nonnegative,
+needed by the point-exponential arm). Each count is fitted under both task A setups
+(z-score with point-Laplace, X/sd with point-exponential), with Normal β. A full fit
+at each count is timed first; five-fold CV runs only for counts that converge, and the
+largest counts can wait if they are too slow. The comparator is an expression fit with
+the D4 genes on the same matched TCGA patients and folds. Results compared: training
+CV concordance, external scoring of the fixed models on ICGC, and program agreement
+between data types. A methylation program counts as new if its patient scores
+correlate below 0.5 with every expression program and it is survival-active in the
+full fit and at least three of five folds.
+
+**Caveat.** C uses Normal β before task B chooses the β prior. If B adopts
+point-normal or point-Laplace, the methylation fits are rerun under that prior as a
+follow-up. The October failures at 10k and 25k CpGs came from the older fitter before
+the supervision fixes, so they do not predict how the current fitter behaves.
+
 ## 2026-11-11 — A bounded local results pilot
 
 Andrew authorized the first synthetic pilot of the

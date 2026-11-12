@@ -4,6 +4,7 @@ Paste-in prompts, briefs and session handoffs.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [codex-c-d-e-prompts](2026-11-12-codex-c-d-e-prompts.md) | Two concurrent Codex prompts: task C methylation CpG-count study; task D steps 1–2 then task E code | active |
 | 2026-11-11 | [week-plan-continuation-prompt](2026-11-11-week-plan-continuation-prompt.md) | Current paste-ready handoff after housekeeping, CV review and local pilot; discuss A–F and later migration before execution | active continuation prompt |
 | 2026-04-28 | [cross-modality-diagnostics-prompt](2026-04-28-cross-modality-diagnostics-prompt.md) | Asks a session to combine the 4/27 meeting notes with the preprocessing-reorder plan and run PCA/EBMF batch-effect diagnostics | complete |
 | 2026-06-16 | [pathway-enrichment-prompt](2026-06-16-pathway-enrichment-prompt.md) | Asks a session to write the pathway-enrichment plan | complete (produced [the plan](../plans/2026-07-14-pathway-enrichment-plan.md)) |
