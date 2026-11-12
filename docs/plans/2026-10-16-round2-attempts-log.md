@@ -2912,3 +2912,16 @@ PL's minus 1 of 10. (2) Mean false-active programs per fit at most 1 in every ce
 no lower than PL's by more than one SE of the paired fold difference, and every fold
 converges. Otherwise PL stays and the failed cell is recorded. A program absorbing the
 mean level is reported, not fixed by raising K.
+
+## 2026-11-12 — A result
+
+98/98 fits returned without errors or fit warnings. Point-exponential passes recovery
+(8, 10, 10, 10 of 10 against point-Laplace's 5, 10, 10, 10) and convergence (10/10 in
+every cell) but fails false activity (mean 2.6, 3.0, 4.0, 4.3 per fit) and the real-data
+criterion: within-cohort CV C 0.573 against 0.658, difference −0.085 (SE 0.031), 0/5
+folds converged. Its programs track the TCGA indicator (one program at 0.998 in every
+fold). Point-Laplace stays. Rank-transform arm, descriptive: 0.615, difference −0.043
+(SE 0.016), 0/5 converged. The point-Laplace refits reproduced the saved S-9, S-14 and
+S-11 fits; five S-14 false-active counts differ by one only because S-14's scoring
+excluded the best program when it did not match. Findings:
+`docs/findings/2026-11-12-lf-prior-comparison-findings.md`.

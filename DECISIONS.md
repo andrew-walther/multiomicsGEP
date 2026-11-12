@@ -3,6 +3,25 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task A: point-Laplace L and F priors stay
+
+Task A compared point-exponential L and F on nonnegative X/sd input
+(`center_projection = TRUE`) with the working point-Laplace fit on z-scored input,
+pooled over TCGA and CPTAC, under the four registered criteria. Point-exponential
+failed two. It averaged 2.6 to 4.3 false-active programs per fit in every simulation
+cell (limit 1), though it recovered the planted program as often or more often and
+converged in every fit. On the training data its mean within-cohort CV concordance
+was 0.573 against 0.658 (paired difference −0.085, SE 0.031), with no fold converged in
+300 sweeps and no survival-active program. In every fold one of its programs correlates
+0.998 with the TCGA indicator, because X/sd keeps each cohort's mean level. The working
+model's L/F prior is therefore unchanged, and tasks B to F use point-Laplace on the
+z-scored input. The task F rank-transform point-exponential arm (descriptive, not
+adopted) also separates the cohorts and reached 0.615 (difference −0.043, SE 0.016),
+converging in no fold. The 40 point-Laplace refits reproduced the saved S-9, S-14 and
+S-11 fits. Not tested: point-exponential with cohort strata or cohort mean offsets.
+Findings: [docs/findings/2026-11-12-lf-prior-comparison-findings.md](docs/findings/2026-11-12-lf-prior-comparison-findings.md).
+Runner: `results/benchmark_sim/run_lf_prior_comparison.R`.
+
 ## 2026-11-12 — Task A fits pooled training data; methylation study design for task C
 
 **Pooled training, revising the 2026-11-09 strata line (Andrew).** The working model

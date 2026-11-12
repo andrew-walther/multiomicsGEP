@@ -1,0 +1,5 @@
+real_PL_f1 ok 58s
+real_PE_f1 ok 53s
+real_RANK_f1 ok 52s
+sim_s9_1pct_s01_PL ok 10s
+sim_s9_1pct_s01_PE ok 8s

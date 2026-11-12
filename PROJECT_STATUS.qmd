@@ -29,8 +29,19 @@ Against DeSurv and D4 elastic-net Cox trained on the same 273 patients, the fixe
 external concordance is within noise (paired differences 0.007 and 0.001, donor-bootstrap
 intervals including zero). A proposed classification rule names programs 2 and 3, but its
 simulation support is incomplete. The open methods problem is stability at weights large enough to
-move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study on the
-nonnegative input. Multimodal development stays deferred.
+move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study, now on the
+z-scored input, since task A (2026-11-12) kept point-Laplace L and F priors. Multimodal development stays deferred.
+
+## L and F prior comparison (2026-11-12)
+
+Task A kept point-Laplace priors on L and F. Point-exponential priors on nonnegative X/sd
+input recovered planted programs as well or better and always converged in simulation,
+but marked 2.6 to 4.3 non-planted programs survival-active per fit (limit 1). On the
+pooled training data their within-cohort CV concordance was 0.573 against 0.658, no fold
+converged, and the programs tracked TCGA versus CPTAC rather than survival. The
+rank-transform arm reached 0.615 with the same cohort tracking. Later tasks use
+point-Laplace on z-scored input. See the
+[findings](docs/findings/2026-11-12-lf-prior-comparison-findings.md).
 
 ## Early benchmark archive paths (2026-11-11)
 
