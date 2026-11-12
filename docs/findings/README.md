@@ -7,7 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
-| 2026-11-12 | [feature-group-fitter-findings](2026-11-12-feature-group-fitter-findings.md) | Task D grouped F priors, exact single-group compatibility and simulation checks | 80 attempts complete; all cells/arms fail gate; 38 grouped support errors; step 4 not run; 844 tests pass |
+| 2026-11-12 | [feature-group-fitter-findings](2026-11-12-feature-group-fitter-findings.md) | Task D grouped F priors, exact single-group compatibility and simulation checks | rerun: 120/120 converged, zero errors; all recovery gates fail; expression-only also fails; step 4 not run; 849 tests pass |
 | 2026-11-12 | [training-cv-redo-findings](2026-11-12-training-cv-redo-findings.md) | Task F: gene screen (D2 vs D4), input scaling and rank K = 2 to 12 chosen by pooled training CV; task A rerun at the new K | complete; D4 and z-score kept, K = 5 selected by the one-SE rule |
 | 2026-11-12 | [beta-prior-comparison-findings](2026-11-12-beta-prior-comparison-findings.md) | Task B: per-program Normal vs shared point-Laplace, point-normal and Normal β; point-normal inclusion probabilities | complete at K = 7 and real-data rerun at K = 5; Normal β stays, both sparse priors fail K = 5 CV rule (c) |
 | 2026-11-12 | [lb-yfb-study-code-findings](2026-11-12-lb-yfb-study-code-findings.md) | Matched-input pooled five-fold LB fold-in and YFB projection code, configurable runner and regression checks | code independently reviewed; scientific fits wait for fixed priors |

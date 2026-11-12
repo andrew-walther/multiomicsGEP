@@ -4,7 +4,12 @@ Author: Andrew Walther
 
 Date: 2026-11-12
 
-## Current result
+The [approved rerun](#2026-11-12-rerun-empty-blocks-and-recovery-diagnostics)
+resolves the grouped crash. All 120 fits converge, but every recovery gate
+still fails and the matched-TCGA comparison remains blocked. The first-run
+record below is retained for comparison.
+
+## First run, before the empty-block fix
 
 The registered 80-fit simulation is complete. **Every cell and arm fails the
 acceptance gate.** The grouped model has zero recoveries, 38 explicit
@@ -371,6 +376,233 @@ registered stop before step 4. Pooled passes no cell either. Task C's prepared
 matched-patient data do not override this rule. No matched-TCGA model, CV
 comparison, joint-only program list or real-data adoption was produced.
 
+## 2026-11-12 rerun: empty blocks and recovery diagnostics
+
+The [approved registration](../prompts/2026-11-12-codex-d-rerun-prompt.md)
+keeps the same four cells, seeds, survival draws and working configuration.
+It changes the grouped empty-block handling and adds expression-only fits
+and true-risk C. The [new aggregate directory](../../results/benchmark_sim/outputs/feature_group_simulation_2026-11-12_rerun/)
+and corresponding ignored `data/feature_group_simulation_2026-11-12_rerun/`
+private directory preserve the first run's directories unchanged.
+
+**All 120 fits converge, with no errors and no study warnings.** The empty-block
+crash is resolved. Every arm and cell still fails the recovery threshold.
+Grouped is the default selected prior because pooled passes no cell, but the
+selected arm passes no cell either, so step 4 did not run. This rerun does not
+adopt a multimodal model or a weighting scheme.
+
+### Empty-block implementation and tests
+
+`yf_update_F_groups()` still obtains a sequential block posterior under its
+incoming prior. If the refitted prior is a pure point mass at zero, it now
+subtracts that block's just-returned mean contribution from the returned
+E[Z_k] and its just-returned variance contribution from the returned V[Z_k].
+It then sets both loading moments to exactly zero before the next group
+updates. The refitted point-mass prior is stored. Since zero second moment
+makes q exactly delta zero as well, that block's KL is zero. Non-point-mass
+refits still call the existing KL calculation and retain its explicit
+nonfinite-KL error. This is the approved posterior reset, rather than
+clamping a prior probability or hiding an incompatible KL.
+
+The helper's inputs and sweep calculations are unchanged. Its return list
+adds final EZ/VZ and named reset-event counts for the groups. The fitter
+accumulates those counts in `fit$empty_blocks`, a modality-by-program integer
+matrix, and returns it only for canonical grouped fits. Every point-mass
+refit counts, including repeated resets of an already empty block. The total
+is a count of update events, not distinct removed programs. Low-information
+blocks handled by the pre-existing precision threshold do not increment this
+new refit counter. No VF carrier exists on this kernel path. Zero first and
+second moments also imply zero loading variance.
+
+The first new real-update regression uses a weak but nonzero block whose
+sweep returns positive mean and variance before the prior collapses. It
+checks that the next group receives only the remaining block's projection,
+that final EZ = YF, and that VZ equals the projection variance reconstructed
+from the returned moments. It independently checks that only the live
+block contributes loading KL. The second fixture fits a program present in
+one modality and absent in the other. It requires exact zero moments, a
+point-mass prior, a positive counter, nonzero companion loadings and a
+monitored objective recomputed with independent live-block loading KL.
+
+Tests were committed first in `041a3e5d`. The new grouped checks initially
+failed, including the original incompatible-KL error, while all 14 existing
+fitter checks passed. After implementation, all 16 fitter checks pass,
+including the frozen pooled and stratified-centered NULL/one-group outputs.
+The full suite passes **849 checks with zero failures**. Its only warning is
+the existing bounded-β optimizer profile-likelihood fallback. The derivation
+verification passes **88/88**. The implementation and twelve-fit smoke
+aggregates are in `a0bdb81d`. All smoke fits converged without errors or
+warnings. Production changes are confined to the grouped helper, conditional
+grouped metadata in the fitter and the simulation runner. The historical
+multimodal fitter and single-group updates are unchanged.
+
+### Expression-only and true-risk diagnostics
+
+`fgsim_arm_inputs()` takes the prepared joint data and K, computes the same
+signed joint SVD used in the first run, and returns the grouped, pooled and
+expression-only input lists. The two joint lists are identical. Expression
+uses the expression columns of training and validation data, the matching
+rows of that joint F start and the same initial L. Its recovery truth is the
+expression part of g renormalized to unit norm. Its survival outcomes and
+true η remain those drawn from the joint model. It does not regenerate
+expression-only outcomes or use a new SVD.
+
+`fgsim_assert_expression_inputs()` checks the feature subsets, normalized
+truth, training centers, group labels, both starting matrices and shared
+survival/risk fields. The existing joint-arm identity assertion runs before
+and after fitting, and the new expression assertion does likewise. Regression
+checks mutate each field in turn and require failure.
+
+`fgsim_true_risk()` evaluates `frozen_reverse_cindex()` on the validation η
+used to generate outcomes, with no outcome-based sign change. This value is
+computed before any fit, retained even if a fit fails, and repeated for all
+three arms in the seed/cell. It is an oracle discrimination reference, not a
+strict upper bound on an empirical C in a finite validation sample.
+
+`fgsim_one()` fits the three arms sequentially, using each arm's own feature
+matrix and recovery target. Its metrics add signed expression-block loading
+correlation for the matched program, empty-block events and true-risk C.
+Joint programs are matched on the full g before reporting the expression
+block correlation. Expression-only programs are matched on its normalized
+expression part. Its precision and prior tables use only the modalities
+actually fitted. The `p_expression` and `p_methylation` metadata identify the
+source simulation cell, so expression-only rows still identify that cell's
+methylation count even though only 50 expression features are fitted.
+`empty_blocks.csv` gives every grouped fit's counts by modality and program.
+Non-grouped arms report zero events in metrics because they do not execute
+the grouped reset. These zeros do not assert that their priors stay nonempty.
+
+`fgsim_gate()` now includes total reset events with their defined-fit count
+and mean true-risk C with its defined count. The numerical acceptance
+thresholds are unchanged. `fgsim_select()` follows the rerun's explicit
+selected-arm rule: grouped is preferred unless pooled passes a cell that
+grouped fails, and step 4 requires the selected arm to pass at least one cell.
+This supersedes the earlier additional all-grouped-fail stop if pooled passes
+some cell. The distinction has no effect on this rerun because neither joint
+arm passes any cell. The runner uses one CPU worker and one BLAS thread.
+Only aggregate CSVs/settings/hashes are committed. Fits stay under ignored
+`data/`. The full rerun aggregates are committed in `d526d066`.
+
+### Rerun gates and discrimination
+
+| Features, expression:methylation | Methylation nonzero | Arm | Recovery /10 | Mean false active | Converged /10 | Errors | Empty-block events | Validation C (defined n) | True-risk C (defined n) | Gate |
+|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 50:50 | 15% | grouped | 1 | 1.2 | 10 | 0 | 258 | 0.577 (10) | 0.773 (10) | fail |
+| 50:50 | 15% | pooled | 2 | 0.8 | 10 | 0 | 0 | 0.585 (10) | 0.773 (10) | fail |
+| 50:50 | 15% | expression only | 1 | 0.6 | 10 | 0 | 0 | 0.539 (10) | 0.773 (10) | fail |
+| 50:50 | 3% | grouped | 5 | 0.9 | 10 | 0 | 572 | 0.685 (10) | 0.790 (10) | fail |
+| 50:50 | 3% | pooled | 4 | 0.9 | 10 | 0 | 0 | 0.658 (10) | 0.790 (10) | fail |
+| 50:50 | 3% | expression only | 5 | 0.3 | 10 | 0 | 0 | 0.617 (10) | 0.790 (10) | fail |
+| 50:250 | 15% | grouped | 0 | 0.9 | 10 | 0 | 427 | 0.533 (10) | 0.787 (10) | fail |
+| 50:250 | 15% | pooled | 0 | 0.8 | 10 | 0 | 0 | 0.544 (10) | 0.787 (10) | fail |
+| 50:250 | 15% | expression only | 0 | 0.2 | 10 | 0 | 0 | 0.513 (9) | 0.787 (10) | fail |
+| 50:250 | 3% | grouped | 0 | 0.9 | 10 | 0 | 153 | 0.559 (10) | 0.781 (10) | fail |
+| 50:250 | 3% | pooled | 0 | 0.8 | 10 | 0 | 0 | 0.547 (10) | 0.781 (10) | fail |
+| 50:250 | 3% | expression only | 2 | 0.3 | 10 | 0 | 0 | 0.576 (8) | 0.781 (10) | fail |
+
+Every cell has ten attempted fits per arm. The gate requires recovery ≥ 8/10,
+mean false activity ≤ 1 and convergence ≥ 9/10. All arms pass convergence.
+Grouped at 50:50 and 15% methylation also fails false activity, with mean 1.2.
+Every arm fails recovery. The conservative no-error condition carried from
+the original runner has no effect here because no fit errors.
+
+The three undefined validation C values are expression-only seed 3 at
+50:250 with 15% methylation, and seeds 7 and 10 at 50:250 with 3%. Their
+returned risk scores are constant. They remain in all gate denominators and
+are excluded only from the descriptive C means, whose defined counts are
+shown. True-risk C is defined for every seed/cell and identical across arms.
+There are no unconverged fits or study warning messages.
+
+All 40 pooled fits reproduce the first run exactly in recovery, false
+activity, matched program/correlation, convergence, iteration count,
+validation C and monitored objective. This verifies that the grouped fix
+and new diagnostics did not change the pooled comparator.
+
+### Expression recovery and modality precision
+
+Mean absolute expression-block loading correlation for the matched program
+is reported below, with the defined count in parentheses. A zero or constant
+expression loading block has undefined correlation. These values are excluded
+only from this descriptive mean. Matching remains arm-specific as described
+above. Signed values for every seed are in `metrics.csv` and `blocks.csv`.
+
+| Features, expression:methylation | Methylation nonzero | Grouped | Pooled | Expression only |
+|---|---:|---:|---:|---:|
+| 50:50 | 15% | 0.231 (10) | 0.237 (10) | 0.241 (10) |
+| 50:50 | 3% | 0.553 (9) | 0.541 (10) | 0.521 (10) |
+| 50:250 | 15% | 0.214 (9) | 0.168 (10) | 0.179 (9) |
+| 50:250 | 3% | 0.259 (9) | 0.258 (10) | 0.377 (8) |
+
+The matched program's methylation L-precision share and the number of seeds
+where it exceeds methylation's feature share are:
+
+| Features, expression:methylation | Methylation nonzero | Grouped mean share | Grouped dominance /10 | Pooled mean share | Pooled dominance /10 |
+|---|---:|---:|---:|---:|---:|
+| 50:50 | 15% | 0.500 | 7 | 0.495 | 7 |
+| 50:50 | 3% | 0.508 | 5 | 0.518 | 4 |
+| 50:250 | 15% | 0.545 | 3 | 0.839 | 7 |
+| 50:250 | 3% | 0.667 | 2 | 0.785 | 5 |
+
+All matched-program shares above are defined. The full table contains both
+modality shares for every live program. Feature-share thresholds are 0.5
+and 5/6. Expression-only has precision share 1 for its sole modality when
+defined. The grouped reset totals are 258, 572, 427 and 153 across the four
+cells in this table, summing to **1,410 events**. They split by expression and
+methylation as 105/153, 305/267, 336/91 and 139/14, respectively. Per-program
+counts are retained in `empty_blocks.csv`. The fitted-prior table contains
+all returned group/program priors, point-mass weights, Laplace scales and
+true nonzero fractions, as in the first run.
+
+### Registered reading of problem 2 and step 4
+
+Expression-only fails the 8/10 recovery criterion in every cell, with
+1/10 and 5/10 at 50:50 and 0/10 and 2/10 at 50:250. There is no cell where
+expression-only passes recovery while both joint arms fail. Under the
+registered descriptive rule, this scenario is too weak at the current sample
+size for the gate to separate the arms. It does not establish that adding
+methylation causes the recovery failure. The proposed next decision is to
+choose a scenario in which the expression-only arm can pass, before using
+the gate to assess an added-modality benefit. No scenario or weights were
+changed in this task.
+
+The true-risk C means of 0.773–0.790 show that the known joint direction
+carries prognostic information. They do not establish that its loadings are
+identifiable from 120 training patients or that this optimizer can recover
+them. Expression-only also omits the true methylation contribution to the
+hazard and uses matching rows of the joint SVD start, as registered. Its
+failure cannot distinguish weak molecular recovery signal from fitting or
+initialization limitations. Grouped recovery improving from 4/10 pooled to
+5/10 in one cell is below the gate and does not establish a benefit.
+
+**Step 4 was not run.** The registered rule selects grouped by default, but
+it passes no cell. There are no matched-TCGA rerun fits, CV results or
+joint-only program claims. The returned-prior KL in grouped fits and the
+historical incoming-prior KL in pooled fits still differ. The reset makes
+q and g compatible in an empty grouped block, but does not remove that
+accounting difference for live blocks. Absolute objectives remain unsuitable
+for a grouped-versus-pooled model comparison.
+
+### Rerun independent review
+
+A read-only statistical/code review found no blocking defect before the full
+run. It verified returned-sweep projection removal, zero empty-block KL,
+conditional counts, preservation of the single-group path, expression inputs,
+true-risk scoring and the selected-arm rule. Its requests to distinguish
+true-risk C from a strict finite-sample bound and to qualify the descriptive
+weak-scenario interpretation are addressed above.
+
+A fresh final reviewer independently audited the code and all 120 aggregate
+attempts before reading these findings. The review verified all gate and
+diagnostic tables, reconciled the 400 modality/program event rows with the
+1,410 total resets, confirmed identical true-risk C across each seed/cell
+triplet, checked all 12 source hashes and confirmed exact reproduction of
+all 40 original pooled results. The suite and derivation logs confirmed
+849/0 and 88/88. The subsequent findings review requested defined counts
+for expression-block correlation means. Those counts and the handling of
+zero/constant blocks are now explicit. The final verdict was **PASS for the
+approved rerun and stop decision, with no blocking code, statistical or
+reporting defects**. No scientific adoption is supported.
+
 ## Independent review
 
 A fresh reviewer inspected the tests and existing update code without editing
@@ -418,18 +650,22 @@ review is explicitly identified as a historical checkpoint.
 
 ## Text for the shared status files
 
-Task D's registered grouped-versus-pooled comparison is complete at K = 5,
-with 50:50 and 50:250 expression:methylation features and equal or unequal
-modality sparsity. Survival was regenerated from the unit standardized
-reconstruction direction, preserving the generator's training risk SD.
-Every cell and arm fails the acceptance gate. Grouped has zero recoveries,
-38 explicit refitted-prior support errors and two converged fits. Pooled
-converges in all 40 attempts, with recovery 2/10 and 4/10 at 50:50 and 0/10
-in both 50:250 cells. The rule retains grouped as its default preference but
-authorizes neither prior for step 4. The matched-TCGA comparison did not run.
-There were no study warnings. The full suite passes 844 checks with zero
-failures and its existing bounded-β fallback warning. No modality weights,
-prior-support fix or model adoption was introduced. The next decision is
-whether to register a prior-update strategy that preserves compatible
-support, then reevaluate the grouped implementation. These results do not
-establish a benefit from separate modality priors.
+Task D's approved empty-block rerun is complete. A refitted point-mass F prior
+now resets that modality-program posterior to delta zero, removes its
+returned sweep contribution from joint projection mean and variance, and
+contributes zero loading KL. Other nonfinite KL errors remain explicit.
+The NULL and one-group frozen fixtures remain bitwise unchanged. All 120
+fits converge with zero errors and zero study warnings. Grouped fits record
+1,410 reset events, including repeated resets. Every cell and arm fails the
+recovery gate. At 50:50 with 15% or 3% methylation nonzero loadings, grouped
+recovers 1/10 or 5/10, pooled 2/10 or 4/10, and expression-only 1/10 or 5/10.
+At 50:250, both joint arms recover 0/10 in both sparsity cells, and
+expression-only recovers 0/10 or 2/10. Grouped remains the default prior
+preference, but no prior is authorized for step 4, which did not run.
+The registered descriptive rule identifies the scenario as inadequate for
+gate separation at this sample size. True-risk C averages 0.773–0.790, so
+this conclusion concerns loading recovery, not absence of prognostic signal.
+A new scenario where expression-only can pass would need a separate decision.
+No weights, scenario changes or model adoption were introduced. The full
+suite passes 849 checks and the derivation verification passes 88/88.
+Independent code and findings review passed with no blocking defect.
