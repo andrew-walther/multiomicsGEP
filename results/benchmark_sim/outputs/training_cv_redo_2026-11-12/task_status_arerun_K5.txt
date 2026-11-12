@@ -1,0 +1,6 @@
+a_rerun_D4_XSD_K05_f0 ok 89s
+a_rerun_D4_XSD_K05_f1 ok 78s
+a_rerun_D4_XSD_K05_f2 ok 79s
+a_rerun_D4_XSD_K05_f3 ok 79s
+a_rerun_D4_XSD_K05_f4 ok 79s
+a_rerun_D4_XSD_K05_f5 ok 40s

@@ -1,0 +1,4 @@
+"choice","current","selected","rule"
+"gene screen","D4","D4","alternative replaces current only if better by > 1 SE (paired)"
+"input scaling","per-cohort z-score","per-cohort z-score","alternative replaces current only if better by > 1 SE (paired)"
+"rank K","7","5","one-SE: best K = 10 (mean 0.6659, SE 0.0269), threshold 0.6390"

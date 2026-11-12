@@ -7,6 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [training-cv-redo-findings](2026-11-12-training-cv-redo-findings.md) | Task F: gene screen (D2 vs D4), input scaling and rank K = 2 to 12 chosen by pooled training CV; task A rerun at the new K | complete; D4 and z-score kept, K = 5 selected by the one-SE rule |
 | 2026-11-12 | [beta-prior-comparison-findings](2026-11-12-beta-prior-comparison-findings.md) | Task B: per-program Normal vs shared point-Laplace, point-normal and Normal β; point-normal inclusion probabilities | complete; Normal β stays (literal rule; S-14 cell binding for every prior) |
 | 2026-11-12 | [lb-yfb-study-code-findings](2026-11-12-lb-yfb-study-code-findings.md) | Matched-input pooled five-fold LB fold-in and YFB projection code, configurable runner and regression checks | code independently reviewed; scientific fits wait for fixed priors |
 | 2026-11-12 | [methylation-single-modality-findings](2026-11-12-methylation-single-modality-findings.md) | Fixed methylation-only CpG-count sweep against matched expression, paired CV, program stability and external description | full-fit timing sweep in progress |

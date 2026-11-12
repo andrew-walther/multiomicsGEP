@@ -3,6 +3,24 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task F: training CV keeps D4 and the z-score input, and selects K = 5
+
+Task F redid, on the 273 training patients alone, the three choices that external
+cohorts had informed. Gene screen: D4 is kept. The original D2 screen (quantile
+normalization, top 2,000 by variance) is 0.012 lower in within-cohort CV concordance
+(paired SE 0.014). Input scaling: the per-cohort z-score is kept. X/sd (−0.020, SE 0.007)
+and rank-then-z-score (−0.017, SE 0.009) are both lower. Rank: CV concordance is flat from
+K = 5 to 12 (0.649 to 0.666) and lower at K = 2 to 4 (0.611 to 0.620). The registered
+one-SE rule (best K = 10, mean 0.666, fold SE 0.027) selects **K = 5**, which is adopted
+for new work. K = 5 and K = 7 differ by −0.003 (paired SE 0.007), and K = 5 converges in
+all five folds where K = 7 converges in three. The external C screens of July and August
+that supported K = 7 are no longer used for selection. Results reported at K = 7 stay
+on record and are labeled with that rank. Task A's prior choice holds at K = 5
+(point-exponential 0.519 against 0.655). `config/globals.yml` is not changed:
+`k_merged_yfb_desurv` drives historical runners, so whether to add a new key or change
+that one is left to Andrew. Findings:
+[docs/findings/2026-11-12-training-cv-redo-findings.md](docs/findings/2026-11-12-training-cv-redo-findings.md).
+
 ## 2026-11-12 — Task B: Normal β stays
 
 Task B compared the working model's per-program Normal β with shared point-Laplace,

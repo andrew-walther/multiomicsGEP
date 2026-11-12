@@ -3034,3 +3034,15 @@ within-cohort C is at least the best mean minus the SE of the fold C at the best
 screen or K changes, A's point-exponential vs point-Laplace real-data CV is rerun once at
 the new setting. Pooled concordance and held-out partial log-likelihood are reported
 beside the primary metric.
+
+## 2026-11-12 — F result
+
+78/78 new fits without errors, plus 6 point-exponential fits for the task A rerun.
+Screen: D4 kept (D2 −0.012, paired SE 0.014). Scaling: per-cohort z-score kept (X/sd
+−0.020, SE 0.007; rank then z-score −0.017, SE 0.009). Rank: within-cohort CV C 0.611,
+0.617, 0.620 at K = 2 to 4 and 0.649 to 0.666 at K = 5 to 12; best K = 10 (0.666, fold SE
+0.027), one-SE threshold 0.639, **K = 5 selected**. Every column keeps nonzero loadings at
+every K; survival-active programs in the full fit rise from 1 (K = 2) to 3 (K = 5 to 8)
+and 4 (K = 9 to 12). Task A rerun at K = 5: point-exponential 0.519 against point-Laplace 0.655 (−0.135,
+SE 0.021), 0/5 converged; point-Laplace holds. Findings:
+`docs/findings/2026-11-12-training-cv-redo-findings.md`.

@@ -1,0 +1,2 @@
+"K","mean_C_within_PE","mean_C_within_PL","diff","se","folds_converged_PE","folds_converged_PL","mean_active_PE","mean_active_PL","max_abs_cor_cohort_PE","criterion4_pass"
+5,0.519192046549648,0.654620082171644,-0.135428035621996,0.0212210230337851,0,5,0,2.6,0.998080972736605,FALSE
