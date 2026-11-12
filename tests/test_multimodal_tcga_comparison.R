@@ -46,11 +46,16 @@ run_test("Matched TCGA: joint-only requires no match in either modality", {
   v <- c(-2, -1, 0, 1, 2)
   w <- c(2, -1, -2, -1, 2)
   expression <- matrix(v, ncol = 1)
-  methylation <- matrix(w, ncol = 1)
-  joint <- cbind(c(v, w), c(w, v), c(w, w))
+  methylation <- cbind(w, rep(0, 5))
+  joint <- cbind(c(v, w), c(w, v), c(w, w), rep(0, 10))
   result <- mtcga_joint_only(joint, expression, methylation,
     c(rep("expression", 5), rep("methylation", 5)))
-  assert_equal(result$joint_only, c(FALSE, TRUE, FALSE))
+  assert_equal(result$joint_only, c(FALSE, TRUE, FALSE, FALSE))
+  undefined <- mtcga_joint_only(joint, matrix(0, 5, 1), methylation,
+    c(rep("expression", 5), rep("methylation", 5)))
+  assert_true(all(undefined$expression_defined == 0))
+  assert_true(all(!undefined$correlations_defined))
+  assert_true(all(!undefined$joint_only))
 })
 
 if (sys.nframe() == 0L) {

@@ -1,0 +1,5 @@
+"arm","folds","mean_C","mean_difference","paired_SE","validation"
+"expression",1,NA,NA,NA,"not validated by simulation"
+"methylation",1,NA,NA,NA,"not validated by simulation"
+"joint_grouped",1,NA,NA,NA,"not validated by simulation"
+"joint_pooled",1,NA,NA,NA,"not validated by simulation"

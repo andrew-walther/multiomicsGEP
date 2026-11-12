@@ -1,0 +1,5 @@
+"feature_ratio","methylation_active_fraction","testable","grouped_passed","pooled_passed","conclusion"
+1,0.03,FALSE,FALSE,FALSE,"not testable"
+5,0.03,FALSE,FALSE,FALSE,"not testable"
+1,0.15,FALSE,FALSE,FALSE,"not testable"
+5,0.15,FALSE,FALSE,FALSE,"not testable"

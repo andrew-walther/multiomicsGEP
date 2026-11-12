@@ -1,0 +1,4 @@
+not validated by simulation
+K=5; max_iter= 300 ; tol= 1e-05 ; alpha= 0.5
+point-Laplace L/F; Normal beta; w_S=1; canonicalize=TRUE; no strata or pruning.
+Task C saved folds and D4 genes; 10000 ranked CpGs; training-only z-scores; one worker.

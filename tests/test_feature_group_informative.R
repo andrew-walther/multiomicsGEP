@@ -61,6 +61,13 @@ run_test("Informative simulation: both true survival programs are scored separat
     rep(c("expression", "methylation"), each = 3), 1.96)
   assert_true(collision$match_collision)
   assert_equal(collision$false_active, 2L)
+  weak <- fit
+  weak$EF <- matrix(rep(c(0, 1, 0, -1, 0, 1), 3), 6)
+  no_match <- fgsim_recovery_two(weak, g,
+    rep(c("expression", "methylation"), each = 3), 1.96)
+  assert_false(no_match$recovered)
+  assert_false(no_match$recovered2)
+  assert_equal(no_match$false_active, 3L)
 })
 
 run_test("Informative simulation: separation is assessed only where expression passes", {

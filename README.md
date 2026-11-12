@@ -186,6 +186,24 @@ results are written under `results/benchmark_sim/outputs/feature_group_simulatio
 The original 80-fit output directories are preserved.
 Use `Rscript tests/test_feature_group_simulation.R` for its focused regression checks.
 
+## Matched-TCGA multimodal comparison
+
+This descriptive comparison is **not validated by simulation**. It requires
+Task C's existing private preparation and reuses its 144 patients and five
+folds without modifying it. Run
+`OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 Rscript results/multimodal_real/run_multimodal_tcga_comparison.R --smoke`
+for one fold, then omit `--smoke` for the full cohort and all five folds.
+The full run reuses the smoke fold only when source and input hashes agree.
+It retains capped fits. Aggregate tables carry the validation label, and
+patient fits/scores remain under ignored `data/`.
+
+For the separate two-direction `both_informative` simulation, run
+`OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 Rscript results/benchmark_sim/run_feature_group_simulation.R --informative --smoke`.
+Omit `--smoke` for all 120 fits in the new `_informative` directories. Program 1
+controls the recovery gate, and program 2 is descriptive. Grouped and pooled
+priors are compared only in cells where expression alone passes the gate.
+The simulation does not change the TCGA comparison's descriptive status.
+
 ## License and author
 
 [MIT](LICENSE). Patient data remain under their own terms of use.

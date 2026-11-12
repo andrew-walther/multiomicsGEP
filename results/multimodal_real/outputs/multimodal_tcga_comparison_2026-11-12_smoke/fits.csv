@@ -1,0 +1,5 @@
+"arm","fold","status","converged","iterations","seconds","C","error","validation"
+"expression",1,"capped",FALSE,300,32.88,0.694690265486726,NA,"not validated by simulation"
+"methylation",1,"converged",TRUE,97,41.242,0.610619469026549,NA,"not validated by simulation"
+"joint_grouped",1,"converged",TRUE,138,141.089,0.654867256637168,NA,"not validated by simulation"
+"joint_pooled",1,"converged",TRUE,156,80.568,0.63716814159292,NA,"not validated by simulation"
