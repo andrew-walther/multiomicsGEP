@@ -50,6 +50,10 @@ converged, and the programs tracked TCGA versus CPTAC rather than survival. The
 rank-transform arm reached 0.615 with the same cohort tracking. Later tasks use
 point-Laplace on z-scored input. See the
 [findings](docs/findings/2026-11-12-lf-prior-comparison-findings.md).
+A follow-up that removed the cohort mean difference, by a shifted per-cohort z-score or by
+cohort strata on X/sd, recovered part of the gap (0.635 and 0.628) but still failed both
+criteria, so point-Laplace stays
+([follow-up findings](docs/findings/2026-11-12-lf-prior-followup-findings.md)).
 
 ## Early benchmark archive paths (2026-11-11)
 

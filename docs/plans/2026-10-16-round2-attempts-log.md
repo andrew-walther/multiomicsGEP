@@ -2988,3 +2988,14 @@ qualify without the S-14 cell (CV −0.002, SE 0.004; calibration part passed by
 differences of 0.03 and 0.0003). Normal β stays. Real-data point-normal inclusion
 probabilities 0.94 to 1.00 in the full fit. Findings:
 `docs/findings/2026-11-12-beta-prior-comparison-findings.md`.
+
+## 2026-11-12 — A2 result
+
+Neither setup qualifies. The shifted z-score removes the cohort artifact (largest program
+correlation with cohort 0.05), but within-cohort CV C is 0.635 against 0.658 for
+point-Laplace (−0.023, SE 0.008), 1/5 folds converge, and the simulation gives 2.8 to 4.4
+false-active programs per fit. Cohort strata on X/sd keep the directions of task A's
+point-exponential programs (|r| ≥ 0.9999) and make 3 or 4 of them survival-active.
+Within-cohort C is 0.628 (−0.030, SE 0.015), and no fold converges. False-active
+coefficients in the shifted z-score simulation are mostly 0.1 to 0.3 of the matched
+program's |β| (largest 0.51). Findings: `docs/findings/2026-11-12-lf-prior-followup-findings.md`.

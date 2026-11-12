@@ -49,6 +49,15 @@ S-11 fits. Not tested: point-exponential with cohort strata or cohort mean offse
 Findings: [docs/findings/2026-11-12-lf-prior-comparison-findings.md](docs/findings/2026-11-12-lf-prior-comparison-findings.md).
 Runner: `results/benchmark_sim/run_lf_prior_comparison.R`.
 
+**Follow-up A2 (same day, requested by Andrew).** Removing the TCGA/CPTAC mean difference
+does not make point-exponential L and F competitive. A shifted per-cohort z-score
+(nonnegative, the same mean and SD in both cohorts) removed the cohort tracking but
+reached within-cohort CV C 0.635 against 0.658 (difference −0.023, SE 0.008, 1/5 folds
+converged), with 2.8 to 4.4 false-active programs per fit in simulation. Cohort strata on
+X/sd kept the cohort-separating programs, made 3 or 4 of them survival-active, and reached
+0.628 (−0.030, SE 0.015, 0/5 folds converged). Point-Laplace on per-cohort z-scores stays.
+Findings: [docs/findings/2026-11-12-lf-prior-followup-findings.md](docs/findings/2026-11-12-lf-prior-followup-findings.md).
+
 ## 2026-11-12 — Task A fits pooled training data; methylation study design for task C
 
 **Pooled training, revising the 2026-11-09 strata line (Andrew).** The working model
