@@ -3054,3 +3054,19 @@ from both parts, part (b) holds in only one cell (1%), so neither sparse prior q
 Shared point-normal qualifies only if S-14 is exempted from part (a) alone. The real-data
 all-zero check now tests the coefficients (largest |E[β]| below 10⁻⁸) instead of the
 survival-active count; no fold has every coefficient zero. The decision is unchanged.
+
+## 2026-11-12 — F repeat splits (registered before execution)
+
+The week plan repeats the five-fold split with four more seeds when a paired difference is
+within one SE. In task F that applies to the gene screen (D2 vs D4) and the rank (K = 5 vs
+7). Four new fold assignments use the S-11 construction (cohort × event cells, sampled
+round-robin) with seeds 2027 to 2030. For each seed: D2 and D4 at K = 7, and D4 at
+K = 2 to 12, five folds each (240 fits). Same model, inputs and metric as task F.
+
+**Summary rules (fixed before fitting).** Screen: the mean paired D2 − D4 difference over
+all five splits, with SE = SD of the five split-level mean differences / √5. D4 stays
+unless D2 is better by more than one SE. Rank: (i) the one-SE choice within each split
+(how often each K is chosen) and (ii) the one-SE rule on the curve averaged over the five
+splits, using as SE the average of the five splits' fold SEs at the best K. K = 5 is
+reported as stable if (ii) selects 5. Any different result is reported to Andrew, who
+adopted K = 5.
