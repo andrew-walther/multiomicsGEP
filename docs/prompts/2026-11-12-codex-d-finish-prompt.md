@@ -53,14 +53,20 @@ Recovery is scored against g only. Do not report raw-F or DF correlations.
 ## Decision 2: the arms and cells
 
 All fits use the working configuration: K = 5, point-Laplace L and F, per-program
-Normal β, w_S = 1, `canonicalize = TRUE`, pooled, no strata, no pruning, tolerance and
+Normal β, w_S = 1, `canonicalize = TRUE`, cohorts fitted together without strata, no pruning, tolerance and
 iteration limit from `config/globals.yml`. Seeds 1–10 in every cell.
 
 | Factor | Levels |
 |---|---|
 | Feature ratio, expression : methylation | 1:1 (50 : 50) and 1:5 (50 : 250) |
 | Methylation loading sparsity | same as expression (15% nonzero), or different (3% nonzero) |
-| Prior arm | grouped (`feature_group` by modality) and pooled (`feature_group = NULL`) |
+| Prior arm | grouped (`feature_group` by modality: one F prior per modality and program) and pooled (`feature_group = NULL`: one F prior per program shared across modalities) |
+
+In the grouped arm both modalities use the point-Laplace family, with the point-mass
+weight and Laplace scale estimated separately for each modality and program. Assert in
+every grouped fit that `fit$prior_F` has an `expression` and a `methylation` entry, each
+with K fitted priors, so a fit that silently fell back to one prior fails. The grouped arm
+is the multimodal model. The pooled arm is only its comparator.
 
 That is 4 cells × 2 arms × 10 seeds = 80 fits. Both arms in a seed get the identical
 scaled matrix, survival draw and initialization. Assert this as task E did.
@@ -106,7 +112,8 @@ or per-seed fits stay under ignored `data/`; commit only aggregate CSVs and `set
 
 ## Step 4: matched TCGA patients, descriptive
 
-Run only if the step-3 gate passes for the arm the rule selects. Use the 144 matched TCGA
+Run only if the step-3 gate passes for the arm the rule selects. Fit 3 below is the
+multimodal model and uses `feature_group` by modality, with the same `prior_F` assertion. Use the 144 matched TCGA
 patients and the five folds from task C, and task C's 10,000-CpG point-Laplace setup
 (CpG z-scores) with D4 genes for expression, both z-scored on training folds only. K = 5,
 working configuration. Four fits per fold:
