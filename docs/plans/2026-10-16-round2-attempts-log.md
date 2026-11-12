@@ -3104,3 +3104,36 @@ methylation full fit is survival-active); only its expression-correlation step i
 unassessed, because the expression PE full fit capped. Paired SEs 0.038 to 0.053; most
 expression folds capped. Descriptive; nothing adopted; no ICGC scoring. Findings:
 `docs/findings/2026-11-12-methylation-single-modality-findings.md`.
+
+
+## 2026-11-12 — K = 5 expression convergence and factor characterization
+
+Approved K = 5 numerical follow-up and descriptive analysis, implemented in
+`ba5e6a1f`. All eight capped K = 5 expression fits restarted with only max_iter
+changed to 1000. At K = 5, all converged in 305 to 438 sweeps, all 300-sweep ELBO
+prefixes reproduced exactly and no fitting warnings/errors occurred. K = 5 PL
+mean CV C changed 0.59116016 → 0.58231061 and PE 0.62236103 → 0.62021429. At K = 5,
+all seven completed methylation comparisons remain lower. No K = 5 prognostic
+methylation-only program qualifies, and the PE expression-correlation step is
+now assessed. The K = 5 methylation fits were not extended: three smaller PE full
+fits and one 100k PE fold remain capped.
+
+At K = 5, 19/35 factor-at-count instances meet the fixed descriptive specificity
+rule (9 PL, 10 PE), without requiring survival activity. K = 5 annotation uses
+450K hg19 version 0.6.1. At K = 5, 6,952/9,086 promoter CpG–D4-gene pairs have
+negative Spearman correlation, with 3,001 below −0.3 and 949 below −0.5. K = 5
+ABSOLUTE purity correlations use 143 complete patients. At K = 5, 19 contextual
+fgsea warnings and 18 undefined rows among 2,475 are retained without tuning.
+K = 5 limitations: n = 144, pre-fold screening/imputation, 2,218 D4 genes,
+descriptive specificity does not imply separation from expression score space,
+and no external scoring or adoption. K = 5 10k PL is recommended for a future
+authorized joint fit, not selected as a joint optimum.
+
+K = 5 verification: 849 full-suite tests passed, zero failed; focused tests
+15 + 15 assertions passed. Independent recomputation verified all paired stats,
+score/CCA correlations, specificity calls, annotations, overlap nulls, promoter
+correlations and purity values, plus representative enrichment values. The K = 5
+CSV sources and exact document text are in the final section of
+`docs/findings/2026-11-12-methylation-single-modality-findings.md`. K = 5 aggregate
+outputs are under `results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/`,
+including `factor_characterization/`. Patient-level K = 5 data remain ignored.
