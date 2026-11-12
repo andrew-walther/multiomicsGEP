@@ -942,64 +942,112 @@ undefined results. No substantive K = 5 numerical or code blocker was found.
 The K = 5 review identified unescaped absolute-correlation symbols in table
 headers, which were corrected.
 
+### Verification of the follow-up and a joint-overlap check
+
+All numbers in this follow-up were recomputed from the committed aggregate CSVs on
+2026-11-12: the 12 converged expression fits, the expression means (0.5823 PL,
+0.6202 PE), all seven paired differences and SEs, the 35 specificity calls, the
+canonical-correlation ranges, the 9,086 promoter pairs and their counts, and the
+maximum purity correlations. All reproduce. Two points qualify the specificity result.
+
+First, only the expression-correlation condition decides the calls. Every one of the
+35 methylation factors passes the fold-stability and cross-count recurrence conditions,
+and the 16 non-specific factors all fail on max |r| ≥ 0.5.
+
+Second, that condition compares a methylation factor with one expression factor at a
+time, so a factor can pass while being largely a combination of several expression
+factors. To check this, each methylation factor's full-fit scores were regressed on all
+five expression factor scores of the same setup (the PL full fit, and the PE full fit
+from the 1,000-sweep rerun), on the same 144 patients. The R² values are in
+`factor_characterization/joint_expression_r2.csv`.
+
+- Of the 19 factors called specific, 12 have R² < 0.25 and 3 have R² ≥ 0.5
+  (PL factor 4 at 25k, 0.517; PL factor 4 at 50k, 0.527; PL factor 5 at 50k, 0.664).
+  Those three are mostly explained by expression jointly.
+- The clearest methylation-specific factor is PL factor 2 at 100k and at all CpGs
+  (R² 0.055 and 0.036, purity |r| 0.20 and 0.15, recurrence |r| 0.963). Its leading
+  Hallmark sets are allograft rejection and TNF-α signaling via NF-κB, which suggests
+  an immune component, but the enrichment does not establish a cell type.
+- PL factor 4 at all CpGs (R² 0.146) and PL factor 5 at 100k (R² 0.193) are also
+  largely separate from expression. Most PE factors have R² of 0.04 to 0.24.
+- The one specific factor at 10k (PL factor 4) has R² 0.431, so 10k carries no clearly
+  separate methylation factor. This weakens the stated reason for recommending 10k for
+  a joint fit if the aim of the joint fit is methylation-specific structure. The larger
+  counts carry the most separate factors and still finish (full fit 7 to 11 minutes
+  under PL).
+
+The regression is in-sample on 144 patients with five predictors, so R² is biased
+upward by roughly 5/143 under no association. The check was not part of the
+registered follow-up and is descriptive.
+
+Enrichment discriminates poorly between factors. The Hallmark epithelial–mesenchymal
+transition set has 159 genes in the 2,218-gene universe and is the leading set for
+26 of 35 methylation factors and 7 of 10 expression factors, so it mainly indicates
+correlation with stromal genes.
+
 ## Text for the documents
 
-At K = 5 on the 144 matched TCGA patients, all eight capped expression fits
-converged after restarting with an approved 1,000-sweep cap. At K = 5, convergence
-occurred in 305 to 438 sweeps, every first-300-sweep ELBO prefix reproduced
-exactly, and no expression restart raised a fitting error or warning. At K = 5,
-the expression mean CV concordance changed from 0.59116016 to 0.58231061 for
-point-Laplace and from 0.62236103 to 0.62021429 for point-exponential. At K = 5,
-both expression full fits and all ten expression CV folds now converge.
+All results are at rank K = 5 on the 144 TCGA patients with matched expression,
+methylation and survival (75 deaths). The expression comparator uses the 2,218 genes
+selected by ranking each gene's mean and variance within each training cohort, keeping
+the 3,000 with the smallest rank sum, and intersecting the two cohorts' sets.
 
-At K = 5, point-Laplace methylation mean CV concordance is 0.54544204, 0.50350214,
-0.51126748, 0.50213560 and 0.51981370 at 10k, 25k, 50k, 100k and all 182,934
-eligible CpGs. At K = 5, the corresponding paired methylation-minus-expression
-differences are −0.03686857, −0.07880847, −0.07104313, −0.08017500 and −0.06249690,
-with paired SEs 0.03954779, 0.03764808, 0.04487644, 0.03559844 and 0.03280247.
-At K = 5, point-exponential methylation mean CV concordance is 0.53949843 at
-100k and 0.51170733 at all CpGs, with paired differences −0.08071587 and
-−0.10850696 and SEs 0.05250160 and 0.05122491. At K = 5, the 10k, 25k and 50k
-point-exponential methylation full fits still cap at 300 sweeps and have no CV,
-and one 100k point-exponential methylation fold still caps at 300. At K = 5,
-all seven completed methylation comparisons remain lower than expression.
+**Expression comparator.** The eight expression fits that stopped at 300 sweeps were
+restarted from the same initialization with a 1,000-sweep limit. All converged, in 305
+to 438 sweeps, and reproduced their first 300 ELBO values exactly. Both expression full
+fits and all ten expression folds now converge. Mean CV concordance for expression is
+0.582 under point-Laplace (0.591 before) and 0.620 under point-exponential (0.622 before).
 
-At K = 5, zero methylation factors meet the earlier prognostic methylation-only
-rule. At K = 5, a separate descriptive rule without survival activity identifies
-19 of 35 factor-at-count instances as methylation-specific, nine point-Laplace
-and ten point-exponential. The K = 5 rule requires max expression-factor |r| < 0.5,
-matched |r| ≥ 0.5 in at least three converged folds, and recurrence |r| ≥ 0.7 at
-another CpG count in the same setup. At K = 5, these are recurring factor
-instances rather than 19 independent biological programs, and first canonical
-correlations of 0.903 to 0.921 show substantial shared linear score structure.
+**Prediction.** Point-Laplace methylation mean CV concordance was 0.545, 0.504, 0.511,
+0.502 and 0.520 at 10k, 25k, 50k, 100k and all 182,934 eligible CpGs. The paired
+differences from expression were −0.037 (SE 0.040), −0.079 (0.038), −0.071 (0.045),
+−0.080 (0.036) and −0.062 (0.033). Point-exponential methylation reached 0.539 at
+100k and 0.512 at all CpGs, with differences −0.081 (0.053) and −0.109 (0.051). The
+point-exponential methylation full fits at 10k to 50k did not converge within 300
+sweeps and were not cross-validated, and one 100k point-exponential fold did not
+converge. Methylation is lower than expression in all seven comparisons.
 
-At K = 5, 6,952 of 9,086 unique promoter CpG–D4-gene pairs have negative Spearman
-correlation, a fraction of 0.76513317. At K = 5, 3,001 pairs are below −0.3 and
-949 are below −0.5. At K = 5, local ABSOLUTE purity is available for 143 of 144
-patients, and methylation-factor absolute correlations with purity reach 0.871691
-for point-Laplace and 0.575476 for point-exponential. At K = 5, four top-CpG versus
-top-expression-gene overlap tests have unadjusted permutation p < 0.05, but none
-passes 0.05/35. At K = 5, the enrichment output retains 18 undefined rows among
-2,475 and records 19 contextual numerical warnings.
+**Survival-active programs.** No methylation program is survival-active in the full
+fit and in at least three folds while correlating below 0.5 with every expression
+program.
 
-At K = 5, these results are descriptive, with n = 144, pre-fold CpG screening and
-imputation, a restricted 2,218-gene D4 universe, one missing purity estimate and
-the remaining capped methylation fits described above. At K = 5, enrichment does
-not independently establish subtype identity or a causal mechanism. At K = 5,
-no rank, setup, prior or CpG count is adopted, and no ICGC scoring was performed.
-At K = 5, 10,000 CpGs with point-Laplace is recommended as a computationally
-manageable starting count for a future authorized joint fit, rather than as an
-established optimal joint count.
+**Methylation factors compared with expression factors.** The two sets of patient
+scores share two strong directions: the first two canonical correlations are 0.90 to
+0.92 and 0.85 to 0.88 across the seven comparisons, and the fifth is 0.00 to 0.17.
+Under a descriptive rule that does not require survival activity (correlation below
+0.5 with every expression factor, matched in at least three folds and recurring at
+another CpG count), 19 of the 35 factor fits are methylation-specific, nine under
+point-Laplace and ten under point-exponential. These are recurring factors seen at
+several counts, not 19 separate programs. Regressing each factor on all five
+expression factors gives R² below 0.25 for 12 of the 19 and above 0.5 for three, so
+those three are mostly combinations of expression factors. The clearest
+methylation-specific factor is point-Laplace factor 2 at 100k and all CpGs (R² 0.06
+and 0.04). Its strongest gene-set associations are allograft rejection and TNF-α
+signaling, which suggests an immune component. The most purity-related methylation
+factor (point-Laplace factor 1) correlates up to 0.87 with ABSOLUTE purity (143 of 144
+patients) and overlaps expression factor 1.
 
-The K = 5 aggregate directory is
-`results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/`.
-The K = 5 expression and paired-CV sources are `expression_iteration1000.csv`,
-`expression_iteration1000_programs.csv`, `cv_summary_iteration1000.csv` and
-`programs_iteration1000.csv`. The K = 5 descriptive sources in its
-`factor_characterization/` subdirectory are `score_correlations.csv`,
-`canonical_correlations.csv`, `factor_stability.csv`, `top_cpgs_annotated.csv`,
-`annotation_enrichment.csv`, `fgsea_by_factor.csv`,
-`promoter_cpg_gene_correlations.csv`, `cross_modality_overlap.csv`,
-`purity_correlations.csv`, `analysis_warnings.csv`, `package_versions.csv` and
-`input_hashes.csv`. At K = 5, all patient-level inputs, scores and fits remain
-in ignored private storage.
+**CpG–gene associations.** Of 9,086 pairs of a promoter CpG and one of the 2,218
+genes, 76.5% have negative Spearman correlation between methylation and expression,
+3,001 are below −0.3 and 949 below −0.5. These are not adjusted for purity. The top
+CpGs of a methylation factor rarely sit at the top genes of its closest expression
+factor (0 to 4 of 100). Four comparisons have unadjusted permutation p < 0.05, and
+none survives a Bonferroni correction over 35.
+
+**Caveats.** The results are descriptive at n = 144. CpG screening and imputation
+preceded the fold split. Gene-set analysis is limited to the 2,218 genes, where the
+epithelial–mesenchymal transition set (159 genes) leads for most factors in both data
+types. 18 of 2,475 enrichment rows are undefined. No ICGC scoring was run, and no
+rank, setup, prior or CpG count is adopted. Codex recommended 10k CpGs under
+point-Laplace as a first count for a joint fit because it predicts best and is
+cheapest, but the clearly methylation-specific factors appear only at 100k and all
+CpGs. The choice of count is open.
+
+**Sources.** `results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/`:
+`expression_iteration1000.csv`, `cv_summary_iteration1000.csv`,
+`programs_iteration1000.csv`, and under `factor_characterization/`:
+`score_correlations.csv`, `canonical_correlations.csv`, `factor_stability.csv`,
+`joint_expression_r2.csv`, `top_cpgs_annotated.csv`, `annotation_enrichment.csv`,
+`fgsea_by_factor.csv`, `promoter_cpg_gene_correlations.csv`,
+`cross_modality_overlap.csv`, `purity_correlations.csv`, `analysis_warnings.csv`.
+Patient-level inputs, scores and fits remain in ignored private storage.
