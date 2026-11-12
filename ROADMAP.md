@@ -1,15 +1,47 @@
 # multiomicsGEP — Research Roadmap
 
-**Week of 2026-11-09.** The [week plan](docs/plans/2026-11-09-week-plan.md) orders five
-tasks: the L/F prior comparison (point-exponential on nonnegative input with
-`center_projection = TRUE` against the current point-Laplace fit), then the β prior, then
-methylation alone and the LB vs YFB study, then the M-modality fitter. It replaces the
-planned LB vs YFB study and the multimodal items below. External cohorts are now for
-validation scoring only (DECISIONS.md, 2026-11-09). Task F redoes the gene screen, input
-scaling and rank on training CV, and task G designs a results list that rebuilds when the
-model changes. Results freeze on 11/12. The November 13 progress-book chapter, writeup
-version and prelim Chapter 4 update are due 11/13. The plan also lists every open plan
-with its status.
+**Week of 2026-11-09.** The [week plan](docs/plans/2026-11-09-week-plan.md) fixed the
+working single-modality model from training data alone. External cohorts are for
+validation scoring only (DECISIONS.md, 2026-11-09). The model is YFB with point-Laplace L
+and F, per-program Normal β, per-cohort z-scores on 2,218 genes, pooled training data,
+`w_S = 1` and K = 5 (PROJECT_STATUS.qmd, Current priorities).
+
+- [x] A. L and F priors: point-Laplace stays, including after the cohort-mean follow-up.
+- [x] B. β prior: per-program Normal stays at K = 7 and K = 5.
+- [x] C. Methylation alone at K = 5: no methylation-only program, descriptive.
+- [ ] D. M-modality fitter: implemented as feature groups in `fit_ssbmf_yfb()`. The
+  registered simulation failed every cell and is being rerun.
+- [x] E. LB against YFB: YFB stays.
+- [x] F. Training-CV redo: the 2,218-gene screen and per-cohort z-score stay, K = 5 adopted.
+- [x] G. Results-rebuild design and local pilot.
+- [x] External scoring of the K = 5 working model (within E).
+- [ ] November 13 progress-book chapter, writeup version and prelim Chapter 4 update.
+
+**Next priorities (after 2026-11-12).**
+
+- [ ] **Fit stratified by cohort.** Fit the working model with cohort strata in the Cox
+  term, so each cohort keeps its own baseline hazard, and compare it with the pooled fit
+  in training CV. This week's tasks were pooled by decision (DECISIONS.md, 2026-11-12).
+- [x] **β prior caveat for C.** C was run with Normal β before B finished. B kept Normal β,
+  so C needs no rerun.
+- [ ] **D steps 3 and 4.** Finish the rerun of the two-modality simulation (empty-block fix,
+  true-risk concordance, expression-only arm). Run the descriptive matched-TCGA comparison
+  only if a prior passes the gate.
+- [ ] **Methylation follow-ups.** Characterize the K = 5 methylation programs, extend the
+  capped expression fits to more iterations, and obtain an independent review of C. Later
+  work includes CpG annotation, promoter and enhancer mapping and comparisons of programs
+  across modalities.
+- [ ] **Dead-program rule that does not depend on scale.** The floors that mark a program
+  dead act on standardized scores. Under cohort strata a program that mainly separates the
+  cohorts has a small within-cohort SD, is rescaled by a large factor and may not be marked
+  dead (DECISIONS.md, 2026-11-06). Settle this before the stratified fit.
+- [ ] **False-activity criterion in the near-threshold cell.** In B the working Normal prior
+  itself averages 3.0 false-active programs per fit in the S-14 cell (limit 1), as do both
+  sparse priors. Decide whether the limit applies there or the cell needs its own
+  criterion before the next prior comparison.
+- [ ] **Program classification at K = 5.** The rule naming the main prognostic programs was
+  set on the K = 7 fit. The K = 5 active set is {2, 4, 5}, with programs 3 and 4 near the
+  threshold.
 
 - [ ] **Reorganize PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md.**
   Requested by Andrew on 2026-11-11, deferred beyond the current housekeeping.

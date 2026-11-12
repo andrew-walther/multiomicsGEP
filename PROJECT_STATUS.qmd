@@ -2,7 +2,7 @@
 title: "multiomicsGEP — Project Status"
 subtitle: "Supervised Bayesian Matrix Factorization for Joint Genomics + Survival Modelling"
 author: "Andrew Walther"
-date: "November 6, 2026"
+date: "November 12, 2026"
 format:
   pdf:
     toc: true
@@ -21,16 +21,67 @@ execute:
 
 ## Current priorities
 
-The working single-modality model is `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on the
-2,218 D4 genes, at K = 7 without pruning. S-13 to S-15 (below) show that the survival weight
-can be chosen by cross-validation and that supervision helps near the detection threshold.
-On real data, CV keeps `w_S = 1`, and survival does not move the loadings in the tested range.
-Against DeSurv and D4 elastic-net Cox trained on the same 273 patients, the fixed fit's
-external concordance is within noise (paired differences 0.007 and 0.001, donor-bootstrap
-intervals including zero). A proposed classification rule names programs 2 and 3, but its
-simulation support is incomplete. The open methods problem is stability at weights large enough to
-move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study, now on the
-z-scored input, since task A (2026-11-12) kept point-Laplace L and F priors. Multimodal development stays deferred.
+**Working model (2026-11-12).** The working single-modality model is
+`fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` with these settings:
+
+- survival predictor η = (YF)β (YFB),
+- point-Laplace priors on L and F,
+- per-program Normal β,
+- expression z-scored within each cohort, on 2,218 genes: in each training cohort the
+  3,000 genes with the smallest sum of mean rank and variance rank, intersected across
+  TCGA and CPTAC, with no survival screen,
+- the 273 TCGA and CPTAC training patients pooled, without Cox strata,
+- K = 5 without pruning (`benchmark$k_working_yfb`).
+
+Every setting was chosen by simulation and five-fold training CV, with folds balanced by
+cohort and event status. The five external series only score the fixed model. Mean
+within-cohort CV concordance is 0.655. The pooled external concordance, weighted by
+comparable pairs within each series, is 0.628 (donor-bootstrap interval 0.596 to 0.662).
+Results reported earlier at K = 7 keep that label.
+
+**Open priorities.** The [ROADMAP](ROADMAP.md) lists them in order: a fit stratified by
+cohort, the rerun of the M-modality simulation and its real-data step, the methylation
+follow-ups, a dead-program rule that does not depend on scale, the false-activity
+criterion in the near-threshold cell, and a recheck of the program classification at
+K = 5. The open methods problem from November 6 remains: fits are not stable at survival
+weights large enough to move real-data loadings (about 10⁴).
+
+## Week of November 9: tasks A to F
+
+All six tasks used pooled training data and training CV only. The detailed sections
+below give the numbers.
+
+| Task | Question | Result | Status |
+|---|---|---|---|
+| A | Point-exponential L and F on nonnegative input, against point-Laplace | Point-Laplace stays. Point-exponential fails false activity and CV (0.573 against 0.658), and its programs track cohort. A follow-up that removed the cohort mean difference also failed. | complete, independently reviewed ([findings](docs/findings/2026-11-12-lf-prior-comparison-findings.md), [follow-up](docs/findings/2026-11-12-lf-prior-followup-findings.md)) |
+| B | Shared sparse β priors against per-program Normal β | Normal β stays, at K = 7 and K = 5. | complete, independently reviewed ([findings](docs/findings/2026-11-12-beta-prior-comparison-findings.md)) |
+| C | Methylation alone at 10k to 182,934 CpGs | Methylation CV concordance 0.50 to 0.55 against 0.59 for expression, and no methylation-only program. Descriptive. | complete at K = 5, numbers verified from the saved CSVs, no independent review, follow-up running ([findings](docs/findings/2026-11-12-methylation-single-modality-findings.md)) |
+| D | M-modality fitter as feature groups in `fit_ssbmf_yfb()` | Fitter implemented and matches the single-modality fit exactly. The registered two-modality simulation failed every cell. | open: rerun with the empty-block fix underway ([findings](docs/findings/2026-11-12-feature-group-fitter-findings.md)) |
+| E | LB with fold-in against YFB, same input | YFB stays. LB fails false activity in all three S-9 cells. On real data the two give the same programs and concordance. | complete, independently reviewed ([findings](docs/findings/2026-11-12-lb-yfb-study-findings.md)) |
+| F | Gene screen, input scaling and rank from training CV | The 2,218-gene screen and per-cohort z-score stay. K = 5 by the one-SE rule, also on four more fold partitions. | complete, independently reviewed ([findings](docs/findings/2026-11-12-training-cv-redo-findings.md)) |
+
+## M-modality fitter (2026-11-12, in progress)
+
+Task D adds a feature-group argument to `fit_ssbmf_yfb()`, so that each data type has its
+own loading prior and noise precisions while the scores L are shared. With no groups or
+one group the fitter reproduces the single-modality fit exactly, and the full test suite
+passes. The registered two-modality simulation failed the acceptance gate in every cell:
+38 of 40 grouped fits stopped when one modality's prior refitted to all zeros, and the
+pooled-prior arm recovered the planted program in at most 4 of 10 datasets. The real-data
+step was not run. A rerun with a fix for empty blocks, true-risk concordance and an
+expression-only arm is underway. See the
+[findings](docs/findings/2026-11-12-feature-group-fitter-findings.md).
+
+## LB against YFB (2026-11-12)
+
+Task E fitted LB, scored on new patients by fold-in, and YFB from the same start on the
+same input at K = 5. YFB stays. Under the registered rule LB is dropped because its mean
+false activity is 1.2 to 1.8 in all three S-9 cells at `w_S = 1`, where YFB passes. Neither
+model passes the near-threshold cell. On the training data the fitted predictors correlate
+0.998, every program has the same top-20 genes, and within-cohort CV concordance is 0.652
+for LB and 0.655 for YFB (difference 0.003, SE 0.004). External pair-weighted concordance
+is 0.627 and 0.628, and the donor-bootstrap interval for the difference (−0.002 to 0.005)
+contains zero. See the [findings](docs/findings/2026-11-12-lb-yfb-study-findings.md).
 
 ## Methylation alone (2026-11-12)
 
@@ -44,8 +95,8 @@ paired differences use capped expression states. See the
 
 ## Training-CV redo of screen, scaling and rank (2026-11-12)
 
-Task F made the gene screen, input scaling and rank choices from training CV alone. D4 and
-the per-cohort z-score were kept. Training CV is flat from K = 5 to 12 and lower below 5,
+Task F made the gene screen, input scaling and rank choices from training CV alone. The
+2,218-gene screen and the per-cohort z-score were kept. Training CV is flat from K = 5 to 12 and lower below 5,
 and the one-SE rule selects K = 5 for new work (0.655 against 0.658 at K = 7, all folds
 converged). Andrew adopted K = 5 on 2026-11-12 (`benchmark$k_working_yfb`). Results
 already reported at K = 7 keep that label. See the
