@@ -300,7 +300,7 @@ survival, followed by a Cox model on its program scores.
 **Results.** On `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` training patients, five-fold
 cross-validated concordance was `r num(cv_w1$mean_C)` for the supervised fit and
 `r num(cv_ts$mean_C)` for the two-step fit. The external results in this version come from the
-November 5 fixed fit and its two-step comparator (@sec-model-states). Scored once on
+November 4 fixed fit and its two-step comparator (@sec-model-states). Scored once on
 `r nrow(e_w1)` external series, their mean concordance was
 `r num(mean(e_w1$C))` against `r num(mean(e_ts$C))`, a pooled paired difference of
 `r sgn(pool5$diff)` (95% donor-bootstrap interval `r ci(pool_donor$lo, pool_donor$hi)`). Across the gene sets, the median survival share of the loading precision of the nonempty programs was
@@ -311,7 +311,7 @@ frozen $\alpha_F = 0$ benchmark, gave a paired difference of `r sgn(oct_reg_m$dC
 Its lower limit fell below the non-inferiority margin. In simulation, supervision matches the two-step fit when a prognostic
 program is easy to find. Supervision improved recovery near the detection threshold under strong survival. The real-data refit retained the unit weight, and the working fit remains unpruned.
 
-**External cohorts.** As of November 9, 2026, every modeling choice is made by simulation and
+**External cohorts.** From November 9, 2026, every modeling choice is made by simulation and
 five-fold cross-validation on the `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` TCGA and
 CPTAC training patients. This covers preprocessing, gene screening, priors, rank, survival
 weight and comparator tuning. The five external expression series and the matched ICGC
@@ -322,7 +322,7 @@ and rank 7. They are being redone on training cross-validation (@sec-week).
 **Work of November 9–13.** The analyses of this week compare priors on the loadings and the
 survival coefficients, fit methylation alone, test one fitter for several data types, compare
 two ways of linking survival to the programs, and redo the inherited choices on training data.
-Their results are pending review and appear as marked placeholders in @sec-week.
+Their results are in progress or pending review and appear as marked placeholders in @sec-week.
 
 # Methods {#sec-methods}
 
@@ -465,7 +465,7 @@ Earlier comparisons across the external series informed several choices inherite
 | Historical two-step comparator | July to August | External C compared rank and penalization configurations. Training CV chose the LASSO penalty | No: replaced by the $w_S = 0$ two-step fit | DECISIONS.md, 2026-08-20 |
 | October 15 supervised configuration | October 15 | Chosen in simulation, then scored once against a registered criterion (@sec-results-oct15) | Superseded | DECISIONS.md, 2026-10-15 |
 | Single-log correction | October 26 | External sensitivity quantified the effect of correcting the duplicate log. The correction followed the training recipe | Yes (single log) | [Single-log check](../../../docs/findings/2026-10-26-single-log-check.md) |
-| Current supervised fit | November 5 | Training cross-validation fixed the weight, gene-set size and screening arm before the external scoring (@sec-results-fair) | Yes | [External scoring findings](../../../docs/findings/2026-11-05-supervised-external-scoring-findings.md) |
+| Current supervised fit | November 4, scored November 5 | Training cross-validation fixed the weight, gene-set size and screening arm before the external scoring (@sec-results-fair) | Yes | [External scoring findings](../../../docs/findings/2026-11-05-supervised-external-scoring-findings.md) |
 
 : Every use of the five external series in a model-development choice, from the project decision log. "Chosen outright" means external concordance was the deciding criterion. "Informed" means it was one of several pieces of evidence. C is Harrell's concordance index. LASSO is the least absolute shrinkage and selection operator. {#tbl-external-uses}
 
@@ -482,7 +482,8 @@ is made by simulation and by five-fold cross-validation on the
 includes preprocessing, gene screening, the priors, the rank, the survival weight and the
 tuning of comparators. The five external expression series (Dijk, Moffitt, PACA-AU array,
 PACA-AU RNA-seq and Puleo) and the matched ICGC methylation set score a model only after it
-is fixed. Their results are reported, but they never choose between models or settings. The
+is fixed. The rule applies to work from that date. The DeSurv comparator reported here used its
+published settings rather than a new search on our folds. Their results are reported, but they never choose between models or settings. The
 earlier choices that used external outcomes and still shape the model are the 2,218-gene
 screen, per-cohort standardization without a rank transform, and rank 7. They are being
 redone on training cross-validation (@sec-week-redo).
@@ -498,12 +499,12 @@ With 273 patients, a held-out fifth would estimate concordance with a standard e
 
 Each external result in this version was produced by one of the model states in
 @tbl-model-states. Every external table and figure names its state in the caption. If the
-analyses of @sec-week change the working model, the results below keep their November 5
+analyses of @sec-week change the working model, the results below keep their November 4
 label, and the new model is scored once after it is fixed (@sec-week-external).
 
 | Model state | Configuration | How it was fixed | Where it appears |
 |--------------|--------------------------------|--------------------------|---------------|
-| November 5 fixed fit | `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on the 2,218-gene set, single log, each cohort z-scored gene by gene, rank 7 without pruning, point-Laplace priors on $L$ and $F$, Normal prior on $\beta$. Its two-step comparator uses the same input and rank at $w_S = 0$, followed by an unpenalized Cox fit | Survival weight, gene-set size and survival-screen arm by training cross-validation. Gene screen, scaling and rank inherited from earlier analyses that used external concordance | @sec-results-fair, @sec-results-comparators, @sec-biology, Appendix D |
+| November 4 fixed fit | `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on the 2,218-gene set, single log, each cohort z-scored gene by gene, rank 7 without pruning, point-Laplace priors on $L$ and $F$, Normal prior on $\beta$. Its two-step comparator uses the same input and rank at $w_S = 0$, followed by an unpenalized Cox fit | Fitted November 4 and scored externally once on November 5. Survival weight, gene-set size and survival-screen arm by training cross-validation. Gene screen, scaling and rank inherited from earlier analyses that used external concordance | @sec-results-fair, @sec-results-comparators, @sec-biology, Appendix D |
 | Frozen October 14 $\alpha_F = 0$ benchmark | Rank 7, survival absent from the loading update, `r big(genes$n_genes[genes$arm == "double"])` genes under the historical double log | Frozen October 14. Several choices used external concordance (@tbl-external-uses) | @sec-results-oct15 as the reference arm, @sec-results-alpha0 |
 | October 26 single-log refit of the benchmark | The frozen benchmark refitted with every cohort logged once and nothing else changed | Configuration of the frozen benchmark | @sec-results-alpha0 |
 | October 15 pre-registered supervised configuration | Same predictor at $w_S = 1$, supervised start, shared point-Laplace prior on $\beta$, historical double-log genes | Chosen in simulation, then scored once against a registered criterion | @sec-results-oct15 |
@@ -548,8 +549,8 @@ equal-weight mean of the within-series differences.
 
 # Work of November 9–13 {#sec-week}
 
-This section lists the analyses run in the week of November 9. Each was planned, with its
-criteria, before it ran. The results have not yet been reviewed, so each subsection gives the question and a
+This section lists the analyses planned for the week of November 9. Each was registered, with its
+criteria, before any fit. Their results are in progress or pending review, so each subsection gives the question and a
 marked placeholder for the result. Unless a subsection says otherwise, the simulation cells
 are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at
 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data
@@ -602,14 +603,16 @@ cross-validated concordance and the number of survival-active programs on the tr
 
 This analysis asks whether the single-modality model, fitted to methylation alone, finds
 prognostic programs that the expression fit does not. It uses the matched TCGA patients with
-expression, methylation and survival. CpGs with mean methylation $\beta$-value between 0.1 and 0.9
+expression, methylation and survival. CpGs with mean methylated fraction between 0.1 and 0.9
 on these patients (182,934 CpGs) are ranked by variance, and the fit is run on the top 10,000,
 25,000, 50,000 and 100,000 and on all of them. Both input and prior setups of
 @sec-week-lf are fitted, with a Normal prior on $\beta$. The comparison is with an expression
 fit on the same patients and folds. A methylation program counts as not seen in expression if
 its patient scores correlate below 0.5 with every expression program score and it is
 survival-active in the full fit and in at least three of five folds. With about 150 patients
-the concordance comparison is descriptive.
+the concordance comparison is descriptive. A full fit at each count is timed first, and
+cross-validation runs only for counts that converge. If the comparison of $\beta$ priors adopts
+a sparse prior, the methylation fits are repeated under it.
 
 ::: {.callout-note}
 **Result pending.** [RESULT C1: convergence and run time at each CpG count for each setup.]
@@ -699,7 +702,7 @@ $K$.]
 ## External scoring of the fixed working model {#sec-week-external}
 
 If the comparisons above change the working model, the external results in the rest of this
-version stay labeled with the November 5 fixed fit. The new model is fixed on training data
+version stay labeled with the November 4 fixed fit. The new model is fixed on training data
 first and then scored once on the external cohorts.
 
 ::: {.callout-note}
@@ -734,12 +737,12 @@ coefficient or noise precision was growing, so these folds showed no sign of div
 
 This configuration ($w_S = 1$, the 2,218-gene set, no survival screen) was fixed from these training
 results before any external cohort was scored. It was then scored once on the five external
-series (@tbl-external). This is the November 5 fixed fit of @tbl-model-states. Every external
+series (@tbl-external). This is the November 4 fixed fit of @tbl-model-states. Every external
 result in this section comes from it and its two-step comparator.
 
 ```{r}
 #| label: tbl-external
-#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. The pooled comparison reports intervals from resampling records and resampling donors, plus a sensitivity excluding PACA-AU RNA-seq. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated. Model state: November 5 fixed fit and its two-step comparator."
+#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. The pooled comparison reports intervals from resampling records and resampling donors, plus a sensitivity excluding PACA-AU RNA-seq. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated. Model state: November 4 fixed fit and its two-step comparator."
 ord <- match(e_w1$cohort, e_ts$cohort)
 xt <- data.frame(
   Series = cohort_label[e_w1$cohort],
@@ -792,7 +795,7 @@ fit.
 
 ```{r}
 #| label: fig-external-fit
-#| fig-cap: "External concordance with bootstrap intervals and calibration slopes with Wald intervals for the two fixed fits. Model state: November 5 fixed fit and its two-step comparator."
+#| fig-cap: "External concordance with bootstrap intervals and calibration slopes with Wald intervals for the two fixed fits. Model state: November 4 fixed fit and its two-step comparator."
 #| out-width: "100%"
 chapter_figure("sup_external_c")
 ```
@@ -1027,7 +1030,7 @@ The October 16 writeup led with a comparison against a 40-factor unsupervised fa
 followed by LASSO Cox (`r num(slog_m$C_frozen)` against `r num(k40_mean)`). That comparator was run only under the double log,
 and its factor cap was not matched to the model, so it is not used here. Against the
 rank-matched two-step model, fitted on the same `r big(genes$n_genes[genes$arm == "double"])` double-log genes, the earlier benchmark's advantage was `r num(k7$diff_estimate)` (95% interval
-`r ci(k7$diff_lower, k7$diff_upper)`). This is about the size of the November 5 fixed fit's advantage in @sec-results-fair, but the two comparisons come from different model states and inputs and are not paired.
+`r ci(k7$diff_lower, k7$diff_upper)`). This is about the size of the November 4 fixed fit's advantage in @sec-results-fair, but the two comparisons come from different model states and inputs and are not paired.
 
 ## Comparison with other prognostic models {#sec-results-comparators}
 
@@ -1047,7 +1050,7 @@ s14ts <- p7s14[p7s14$arm == "twostep", ]
 ```
 
 Both comparisons were registered before they were run. The supervised and two-step scores in
-this section are those of the November 5 fixed fit (@tbl-model-states). Every comparator was trained on the
+this section are those of the November 4 fixed fit (@tbl-model-states). Every comparator was trained on the
 `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` training patients only, and each score's direction was fixed on
 the training data. DeSurv used the authors' code, preprocessing and published settings (rank 3),
 which the authors selected on the same training cohorts [@Young2026]. The elastic-net Cox model
@@ -1058,7 +1061,7 @@ cohorts and all five external series.
 
 ```{r}
 #| label: tbl-comparators
-#| tbl-cap: "External performance of the fixed supervised fit and comparators trained on the same patients. Mean C is the equal-weight mean over the five series. The HR is per pooled external SD from a Cox model stratified by series, with a robust interval clustered on donor. The difference is supervised minus comparator C, averaged over series, with a 95% donor-bootstrap interval. Model state: November 5 fixed fit and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients."
+#| tbl-cap: "External performance of the fixed supervised fit and comparators trained on the same patients. Mean C is the equal-weight mean over the five series. The HR is per pooled external SD from a Cox model stratified by series, with a robust interval clustered on donor. The difference is supervised minus comparator C, averaged over series, with a 95% donor-bootstrap interval. Model state: November 4 fixed fit and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients."
 x <- aggregate(C ~ model, p6e[p6e$model %in% names(cmp_lab), ], mean)
 x <- merge(x, p6h[, c("model", "hr", "donor_lo", "donor_hi")], by = "model")
 x <- merge(x, p6p[, c("model", "diff", "lo", "hi")], by = "model", all.x = TRUE)
@@ -1070,7 +1073,7 @@ kable(data.frame(Model = cmp_lab[x$model], `Mean C` = num(x$C),
 ```
 
 Every paired concordance interval included zero (@tbl-comparators). Unsupervised EBMF followed by Cox regression
-gave differences, November 5 fixed fit minus EBMF, of `r paste(sgn(p7k$diff), collapse = ", ")` at ranks 7,
+gave differences, November 4 fixed fit minus EBMF, of `r paste(sgn(p7k$diff), collapse = ", ")` at ranks 7,
 15 and 40. At ranks 15 and 40 the unpenalized Cox step overfit, with external calibration slopes
 of `r num(min(p7ke$cal_slope[p7ke$model %in% c("EBMF_15", "EBMF_40")]), 2)` to
 `r num(max(p7ke$cal_slope[p7ke$model %in% c("EBMF_15", "EBMF_40")]), 2)`, so those differences
@@ -1096,7 +1099,7 @@ and after adjusting for DeCAF it was
 
 ```{r}
 #| label: fig-fixed-risk
-#| fig-cap: "External Kaplan–Meier estimates by fixed training cutpoint. Each model uses its own cutpoint. Curves are drawn from saved monthly survival estimates. The numbers at risk are in Appendix D. Model state: November 5 fixed fit and its two-step comparator."
+#| fig-cap: "External Kaplan–Meier estimates by fixed training cutpoint. Each model uses its own cutpoint. Curves are drawn from saved monthly survival estimates. The numbers at risk are in Appendix D. Model state: November 4 fixed fit and its two-step comparator."
 #| fig-width: 6.5
 #| fig-height: 5.1
 km_fixed <- rd("prompt7_desurv_style", "km_monthly.csv")
@@ -1220,7 +1223,7 @@ ggplot2::ggplot(panel, ggplot2::aes(Design, values, fill = Fit)) +
 
 # Programs of the supervised fit {#sec-biology}
 
-The programs in this section are those of the November 5 fixed fit (@tbl-model-states), and
+The programs in this section are those of the November 4 fixed fit (@tbl-model-states), and
 every external association reported here comes from that model state. The joint fit retained `r nrow(programs)` programs. Of those,
 `r length(program_active)` were survival-active (@tbl-programs).
 Program 2 had a protective coefficient at its positive pole, where the leading genes
@@ -1278,7 +1281,7 @@ descriptive associations characterize fixed programs.
 
 ```{r}
 #| label: tbl-signatures
-#| tbl-cap: "Spearman correlations with selected subtype and stromal signatures. The external interval is the range of point estimates across series. PurIST uses the saved basal-like probabilities. Model state: November 5 fixed fit."
+#| tbl-cap: "Spearman correlations with selected subtype and stromal signatures. The external interval is the range of point estimates across series. PurIST uses the saved basal-like probabilities. Model state: November 4 fixed fit."
 signature_pairs <- data.frame(program = program_active,
   signature = c("Moffitt basal-like", "Moffitt classical", "DeSurv stromal-immune"))
 signature_rows <- merge(signature_pairs, program_subtype, by = c("program", "signature"))
@@ -1354,7 +1357,7 @@ the other program scores.
 
 ```{r}
 #| label: tbl-external-program
-#| tbl-cap: "External program associations from separate Cox regressions. Entries are hazard ratios and Wald intervals per SD of the program score within series. Model state: November 5 fixed fit."
+#| tbl-cap: "External program associations from separate Cox regressions. Entries are hazard ratios and Wald intervals per SD of the program score within series. Model state: November 4 fixed fit."
 hr_rows <- split(program_external, program_external$program)
 hr_display <- lapply(hr_rows, function(z) {
   z <- z[match(e_w1$cohort, z$cohort), ]
@@ -1366,33 +1369,33 @@ kable(hr_table, row.names = FALSE)
 ```
 
 Kaplan–Meier curves use within-series tertiles of the fixed risk score or fixed program
-scores of the November 5 fit. Program scores are oriented using the training coefficients. The tertiles describe
+scores of the November 4 fit. Program scores are oriented using the training coefficients. The tertiles describe
 relative ranking within each series. They use a different set of cutpoints in each series.
 
 ```{r}
 #| label: fig-km-risk
-#| fig-cap: "External Kaplan–Meier curves for tertiles of the fixed supervised risk score, with numbers at risk. Model state: November 5 fixed fit."
+#| fig-cap: "External Kaplan–Meier curves for tertiles of the fixed supervised risk score, with numbers at risk. Model state: November 4 fixed fit."
 #| out-width: "100%"
 chapter_figure("sup_external_km_risk")
 ```
 
 ```{r}
 #| label: fig-km-program-2
-#| fig-cap: "External Kaplan–Meier curves by tertile of the Program 2 score oriented in the adverse training direction, with numbers at risk. Model state: November 5 fixed fit."
+#| fig-cap: "External Kaplan–Meier curves by tertile of the Program 2 score oriented in the adverse training direction, with numbers at risk. Model state: November 4 fixed fit."
 #| out-width: "100%"
 chapter_figure("sup_external_km_program_2")
 ```
 
 ```{r}
 #| label: fig-km-program-3
-#| fig-cap: "External Kaplan–Meier curves by tertile of the Program 3 score oriented in the adverse training direction, with numbers at risk. Model state: November 5 fixed fit."
+#| fig-cap: "External Kaplan–Meier curves by tertile of the Program 3 score oriented in the adverse training direction, with numbers at risk. Model state: November 4 fixed fit."
 #| out-width: "100%"
 chapter_figure("sup_external_km_program_3")
 ```
 
 ```{r}
 #| label: fig-km-program-5
-#| fig-cap: "External Kaplan–Meier curves by tertile of the Program 5 score oriented in the adverse training direction, with numbers at risk. Model state: November 5 fixed fit."
+#| fig-cap: "External Kaplan–Meier curves by tertile of the Program 5 score oriented in the adverse training direction, with numbers at risk. Model state: November 4 fixed fit."
 #| out-width: "100%"
 chapter_figure("sup_external_km_program_5")
 ```
@@ -1401,7 +1404,7 @@ chapter_figure("sup_external_km_program_5")
 
 ## Interpretation {#sec-interpretation}
 
-For the November 5 fixed fit, the external concordance difference was small and its interval
+For the November 4 fixed fit, the external concordance difference was small and its interval
 included zero. The estimated
 loadings correlated 1.000 with the unsupervised loadings at the unit survival weight. DeSurv
 and elastic-net Cox trained on the same patients performed similarly. The joint coefficient
@@ -1415,7 +1418,7 @@ the differences were smaller at realistic survival strength.
 
 ## Limitations {#sec-limitations}
 
-Earlier analyses used external concordance to choose the gene screen, the input scaling and the rank carried into the November 5 fixed fit. Each series informed at least one development decision (@sec-external-uses), so no external cohort is untouched by development. The training-only rule of November 9 applies to choices made from that date. The inherited choices are being redone on training data (@sec-week-redo). The external results in this version describe a model whose setup was partly chosen on the same cohorts. The PACA-AU array and RNA-seq records both contribute to
+Earlier analyses used external concordance to choose the gene screen, the input scaling and the rank carried into the November 4 fixed fit. Each series informed at least one development decision (@sec-external-uses), so no external cohort is untouched by development. The training-only rule of November 9 applies to choices made from that date. The inherited choices are being redone on training data (@sec-week-redo). The external results in this version describe a model whose setup was partly chosen on the same cohorts. The PACA-AU array and RNA-seq records both contribute to
 the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors
 while retaining both series in the estimand. DeSurv used its published settings rather than a
 new search on our training folds. `r nrow(ff) - cv_conv` of `r nrow(ff)` supervised training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are
@@ -1474,7 +1477,7 @@ the expected objective.
   their results.
 - **Summary, limitations and continuing work.** Revised to match the training-only rule and
   the week's analyses.
-- **Wording.** The Kaplan–Meier captions and text call the November 5 risk score "fixed"
+- **Wording.** The Kaplan–Meier captions and text call the November 4 risk score "fixed"
   rather than "frozen", to keep it distinct from the frozen $\alpha_F = 0$ benchmark.
 
 No number from the November 6 version has changed.
@@ -1506,7 +1509,7 @@ extension in this version uses the canonical single-modality objective as its st
 
 ```{r}
 #| label: tbl-comparator-series
-#| tbl-cap: "External discrimination and calibration by series. Concordance intervals are the saved series-level bootstrap intervals. Calibration is the Cox slope with its standard error. The paired donor-level comparison appears in the main text. Model state: November 5 fixed fit and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients."
+#| tbl-cap: "External discrimination and calibration by series. Concordance intervals are the saved series-level bootstrap intervals. Calibration is the Cox slope with its standard error. The paired donor-level comparison appears in the main text. Model state: November 4 fixed fit and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients."
 q <- subset(p6e, model %in% names(cmp_lab))
 q <- q[order(match(q$cohort, names(cohort_label)), match(q$model, names(cmp_lab))), ]
 kable(data.frame(Series = unname(cohort_label[q$cohort]), Model = unname(cmp_lab[q$model]),
@@ -1517,7 +1520,7 @@ kable(data.frame(Series = unname(cohort_label[q$cohort]), Model = unname(cmp_lab
 
 ```{r}
 #| label: tbl-fixed-risk-counts
-#| tbl-cap: "Numbers at risk for the fixed-cutpoint curves. Entries are low-risk / high-risk counts by time in months. Model state: November 5 fixed fit and its two-step comparator."
+#| tbl-cap: "Numbers at risk for the fixed-cutpoint curves. Entries are low-risk / high-risk counts by time in months. Model state: November 4 fixed fit and its two-step comparator."
 at_risk <- rd("prompt7_desurv_style", "at_risk.csv")
 lo_risk <- subset(at_risk, high == 0)
 hi_risk <- subset(at_risk, high == 1)
