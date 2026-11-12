@@ -6,7 +6,7 @@ which is not edited.
 
 This version starts as a copy of the November 6 version. It adds the rule, in force from
 November 9, that the external cohorts only score a model fixed on training data, defines the
-model state behind each external result and labels every external table and figure with it,
+model behind each external result, named by its configuration, and labels every external table and figure with it,
 and adds a section with marked placeholders for the analyses of November 9–13. No number from
 the November 6 version has changed. The section plan below and the [initial plan](_process/plan.md)
 describe the November 6 version and are kept for reference.
