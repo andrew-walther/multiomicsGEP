@@ -3132,8 +3132,13 @@ Verification (2026-11-12, `99849528`): all numbers reproduce. Regressing each
 methylation factor on all five expression factors gives R² < 0.25 for 12 of the 19
 specific factors and ≥ 0.5 for three, so the pairwise rule overstates separation. The
 clearest methylation-specific factor is PL factor 2 at 100k and all CpGs (R² 0.06,
-0.04). The specific factor at 10k has R² 0.43, so the CpG count for a joint fit remains
-open.
+0.04). At 10k the same signal is present (R² 0.80 on the 10k factors) but split across
+two factors that also share structure with expression (`8c47f661`). **Decided
+(Andrew, 2026-11-12):** report both counts. 10k CpGs under point-Laplace is used for
+prediction and as the first joint fit, and 100k is used to describe the
+methylation-specific factor. The 10k joint fit is checked for whether its scores recover
+that factor's direction. If they do not, a 100k joint fit follows after the
+grouped-prior balance check.
 
 K = 5 verification: 849 full-suite tests passed, zero failed; focused tests
 15 + 15 assertions passed. Independent recomputation verified all paired stats,
