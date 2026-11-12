@@ -1,0 +1,5 @@
+"arm","folds","mean_C","mean_difference","paired_SE","validation"
+"expression",5,0.591160163253393,NA,NA,"not validated by simulation"
+"methylation",5,0.545442039856616,NA,NA,"not validated by simulation"
+"joint_grouped",5,0.53128878331375,-0.059871379939643,0.0243247334629287,"not validated by simulation"
+"joint_pooled",5,0.536012377311841,-0.0551477859415522,0.0296090213360464,"not validated by simulation"
