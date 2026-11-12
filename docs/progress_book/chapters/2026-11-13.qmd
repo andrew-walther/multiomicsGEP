@@ -175,12 +175,41 @@ fit, and at least 9 of 10 fits converge, and if its within-cohort CV concordance
 lower than point-Laplace's by more than one SE of the paired difference, with every fold
 converged.
 
-**Result.** In progress.
+**Result.** Point-Laplace stays. Independent review of this result was pending on
+November 12. Details are in the
+[findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-lf-prior-comparison-findings.md)
+and Appendix C of Chapter 4.
 
-<!-- RESULT (L/F priors): recovery, mean false-active and converged counts per cell for each
-arm; mean within-cohort and pooled CV C per arm, paired difference with SE, folds converged,
-survival-active programs, program correlation with the cohort label; decision. Source:
-docs/findings/2026-11-12-lf-prior-comparison-findings.md once independently reviewed. -->
+| Planted share | Recovered (of 10), PL / PE | Mean false-active, PL / PE | Converged, PL / PE |
+|---|---|---|---|
+| 0.05% (near threshold) | 5 / 8 | 3.0 / 2.6 | 10 / 10 |
+| 0.25% | 10 / 10 | 0.9 / 3.0 | 10 / 10 |
+| 1% | 10 / 10 | 0.1 / 4.0 | 10 / 10 |
+| 5% | 10 / 10 | 0.0 / 4.3 | 10 / 10 |
+
+In simulation the point-exponential fit (PE) recovers the planted program as often as the
+point-Laplace fit (PL), and more often near the threshold, but it marks two to four other
+programs survival-active in every cell, against a limit of one. On the training data it
+does worse:
+
+| Prior and input | Mean within-cohort C | Difference from PL (SE) | Folds converged | Largest program correlation with cohort |
+|---|---|---|---|---|
+| Point-Laplace, z-scores (working model) | 0.658 | | 3/5 | 0.05 |
+| Point-exponential, X/sd | 0.573 | −0.085 (0.031) | 0/5 | 0.998 |
+| Point-exponential, X/sd with cohort strata | 0.628 | −0.030 (0.015) | 0/5 | 0.998 |
+| Point-exponential, shifted z-scores | 0.635 | −0.023 (0.008) | 1/5 | 0.05 |
+| Point-exponential, within-patient ranks | 0.615 | −0.043 (0.016) | 0/5 | 1.000 |
+
+X/sd keeps each cohort's mean level (median gene mean 11.0 in TCGA and 15.5 in CPTAC
+against a within-cohort SD of 1), so in the first point-exponential fit one program tracks
+TCGA versus CPTAC and no program is survival-active. A follow-up removed that difference in
+two ways. Cohort strata center the projection and the baseline hazard within cohort, and a
+shifted z-score adds each gene's minus-minimum to its z-scores so the input is nonnegative
+with equal cohort means. Both recover part of the lost concordance but stay more than one
+SE below point-Laplace, and the shifted input still gives 2.8 to 4.4 false-active programs
+per fit in simulation. Point-exponential is not competitive on these data even with the
+cohort difference removed.
+
 
 ## Prior on the survival coefficients
 
@@ -205,11 +234,31 @@ closer to 1 than Normal in at least two of the four cells, and has CV concordanc
 than Normal's by more than one SE. If both sparse priors qualify, the one with fewer
 false-active programs is chosen. A fit that sets every β to zero is reported as a failure.
 
-**Result.** In progress.
+**Result.** Normal stays, and the choice makes little difference. Independent review was
+pending on November 12. Details are in the
+[findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-beta-prior-comparison-findings.md)
+and Appendix C of Chapter 4.
 
-<!-- RESULT (beta prior): per-cell recovery, false-active, convergence and calibration slope
-for the three arms; paired CV C differences with SE; survival-active counts; point-normal
-inclusion probabilities; decision and the DECISIONS.md correction. -->
+A point-mass prior cannot be estimated from a single coefficient, so the sparse priors are
+shared across the seven programs. A shared Normal arm separates sharing from sparsity.
+
+| Prior | Mean within-cohort C | Difference from Normal (SE) | Survival-active programs per fold | False-active per fit, near-threshold cell |
+|---|---|---|---|---|
+| Normal (working model) | 0.658 | | 2.6 | 3.0 |
+| Shared point-Laplace | 0.649 | −0.008 (0.002) | 2.4 | 3.3 |
+| Shared point-normal | 0.656 | −0.002 (0.004) | 2.4 | 3.5 |
+| Shared Normal | 0.651 | −0.007 (0.004) | 2.6 | 4.1 |
+
+The sparse priors lower false activity a little where the planted program is clear (0.3
+against 0.9 at the 0.25% share). Near the threshold every prior has three to four
+false-active programs per fit, so neither sparse prior meets the limit, which Normal also
+misses there. Calibration slopes differ by at most 0.03. On the real data the shared
+point-normal prior gives inclusion probabilities of 0.94 to 1.00 for all seven programs, so
+it does not single out the three survival-active ones, and replacing the 1.96-SD activity
+rule with inclusion probabilities is not supported. The working model's earlier record said
+point-Laplace β; DECISIONS.md now records that the working model uses Normal β and that this
+comparison keeps it.
+
 
 ## Methylation alone
 
