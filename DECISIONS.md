@@ -39,6 +39,23 @@ methylation dominating L, and only after their own derivation.
 part may write its tests at any time. It edits `code/fit_ssbmf_yfb.R` only after Part 1's
 E fits have finished, because those fits use the same file.
 
+## 2026-11-12 — Task C: methylation alone adds no prognostic program at K = 5
+
+Methylation alone was fitted on the 144 matched TCGA patients (75 events) at K = 5, the
+adopted rank, at 10k, 25k, 50k, 100k and all 182,934 eligible CpGs (mean β in [0.1, 0.9]),
+under both setups, with Normal β and the expression fit on the same patients and folds as
+the comparator. All 57 fits completed without errors. Mean point-Laplace methylation CV
+concordance was 0.545, 0.504, 0.511, 0.502 and 0.520 across increasing counts, against
+0.591 for expression. Point-exponential was 0.539 (100k) and 0.512 (all), against 0.622
+for expression. No point-Laplace methylation program met the methylation-only rule. The
+only survival-active one (10k, program 5) was active in one fold and correlated 0.596 with
+an expression program. The point-exponential classification is undefined because the
+expression point-exponential full fit reached the sweep cap. Nothing is adopted. The
+comparison is descriptive at n = 144, and it uses pre-fold CpG screening and imputation.
+The K = 7 run was stopped at Andrew's request to prioritize K = 5, and its completed full
+fits are preserved. No ICGC scoring was run. Findings:
+[docs/findings/2026-11-12-methylation-single-modality-findings.md](docs/findings/2026-11-12-methylation-single-modality-findings.md).
+
 ## 2026-11-12 — Task F: training CV keeps D4 and the z-score input, and selects K = 5
 
 Task F redid, on the 273 training patients alone, the three choices that external
@@ -78,7 +95,11 @@ false-active programs in the S-14 cell. (Corrected after the independent review,
 found that an earlier version of this entry kept S-14 in the calibration count when
 reporting the "without S-14" case.) The four priors give nearly the same fits. On real data the shared point-normal
 inclusion probabilities are 0.94 to 1.00 for all seven programs in the full fit, so they
-do not support replacing the 1.96-SD activity rule. Per-program Normal β is kept. Task C
+do not support replacing the 1.96-SD activity rule. Per-program Normal β is kept.
+**Repeated at K = 5** (real-data CV, 18 fits, all converged): shared point-Laplace
+0.649 against Normal 0.655 (−0.006, SE 0.005) and shared point-normal 0.648 (−0.007, SE
+0.007). Both fail the CV part, so Normal stays. At K = 5 the shared point-normal fit equals the
+shared Normal fit, with inclusion probabilities of 1.00 for every program. Task C
 needs no rerun on account of B. Findings:
 [docs/findings/2026-11-12-beta-prior-comparison-findings.md](docs/findings/2026-11-12-beta-prior-comparison-findings.md).
 

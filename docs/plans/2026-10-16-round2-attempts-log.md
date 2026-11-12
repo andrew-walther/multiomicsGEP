@@ -3080,3 +3080,24 @@ definition. Mean C 0.610 to 0.618 at K = 2 to 4, 0.643 to 0.651 at K = 5 to 12. 
 converged: 25/25 at K = 5, 18/25 at K = 7, 1/25 at K = 12. Screen: D2 − D4 −0.002 (SE
 0.008), D2 better in 1 of 5 splits; D4 stays. Findings section "Repeat splits" in
 `docs/findings/2026-11-12-training-cv-redo-findings.md`.
+
+## 2026-11-12 — B repeated at K = 5
+
+Real-data β-prior CV repeated at the adopted K = 5 on the S-11 folds (18 new fits, all
+converged, no warnings; the per-program Normal reference is the rank-sweep fit). Within-
+cohort C: Normal 0.655, shared point-Laplace 0.649 (−0.006, SE 0.005), shared point-normal
+0.648 (−0.007, SE 0.007), identical to shared Normal. Both sparse priors fail the CV part;
+simulation parts were not rerun. Normal β stays. `b_rerun_paired.csv` in
+`results/benchmark_sim/outputs/training_cv_redo_2026-11-12/`.
+
+## 2026-11-12 — C result (K = 5)
+
+144 matched TCGA patients, 75 events, five saved folds, 182,934 eligible CpGs. K = 7 run
+stopped at Andrew's request after nine full fits; K = 5 completed instead: ten methylation
+full fits (seven converged, three capped), 35 methylation CV fits (34 converged), 12
+expression fits; 57 fits, no errors or warnings. Mean point-Laplace methylation CV C 0.545,
+0.504, 0.511, 0.502, 0.520 (10k to all) against 0.591 for expression; point-exponential
+0.539 (100k) and 0.512 (all) against 0.622. No point-Laplace program met the
+methylation-only rule; point-exponential classification undefined (expression full fit
+capped). Descriptive; nothing adopted; no ICGC scoring. Findings:
+`docs/findings/2026-11-12-methylation-single-modality-findings.md`.

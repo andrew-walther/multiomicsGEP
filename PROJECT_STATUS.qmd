@@ -32,6 +32,14 @@ simulation support is incomplete. The open methods problem is stability at weigh
 move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study, now on the
 z-scored input, since task A (2026-11-12) kept point-Laplace L and F priors. Multimodal development stays deferred.
 
+## Methylation alone (2026-11-12)
+
+At K = 5 on the 144 matched TCGA patients, methylation alone predicted worse than
+expression at every CpG count from 10k to all 182,934 eligible sites (CV concordance 0.50
+to 0.55 against 0.59), and no methylation program carried survival signal that expression
+lacked. The comparison is descriptive. See the
+[findings](docs/findings/2026-11-12-methylation-single-modality-findings.md).
+
 ## Training-CV redo of screen, scaling and rank (2026-11-12)
 
 Task F made the gene screen, input scaling and rank choices from training CV alone. D4 and
