@@ -46,8 +46,34 @@ verification are in `docs/findings/2026-11-11-early-benchmark-migration-findings
 Current November results, the frozen benchmark and private checkpoints retain
 their paths and contents.
 
+Later on November 11, after this prompt was first written, a bios-dissertation
+session made these changes. Read them before planning A to F:
+
+- Week plan, task F item 2 (`2a1c3a91`, `c0b45982`, `3b250851`): a fixed
+  comparison arm added by Andrew, run whatever prior task A chooses. Input is a
+  within-patient rank transform followed by division of each gene by its
+  within-cohort SD of the ranks, without centering ("rank transform, per-gene SD
+  scaling"), with point-exponential L and F, `center_projection = TRUE` and
+  `strata_id = cohort`. It is compared with the current z-score point-Laplace
+  model by five-fold training CV only. The plan records why per-gene SD scaling
+  was chosen over raw ranks or ranks divided by p (the fitter's fixed floors), and
+  the extra five fits if A keeps point-Laplace. The arm follows DeSurv's approach
+  without copying it.
+- Prelim Chapter 4 (`paper/prelim/project3-ssbmf.qmd`; `581487f8`, `52392829`,
+  `0211e846`, `c51faa15`): the Introduction is rewritten as Background & Motivation
+  and Aims & Contributions, with no results, dates or Chapter 1 references. Intro
+  citations were checked against their sources. `Young2026` now cites Amber Young's
+  2026 UNC dissertation (doi:10.17615/jcm5-0a36; DeSurv is its Chapter 2), not
+  the paper under review (DECISIONS in bios-dissertation, 2026-11-11). The gene
+  filter is described as adapted from DeSurv, because our 2,218 genes are not
+  DeSurv's 1,970. For W3, after the body revamp, recheck the Introduction's current
+  and planned contributions and its outline against the new sections, and remove the
+  history wording listed in `paper/prelim/notes/trimmed-material-2026-11.md`.
+  Keep the bib entries in `paper/ssbmf-refs.bib` identical to the bios-dissertation
+  master bib, or the sync's bib check fails.
+
 Andrew will discuss how and where tasks A to F should be done before starting
-them. Begin by confirming the current Git/checklist state and giving a concise
+them, including whether to use Codex for any of them. Begin by confirming the current Git/checklist state and giving a concise
 summary of those choices. Present the next proposed item's checklist line,
 implementation plan and done condition, then wait for Andrew's go-ahead. Do not
 interpret this handoff as authorization to run A to F or a results migration.
