@@ -7,9 +7,13 @@ That prompt produced `2bfd61b5` (D steps 1 and 2) and `153ac5ea` (E code). An
 independent review of both is recorded in the 2026-11-12 notes under Task D and Task E
 of the [week plan](../plans/2026-11-09-week-plan.md). Part 1 runs E's fits and external
 scoring. Part 2 is the D fitter, built the way Andrew chose on 2026-11-12: generalize
-`fit_ssbmf_yfb()` with feature groups. Parts 1 and 2 touch different files, so they can run
-in two separate Codex sessions at the same time. Each is pasted on its own with the
-shared rules at the end.
+`fit_ssbmf_yfb()` with feature groups. Parts 1 and 2 can run in two separate Codex sessions at
+the same time, each pasted on its own with the shared rules at the end, with one guard:
+Part 1's fits source `code/fit_ssbmf_yfb.R`, which Part 2 edits. Part 2 may write its
+tests first, but it must not modify `code/fit_ssbmf_yfb.R` or any file that fitter
+sources until no Part 1 fit is running (check with `pgrep -fl Rscript` and the Part 1
+run log) and Part 1 has committed its outputs. A half-edited fitter picked up by a newly
+started worker would silently change E's results.
 
 The settled choices are point-Laplace L and F (A `bdbd9989`, A2 `b37783c7`), per-program
 Normal β (B `b0c73b1c`), and D4 genes, the per-cohort z-score and K = 5 (F `6bc2980f`).
