@@ -68,3 +68,4 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 | 2026-11-11 | [branch-review-findings](2026-11-11-branch-review-findings.md) | Complete branch table, unique histories, slide-draft comparison and corrected branch pointers | complete; approved cleanup, preserved tips and retained rebuild branch documented |
 
 | 2026-11-12 | [LB/YFB study findings](2026-11-12-lb-yfb-study-findings.md) | Matched K = 5 LB fold-in and YFB projection comparison | complete, independently reviewed. Warning messages unavailable |
+| 2026-11-12 | [K = 5 exhibits findings](2026-11-12-k5-exhibits-findings.md) | Reported-fit exhibits of Chapter 4 and the November 13 writeup rebuilt at K = 5, with the K = 5 to K = 7 program correspondence and rebuild commands | complete, independently reviewed |

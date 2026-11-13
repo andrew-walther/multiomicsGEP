@@ -117,12 +117,21 @@ for the partial results, private checkpoints, commands and K = 5 handoff.
 
 ## Selected findings
 
-The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.
-Its mean external concordance is 0.620 across five dataset series, compared
-with 0.613 for the rank-matched two-step fit. The donor-bootstrap interval
-for the paired difference includes zero. On real data, survival supervision
-barely changes the loadings at the selected weight. The earlier benchmark
-and its estimates remain documented as historical results.
+The working rank-5 expression fit uses 2,218 genes from 273 TCGA and CPTAC
+patients. Its mean external concordance is 0.630 across five dataset series,
+compared with 0.631 for the rank-matched two-step fit. The donor-bootstrap
+interval for the paired difference is −0.010 to 0.008. On real data,
+survival supervision barely changes the loadings at the selected weight.
+The training-only weight search selects w_S = 1, with nested CV concordance
+0.658 and fold SE 0.027. Of its 216 fits, 27 inner fits reach the iteration
+cap. All selected outer fits and the full-data fit converge.
+
+The [rank-5 exhibit ledger](docs/findings/2026-11-12-k5-exhibits-findings.md)
+lists the aggregate tables, figures, interpretation changes and rebuild
+commands. Set `EXHIBIT_K=5 OMP_NUM_THREADS=1` for those commands to write
+separate rank-5 outputs. With `EXHIBIT_K` unset, historical paths and ranks
+are preserved. To summarize saved weight-search checkpoints, run
+`EXHIBIT_K=5 OMP_NUM_THREADS=1 Rscript results/benchmark_sim/run_yfb_supervised_real_refit.R summary`.
 
 In simulations with 2,000 genes, the planted prognostic program explained
 0.05%–0.2% of centered molecular variance before gene standardization. Strong

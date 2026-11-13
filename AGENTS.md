@@ -196,6 +196,13 @@ Use the [KL-2 registration](docs/plans/2026-11-06-flat-beta-pruning-rerun-plan.m
 to locate the repeat of the pruning comparison.
 
 
+To rebuild the reported-fit exhibits at the working rank, set `EXHIBIT_K=5`
+before the same runners and builders (`results/benchmark_sim/exhibit_rank.R`).
+Outputs go to `results/benchmark_sim/outputs/k5_working_2026-11-12/` and to
+`_k5` files beside the K = 7 figures and tables. Unset, nothing changes. The
+command order and file ledger are in the
+[K = 5 exhibits findings](docs/findings/2026-11-12-k5-exhibits-findings.md).
+
 For the supervised Chapter 4 figures, use the three rebuild commands and
 source ledger in `paper/prelim/notes/chapter4-number-sources-2026-11-06.md`. The external KM
 builder consumes fixed scores under the ignored `data/` directory. Keep
