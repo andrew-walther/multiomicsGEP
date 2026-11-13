@@ -7,6 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-13 | [weight-path-findings](2026-11-12-weight-path-findings.md) | Fixed methylation likelihood-weight path, all-truth block correlations and descriptive TCGA programs | complete; repeats exact; 150/150 simulation and 4/4 new TCGA converged; no usable weight or new TCGA program; task D paused |
 | 2026-11-12 | [modality-weights-findings](2026-11-12-modality-weights-findings.md) | Reconstruction weights, registered joint/exclusive recovery and fixed ICGC scoring | complete; neither weight effective; TCGA withheld; 200/200 converged, zero full pattern successes; fixed ICGC scoring descriptive |
 | 2026-11-12 | [multimodal-tcga-comparison-findings](2026-11-12-multimodal-tcga-comparison-findings.md) | Task D matched-TCGA expression, methylation and joint grouped/pooled F priors | complete; not validated by simulation; joint CV C below expression; no joint-only programs |
 | 2026-11-12 | [feature-group-fitter-findings](2026-11-12-feature-group-fitter-findings.md) | Task D grouped F priors, exact single-group compatibility and simulation checks | informative study: 120/120 converged, zero errors; one eligible cell, both priors pass; no helped/hurt verdict; 856 tests pass |

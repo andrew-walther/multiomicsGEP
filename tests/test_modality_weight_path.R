@@ -39,6 +39,18 @@ run_test("Weight path: reproducibility rejects a changed outcome", {
   x$recovered <- FALSE
   assert_true(grepl('Reproducibility',tryCatch({mwpath_reproduce(x,old); ''},error=conditionMessage)))
 })
+run_test("Weight path: unmatched all-zero fits have an explicit missing denominator", {
+  x <- data.frame(matched_program=c(NA,1,2),block_correlation=c(NA,NA,.8),
+    share=c(NA,0,.2),retained=c(FALSE,FALSE,TRUE),empty=c(NA,TRUE,FALSE))
+  z <- mwpath_matched_stats(x)
+  assert_equal(z$matched_defined,2L)
+  assert_equal(z$unmatched,1L)
+  assert_equal(z$empty,1L)
+  assert_equal(z$empty_or_under5,1L)
+  assert_equal(z$retained,1L)
+  assert_equal(z$correlation_defined,1L)
+  assert_near(z$mean_abs_correlation,.8)
+})
 if (sys.nframe()==0L) {
   r <- report_results('Weight path'); if(r$failed>0L) quit(status=1L)
 }

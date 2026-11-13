@@ -278,3 +278,10 @@ for the four approved descriptive TCGA fits. These commands refuse to overwrite
 existing output directories. Fits remain under ignored `data/`, and aggregate
 results go to the corresponding `weight_path` output directories. No CV or
 external scoring is part of this final study.
+
+The completed path is reported in
+[the weight-path findings](docs/findings/2026-11-12-weight-path-findings.md).
+All 150 simulation fits and four new TCGA fits converged. Repeated simulation
+arms matched exactly, but no reduced weight met the registered usability rule.
+The TCGA fits are descriptive, with no new program under the fixed reference
+comparison. Task D is paused after this report.

@@ -336,7 +336,7 @@ mwpath_run <- function(smoke=FALSE) {
     x <- fgsim_prepare(data,seed,programs=1:2)
     inputs <- fgsim_arm_inputs(x,5L)$grouped
     g3 <- unlist(Map(function(F,s) F[,3]/s,data$truth$F,x$scaled$sd),use.names=FALSE)
-    g3 <- g3/sqrt(sum(g3^2)); truth <- if(exclusive) cbind(x$g,g3) else x$g
+    g3 <- g3/sqrt(sum(g3^2)); truth <- cbind(x$g,g3)
     for(w in weights) {
       base <- data.frame(block=row$block,feature_ratio=5,methylation_active_fraction=row$fraction,seed=seed,weight=w)
       start <- proc.time()[['elapsed']]; warnings <- character()
@@ -405,6 +405,22 @@ mwpath_run <- function(smoke=FALSE) {
   invisible(tables)
 }
 
+#' Summarize matched blocks while distinguishing unmatched all-zero fits
+#' @param x One truth/modality/cell/weight group of matched aggregate rows.
+#' @return One-row statistics with explicit matched and undefined denominators.
+#' @examples
+#' # mwpath_matched_stats(matched_rows)
+mwpath_matched_stats <- function(x) {
+  defined <- is.finite(x$block_correlation); shares <- is.finite(x$share)
+  data.frame(seeds=nrow(x),matched_defined=sum(!is.na(x$matched_program)),
+    unmatched=sum(is.na(x$matched_program)),
+    mean_signed_correlation=if(any(defined)) mean(x$block_correlation[defined]) else NA_real_,
+    mean_abs_correlation=if(any(defined)) mean(abs(x$block_correlation[defined])) else NA_real_,
+    correlation_defined=sum(defined),mean_share=if(any(shares)) mean(x$share[shares]) else NA_real_,
+    share_defined=sum(shares),retained=sum(x$retained),empty=sum(x$empty,na.rm=TRUE),
+    empty_or_under5=sum(x$empty | (is.finite(x$share) & x$share<.05),na.rm=TRUE))
+}
+
 #' Summarize path cells and truth-specific block recovery without refitting
 #' @param out Completed path aggregate directory.
 #' @param smoke Whether selection is prohibited for a smoke run.
@@ -412,10 +428,21 @@ mwpath_run <- function(smoke=FALSE) {
 #' @examples
 #' # mwpath_summarize(out)
 mwpath_summarize <- function(out,smoke=FALSE) {
+  #' Read one aggregate table while retaining empty error strings
+  #' @param name Table basename.
+  #' @return Data frame.
+  #' @examples
+  #' # read('metrics')
   read <- function(name) read.csv(file.path(out,paste0(name,'.csv')),colClasses=if(name=='metrics') c(error='character') else NA)
   m <- read('metrics'); p <- read('precision'); t <- read('matched'); b <- read('patterns')
   if(nrow(m)!=(if(smoke) 15L else 150L) || anyDuplicated(m[c('block','methylation_active_fraction','seed','weight')]))
     stop('Incomplete or duplicate path metrics.')
+  #' Split an aggregate table by its identifying columns
+  #' @param x Aggregate data frame.
+  #' @param cols Grouping column names.
+  #' @return List of data frames.
+  #' @examples
+  #' # group(m, keys)
   group <- function(x,cols) split(x,interaction(x[cols],drop=TRUE,lex.order=TRUE))
   expected <- expand.grid(cell=1:3,seed=if(smoke) 1L else 1:10,
     weight=c(1,.7,1/sqrt(5),.3,.2))
@@ -428,6 +455,11 @@ mwpath_summarize <- function(out,smoke=FALSE) {
   #' @examples
   #' # check_rows(m, expected, c('block','seed','weight'))
   check_rows <- function(actual,wanted,cols) {
+    #' Encode numeric and character table keys at common comparison precision
+    #' @param x Key-containing data frame.
+    #' @return Character vector of row identifiers.
+    #' @examples
+    #' # key(actual)
     key <- function(x) do.call(paste,lapply(x[cols],function(z)
       if(is.numeric(z)) format(z,digits=14,trim=TRUE) else z))
     a <- key(actual); w <- key(wanted)
@@ -440,7 +472,7 @@ mwpath_summarize <- function(out,smoke=FALSE) {
   wantp <- merge(successful,expand.grid(program=1:5,modality=c('expression','methylation')))
   check_rows(p,wantp,c(fitkeys,'program','modality'))
   wantt <- do.call(rbind,lapply(seq_len(nrow(successful)),function(i)
-    merge(successful[i,,drop=FALSE],expand.grid(truth_program=if(successful$block[i]=='B') 1:3 else 1:2,
+    merge(successful[i,,drop=FALSE],expand.grid(truth_program=1:3,
       modality=c('expression','methylation')))))
   check_rows(t,wantt,c(fitkeys,'truth_program','modality'))
   wantb <- merge(successful[successful$block=='B',],data.frame(truth_program=1:3))
@@ -454,13 +486,7 @@ mwpath_summarize <- function(out,smoke=FALSE) {
       methylation_retained=sum(primary$retained),n_warnings=sum(x$n_warnings))
   }))
   matched <- do.call(rbind,lapply(group(t,c(keys,'truth_program','modality')),function(x) {
-    defined <- is.finite(x$block_correlation); shares <- is.finite(x$share)
-    data.frame(x[1,c(keys,'truth_program','modality')],seeds=nrow(x),
-      mean_signed_correlation=if(any(defined)) mean(x$block_correlation[defined]) else NA_real_,
-      mean_abs_correlation=if(any(defined)) mean(abs(x$block_correlation[defined])) else NA_real_,
-      correlation_defined=sum(defined),mean_share=if(any(shares)) mean(x$share[shares]) else NA_real_,
-      share_defined=sum(shares),retained=sum(x$retained),empty=sum(x$empty),
-      empty_or_under5=sum(x$empty | (is.finite(x$share) & x$share<.05),na.rm=TRUE))
+    data.frame(x[1,c(keys,'truth_program','modality')],mwpath_matched_stats(x))
   }))
   empty <- do.call(rbind,lapply(group(p,c(keys,'modality')),function(x)
     data.frame(x[1,c(keys,'modality')],empty=sum(x$empty),denominator=nrow(x))))
