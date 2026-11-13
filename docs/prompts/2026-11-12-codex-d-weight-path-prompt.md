@@ -8,6 +8,11 @@ Its results (`e51e03c3` to `1161999b`) are in
 Andrew approved this plan on 2026-11-12. The "Rules for both parts" section at the end of
 [the D/E follow-up prompt](2026-11-12-codex-d-e-followup-prompt.md) applies unchanged.
 
+**This is the last task D run for now.** Andrew is pausing the multimodal work after it,
+to prepare for the advisor meeting and the prelim submission. Report the results and stop.
+Do not start follow-up runs or propose new studies inside this task. Put suggested next
+steps in the findings note only.
+
 ## What the audit of the last run found
 
 The implementation matches the specification. The weight multiplies τ only in the
