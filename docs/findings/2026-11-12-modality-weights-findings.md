@@ -30,6 +30,30 @@ reconstruction coordinates are required. Projection normalization and fresh SVD
 starts themselves depend on block scale. Positive rescaling before training-fold
 z-scoring is tested separately for the supervised fit.
 
+## Fitter implementation and verification
+
+`code/modality_weights_yfb.R` validates named positive powers and computes both
+training-only rules. The leading eigenvalue uses the patient Gram matrix, avoiding
+a CpG-by-CpG allocation. Constant training features fail explicitly.
+`fit_ssbmf_yfb()` sends w_m τ_mj to reconstruction updates while retaining the
+unweighted τ estimate and projection. The objective weights both Gaussian terms.
+NULL and all-one weights bypass extra arithmetic.
+
+Andrew approved `F_prior_by_group = TRUE` as a separate option on November 12.
+FALSE pools the F prior while retaining feature-group labels for the weights.
+The all-one pooled path reproduces the ungrouped posterior and history bit for bit.
+Weighted pruning, posterior restarts and burn-in/warm starts are rejected because
+this study does not implement or evaluate them. Defaults remain unchanged.
+
+The focused run passed 25/25 tests, including the prior feature-group checks.
+The tests failed before the new API was implemented. The weighted objective was
+checked using numerical integration of loading KL under the returned prior, not
+only its cached KL. A separately recomputed objective also matched. Full suite:
+865 passed, zero failed. The existing bounded-β profile-likelihood fallback warning
+was retained. The revised zero-survival check uses a controlled reconstruction
+coordinate sweep with corresponding transformed moments, separately from the
+supervised raw-unit preprocessing test.
+
 ## Text for the shared status files
 
 Pending the registered simulation, TCGA decision and external scoring.

@@ -42,6 +42,7 @@ real_status <- NULL
 
 source("code/profile_cox_intercept.R")
 source("code/feature_groups_yfb.R")
+source("code/modality_weights_yfb.R")
 library(survival)
 library(ebnm)
 
@@ -232,11 +233,14 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
 #'   while the genomics term keeps Y.
 #' @return Scalar ELBO.
 #' @family F_surv_YFB_update
+#' @param modality_weight,feature_group Optional named reconstruction powers and modality labels.
 #' @examples
 #' # Used internally by prune_yf_nullcheck().
 yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
-                              neg_kl, w_S = 1, strata = NULL, survival_Y = Y) {
-  genomics <- update_tau(Y, EL, EL2, EF, EF2)$elbo_proxy
+                              neg_kl, w_S = 1, strata = NULL, survival_Y = Y,
+                              modality_weight = NULL, feature_group = NULL) {
+  feature_weight <- yf_modality_weights(modality_weight, feature_group, ncol(Y))
+  genomics <- yf_weighted_genomics(update_tau(Y, EL, EL2, EF, EF2), feature_weight)
   if (ncol(EF) == 0) return(genomics + neg_kl)
   ZF <- survival_Y %*% EF
   VZ <- (survival_Y^2) %*% pmax(EF2 - EF^2, 0)
@@ -490,6 +494,11 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 combined with profile_cox_intercept. The monitored ELBO uses a different surrogate
 #'                 than with the option off, so ELBO values are not comparable
 #'                 between the two settings.
+#' @param modality_weight NULL or named positive reconstruction powers, one per
+#'                 feature_group label. Priors and survival keep their own weights.
+#'                 NULL and all ones preserve historical arithmetic.
+#' @param F_prior_by_group Logical, default TRUE. FALSE retains modality labels
+#'                 for weighting while fitting one pooled F prior per program.
 #' @param feature_group NULL or one label per column of Y. A single group uses
 #'                 the unchanged numerical path. Multiple groups fit one F prior
 #'                 per group and program while keeping joint Z = sum_m Y_m F_m.
@@ -565,7 +574,9 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            survival_block_weight = FALSE,
                            beta_posterior = c("meanfield", "joint"),
                            center_projection = FALSE,
-                           feature_group = NULL) {
+                           feature_group = NULL,
+                           modality_weight = NULL,
+                           F_prior_by_group = TRUE) {
 
   # ---- S-13 options (derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/) ----------------
   # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
@@ -608,7 +619,14 @@ fit_ssbmf_yfb <- function(Y, time, status,
   record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
+  if (!is.logical(F_prior_by_group) || length(F_prior_by_group) != 1L || is.na(F_prior_by_group))
+    stop("F_prior_by_group must be TRUE or FALSE.")
   groups <- yf_feature_groups(feature_group, p)
+  if (!F_prior_by_group) groups <- NULL
+  feature_weight <- yf_modality_weights(modality_weight, feature_group, p)
+  if (!is.null(feature_weight) && (prune || prune_preserve_posterior ||
+      !is.null(posterior_init) || N_burnin > 0 || N_frozen > 0 || cox_warmstart))
+    stop("modality_weight does not support pruning, posterior restarts, burn-in or warm starts.")
   if (!is.null(groups)) empty_blocks <- matrix(0L, length(groups), K,
     dimnames = list(names(groups), paste0("program", seq_len(K))))
   F_group_priors <- if (!is.null(groups)) vector("list", K) else NULL
@@ -1039,6 +1057,9 @@ fit_ssbmf_yfb <- function(Y, time, status,
   EBeta_cov <- matrix(0, K, K); beta_sigma2 <- NULL; Mbeta <- matrix(0, K, K)
   beta_lik_weight <- if (canonicalize && survival_block_weight) 1 else w_S
   for (iter in 1:max_iter) {
+    # Reconstruction powers multiply both Gaussian precision and signal. Keep
+    # Tau itself unweighted: its featurewise MLE is unchanged by positive powers.
+    reconstruction_tau <- if (is.null(feature_weight)) Tau else Tau * feature_weight
     if (trace_supervision && !use_beta_cohort && beta_prior_mode == "shared") {
       trace_prior_before <- g_beta
       trace_x <- trace_s <- trace_A <- numeric(K)
@@ -1167,7 +1188,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
       # ---- (b) Update q(l_k): Patient Loadings — PURE GENOMICS ----
       # L does not appear in the Cox likelihood under eta = ZF * beta_tilde.
       # Uses update_L_surv_YFB_k() (NOT update_L_k from Cluster A).
-      res_L   <- update_L_surv_YFB_k(Tau, EF_aug[, k], EF2_aug[, k], R_k,
+      res_L   <- update_L_surv_YFB_k(reconstruction_tau, EF_aug[, k], EF2_aug[, k], R_k,
                                       prior_family = prior_LF)
       EL[, k]      <- res_L$mean
       EL2[, k]     <- res_L$second
@@ -1192,8 +1213,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
         # B_j = tau_j (R_k' E[l])_j + w_S { E[beta] (Y'(w z_-k))_j
         #       - E[beta^2] sum_i w_i y_ij (Z_k - y_j E[f_j])_i }
         R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
-        A_gen  <- Tau * sum(EL2_aug[, k])
-        B_gen  <- Tau * as.vector(crossprod(R_k, EL_aug[, k]))
+        A_gen  <- reconstruction_tau * sum(EL2_aug[, k])
+        B_gen  <- reconstruction_tau * as.vector(crossprod(R_k, EL_aug[, k]))
         if (is.null(groups) && is.null(prior_F_state[[k]])) {
           prior_F_state[[k]] <- if (prior_LF == "point_exponential")
             multimodal_yfb_fit_exponential_prior_ebnm(B_gen / A_gen, 1 / A_gen)
@@ -1205,7 +1226,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
           h_k <- if (joint_beta)
             w_S * w * (EBeta[k] * z - as.vector(ZF[, -k, drop = FALSE] %*% Mbeta[k, -k]))
           else w_S * w * z_no_k
-          upd <- yf_update_F_groups(Y, Tau, EL_aug[, k], EL2_aug[, k], R_k,
+          upd <- yf_update_F_groups(Y, reconstruction_tau, EL_aug[, k], EL2_aug[, k], R_k,
             survival_Y, w_S * w, h_k, EF_aug[, k], EF2_aug[, k], EBeta[k], EBeta2[k],
             prior_F_state[[k]], groups, prior_LF, h_beta_weighted = joint_beta)
           empty_blocks[, k] <- empty_blocks[, k] + upd$empty_blocks
@@ -1225,7 +1246,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
             w_S * w * (EBeta[k] * z - as.vector(ZF[, -k, drop = FALSE] %*% Mbeta[k, -k]))
           else w_S * w * z_no_k
           upd <- multimodal_yfb_update_F_mk(
-            survival_Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, h_k,
+            survival_Y, reconstruction_tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, h_k,
             as.vector(survival_Y %*% EF_aug[, k]), VZ_k, EF_aug[, k], EF2_aug[, k],
             EBeta[k], EBeta2[k], prior_F_state[[k]], prior_update = "ebnm",
             loading_prior_update = loading_prior_update, h_beta_weighted = joint_beta)
@@ -1247,7 +1268,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
         # alpha_F > 0 with beta_cohort_id is rejected at the top of this
         # function (alpha=alpha_F=0 here zero-weights A_surv/B_surv below
         # regardless of what EBeta_k/EBeta2_k contain).
-        res_F <- update_F_surv_YFB_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
+        res_F <- update_F_surv_YFB_k(reconstruction_tau, EL_aug[, k], EL2_aug[, k], R_k,
                                       EBeta_k      = EBeta[k],
                                       EBeta2_k     = EBeta2[k],
                                       YtWY_diag    = YtWY_diag,
@@ -1255,7 +1276,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
                                       prior_family = prior_LF,
                                       alpha        = alpha_F,
                                       w_surv       = w_S,
-                                      feature_group = feature_group)
+                                      feature_group = if (F_prior_by_group) feature_group else NULL)
         EF[, k]      <- res_F$mean
         EF2[, k]     <- res_F$second
         EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
@@ -1332,6 +1353,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
     # ========================================================================
     res_tau              <- update_tau(Y, EL_aug, EL2_aug, EF_aug, EF2_aug)
     Tau                  <- res_tau$Tau
+    # Weight the full log-likelihood, including n log(τ)/2.
+    res_tau$elbo_proxy <- yf_weighted_genomics(res_tau, feature_weight)
     history$elbo_proxy[iter] <- res_tau$elbo_proxy
     factor_pve_iter <- vapply(seq_len(K), function(k) {
       sum(EL[, k]^2) * sum(EF[, k]^2) / y_frob2
@@ -1543,6 +1566,11 @@ fit_ssbmf_yfb <- function(Y, time, status,
 
   if(profile_cox_intercept)result$profile_cox_intercept <- TRUE
   if (center_projection) result$projection_center <- projection_center
+  if (!is.null(modality_weight)) result$modality_weight <- modality_weight
+  if (!F_prior_by_group) {
+    result$F_prior_by_group <- FALSE
+    result$feature_group <- as.character(feature_group)
+  }
   if (!is.null(groups)) {
     result$feature_group <- as.character(feature_group)
     if (canonicalize) result$empty_blocks <- empty_blocks

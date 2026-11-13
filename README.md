@@ -22,6 +22,12 @@ The [modality-weight study](docs/findings/2026-11-12-modality-weights-findings.m
 derives reconstruction-only power weights for the grouped YFB model. Verify the
 weighted equations with
 `Rscript derivations/SSBMF-YFB-model-derivations/verify_derivation.R`.
+For concatenated, training-fold z-scored blocks, pass one `feature_group` label
+per feature and `modality_weight = c(expression = 1, methylation = 0.2)` to
+`fit_ssbmf_yfb()`. Compute both registered rules with
+`yf_modality_weight_rules(Y_train, feature_group)`. The default uses separate F
+priors. `F_prior_by_group = FALSE` pools them for the registered comparison.
+Run `Rscript tests/test_modality_weights_yfb.R` for the focused checks.
 
 ## Getting started
 

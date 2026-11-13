@@ -88,6 +88,10 @@ run_test("Modality weights: objective recomputes from posterior and returned pri
   tay <- calc_cox_taylor_yf(drop(Z %*% fit$EBeta), d$time, d$status)
   surv <- compute_survival_elbo(tay$logPL, tay$w, Z, Z^2 + VZ, fit$EBeta, fit$EBeta2)
   assert_near(tail(fit$history$elbo_full, 1), gen + surv + sum(observed$kls) - klf, 1e-7)
+  recomputed <- yf_canonical_elbo(d$Y, d$time, d$status, fit$EL, fit$EL2,
+    fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, sum(fit$neg_kl),
+    modality_weight = mw_weights, feature_group = mw_groups)
+  assert_near(recomputed, tail(fit$history$elbo_full, 1), 1e-7)
 })
 run_test("Modality weights: positive raw unit changes vanish before supervised fit", {
   d <- fg_fixture(); raw <- d$Y
