@@ -181,7 +181,7 @@ plot_forest_stacked <- function() {
       theme_nb() +
       theme(plot.title = element_text(size = 9.5, face = "bold", colour = ink))
     if (i < length(groups)) p <- p + theme(axis.text.x = element_blank())
-    else p <- p + labs(x = "Difference in within-cohort CV C from the working model (±1 paired SE)")
+    else p <- p + labs(x = "Difference in within-cohort CV C from the working configuration\nat the same rank (±1 paired SE)")
     p
   })
   heights <- vapply(groups, function(g) sum(d$group == g), numeric(1)) + 1.2
@@ -203,9 +203,6 @@ false_active_panel <- function(d, arms, title) {
   d$colour <- ifelse(d$arm == arms[1], blue, orange)
   last <- d[d$cell == cell_levels[4], ]
   ggplot(d, aes(cell, value, group = arm, colour = colour)) +
-    geom_hline(yintercept = 1, linetype = "dashed", colour = ink_muted, linewidth = 0.4) +
-    annotate("text", x = 0.6, y = 1.08, label = "Limit: 1 per fit", hjust = 0, vjust = 0,
-             size = 2.8, colour = ink_muted) +
     geom_line(linewidth = 0.5) +
     geom_point(size = 2) +
     geom_text(data = last, aes(label = arm), hjust = -0.35, size = 3.2, colour = ink) +

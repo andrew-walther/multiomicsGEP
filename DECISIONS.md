@@ -3,6 +3,12 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-13 — Pause multimodal development
+
+The preliminary expression and methylation results stand as reported. No
+multimodal configuration is adopted. Further development is paused, with ideas
+for later refinement recorded in the [balance ideas note](docs/notes/2026-11-13-multimodal-balance-ideas-notes.md).
+
 ## 2026-11-12 — Task D: balance modalities with likelihood weights; the multimodal model stays future work in Chapter 4 (Andrew)
 
 **Decided.** Expression and methylation are balanced by a power weight w_m on each

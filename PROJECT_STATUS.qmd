@@ -78,7 +78,7 @@ Paired differences from expression are −0.060 with SE 0.024 and −0.055 with 
 expression folds reach 300 sweeps. Every other fit converges. No full-data joint program
 qualifies as joint-only under the loading-match rule. The grouped and pooled paths also
 differ in loading-prior KL accounting, so absolute objectives do not isolate prior
-grouping. No joint model is adopted or scored externally. See the
+grouping. No joint model is adopted. Fixed joint fits were later scored in ICGC as a descriptive comparison. See the
 [simulation findings](docs/findings/2026-11-12-feature-group-fitter-findings.md) and
 [TCGA findings](docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md).
 

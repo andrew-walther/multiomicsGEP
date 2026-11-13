@@ -10,11 +10,11 @@ training, per-cohort z-scores on 2,218 genes and w_S = 1. The
 | Stage | Work | Evidence or next checkpoint |
 |---|---|---|
 | Done | Priors, gene screen, input scaling and rank comparisons | Training CV keeps the signed point-Laplace model and selects K = 5 |
-| Done | Rank-5 working-fit exhibits and weight search | Programs 2, 4 and 5 active, only Program 2 main. Weight search retains w_S = 1 |
+| Done | Rank-5 working-fit exhibits and weight search | Programs 2, 4 and 5 are survival-active. Only Program 2 is active in at least four of five CV folds, has an absolute standardized coefficient at least one-quarter of the largest, and accounts for at least 5% of risk-score variance through its signed covariance share. Weight search retains w_S = 1 |
 | Done | LB and YFB comparison | YFB retained. On real data the programs and predictions closely agree |
 | Done | Single-modality methylation fit | Shares two strong axes with expression (canonical correlations about 0.9) and adds a recurring methylation-specific, immune-like program from about 50k CpGs. Prediction is lower than expression |
-| Done | Feature-group fitter and initial joint evaluation | Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program. The weight path is done and the multimodal work is paused. At balanced feature counts separate priors find one-modality programs better than pooled priors, but methylation dominates when CpGs outnumber genes, and likelihood weights empty the methylation loadings |
-| Next | Cohort-stratified fit and scale-robust dead-program rule | Evaluate on training data before external scoring |
+| Done | Feature-group fitter and initial joint evaluation | Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program. The weight path is done and the multimodal work is paused. At balanced feature counts separate priors matched one-modality programs more often, but no fit recovered all three planted programs and a general advantage was not established. In TCGA, methylation dominates several shared programs. In simulation, likelihood weights empty the methylation loadings |
+| Next | Cohort-stratified fit and scale-robust identification of empty programs | Evaluate on training data before external scoring |
 | Open | Stronger loading supervision | Stable fits at weights that move loadings |
 | Paused | Multimodal modality balance | Next ideas in [balance-ideas notes](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md), starting with weighting methylation only in the score update |
 | Later | R package and final analysis snapshot | Follow methodological evaluation and final model decisions |
@@ -33,8 +33,8 @@ feedback and uses projected expression to estimate survival coefficients. The
 target YFB formulation lets Cox information influence $F$. In LB, the Cox
 predictor depends directly on $L$. A unified extension uses shared patient
 scores and modality-specific loadings, priors, and noise. A result at $M=1$
-must pass the same supervision gate before the unified fitter becomes the
-common implementation.
+must meet the same recovery, false-activity and convergence criteria before the
+unified fitter becomes the common implementation.
 
 The comparison draws on the visual separation of reconstruction and Cox
 regression in Young et al., DeSurv Figure 1. Figure 2 and supplement Figures
@@ -150,10 +150,9 @@ runs. The bound holds with the projection scale fixed. Recomputing that scale
 between sweeps changes the criterion and limits what acceptance guarantees. The sweep computes Cox working quantities, updates $L,F,\beta$ by
 factor, canonicalizes the factor scales and updates free precision.
 The frozen historical benchmark used zero loading feedback ($\alpha_F=0$)
-while still fitting survival coefficients. S-9 is planned. It would hold the Cox weight at one and reduce the molecular
-weight to test whether survival can influence loadings without the coefficient
-overconfidence seen with large Cox weights. The design calls for a fixed-noise
-pilot, a null check, and the original acceptance gate.
+while still fitting survival coefficients. The completed canonical-fitter simulation varied the survival weight on z-scored
+input and measured loading recovery, false activity and convergence. See the
+[November 6 chapter](chapters/2026-11-06.qmd) for results.
 
 ![YFB held-out prediction from feature alignment through C-index.](figures/held-out-prediction.svg)
 
@@ -169,14 +168,14 @@ observed survival pairs using the training-fixed risk orientation.
 | Result | What it establishes |
 |---|---|
 | Historical YFB mean Harrell C-index 0.627 across five PDAC series (range 0.549–0.657) | Predictive benchmark with zero loading feedback. The principal two-step comparator averaged 0.601 and the rank-matched comparator 0.623. |
-| Attempt 7 completed 360 fits, 153 nonconverged | The corrected shared-loading design failed the registered supervision gate |
-| S-8 fixed noise prevented runaway residual growth in the tested designs | None of 12 fits passed the screen. One guarded fit converged and recovered the planted factor, with two false-active factors. |
+| The corrected shared-loading simulation completed 360 fits, with 153 nonconverged | The tested weights did not meet the recovery, false-activity and convergence criteria |
+| Fixed noise prevented runaway residual growth in the tested designs | None of 12 fits passed the screen. One guarded fit converged and recovered the planted factor, with two false-active factors. |
 
 The external rank sweep informed the choice of starting rank seven, and some PACA-AU
 donors recur across series. The benchmark comparisons are descriptive and
 cannot isolate the effect of survival feedback.
 
-The registered simulation gate requires, at 2,000 features, at least three
+The simulation comparison required, at 2,000 features, at least three
 additional recoveries per ten paired datasets relative to the unsupervised
 fit in at least two variance cells, mean false-active count at most one, and at least 90% convergence.
 None of the tested joint weighting arms qualified. Recovery requires a match to the planted loading,
@@ -186,7 +185,7 @@ the existing canonical comparison recovered the planted program and
 converged in all ten replicates, with one false-active factor on average.
 That cell shows recovery was possible under the design.
 
-The separate S-8 Gaussian reference flagged
+The separate Gaussian reference flagged
 about 6.9 of seven truly null coefficients at a large likelihood weight,
 even with exact coefficient inference. This isolates a weighting issue in
 the Gaussian diagnostic.
@@ -211,28 +210,28 @@ Read the October 30 chapter for the normalization and the replay conditions.
 **14 of 25 evidence items documented.** Each line of this checklist counts once.
 Checked historical or diagnostic items have a saved result, even when it was
 negative. Open items describe evidence still needed for the survival-supervised
-method. Publication readiness depends on the supervision gate and the final
+method. Publication readiness depends on recovery, false activity, convergence and the final
 evidence, not on this count.
 
 **Re-verification required.** Many checked results use the historical
 $\alpha_F=0$ fit, which turns off survival feedback into the molecular
-loadings. Once a supervised fit passes the registered gate, re-verify the
+loadings. Once a supervised fit meets the recovery, false-activity and convergence criteria, re-verify the
 completed results against that fit before carrying them forward as evidence
 for the final method.
 
 ### Methodology
 
 - [x] Document LB and YFB predictors, model updates, and the historical benchmark.
-- [x] Audit precision balance, posterior variance, and numerical failure modes with registered mechanism tests. See the [October 30 findings](chapters/2026-10-30.qmd).
-- [x] Register loading-supervision tests with recovery, false-active, and convergence criteria (S-9, S-13, S-14). No arm passed every criterion. Supervision matches the two-step fit on easy programs and beats it near the detection threshold. See the [November 6 chapter](chapters/2026-11-06.qmd).
+- [x] Audit precision balance, posterior variance, and numerical failure modes with mechanism tests. See the [October 30 findings](chapters/2026-10-30.qmd).
+- [x] Evaluate loading supervision using recovery, false-active, and convergence criteria. Supervision matches the two-step fit on easy programs and beats it near the detection threshold. See the [November 6 chapter](chapters/2026-11-06.qmd).
 - [ ] Establish a reproducible final fitting specification with preprocessing, rank and weight selection inside training, failure handling, and independent review.
 
 ### Simulation
 
-- [x] Complete the corrected shared-loading grid and report recovery, false activity, and nonconvergence. The gate failed.
+- [x] Complete the corrected shared-loading grid and report recovery, false activity, and nonconvergence. The tested weights did not meet all criteria.
 - [x] Complete matched mechanism diagnostics with fixed and adaptive noise and explicit stall reporting. See the [October 30 evidence](chapters/2026-10-30.qmd).
 - [ ] Show final-method recovery and held-out discrimination under strong, weak, and mixed prognostic signals against matched unsupervised and survival baselines. Include rank recovery and replicate uncertainty.
-- [ ] Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal. Partly done: S-11 and S-13 permuted-survival nulls (0.2 to 1.1 false actives per dataset).
+- [ ] Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal. Partly done: Permuted-survival nulls (0.2 to 1.1 false actives per dataset).
 
 ### Real-data application
 
