@@ -1,46 +1,15 @@
-# paper/writeup/2026-11-13-writeup/
+# November 13 writeup
 
-Version of the project writeup dated November 13, 2026. **Draft. The analyses of November 9–13
-are reported except the fitter for several data types, which is in progress.** The previous
-version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md), which is not edited.
+This draft presents the rank-5 supervised YFB working model and its training and external results, including the rank-matched two-step comparison, risk groups and program exhibits. The earlier rank-7 fit remains the reference for the prior and input-scaling comparisons. Simulation results retain their original designs. The draft also reports methylation alone and a descriptive matched-TCGA feature-group comparison, which is **not validated by simulation**. The previous [November 6 version](../2026-11-06-writeup/README.md) remains the circulated record.
 
-This version presents the working model, the supervised YFB fit ($w_S$ = 1, 2,218 genes,
-rank 5), with its training cross-validation, survival-active programs and external
-concordance. Results that exist only for the earlier rank-7 fit (the two-step comparison,
-calibration slopes, hazard ratios, risk groups, comparator differences and the program
-analyses) are kept with "rank 7" in their captions and prose, and each is preceded in the
-source by an HTML comment `<!-- K5-EXHIBIT: ... -->` so it can be replaced by its rank-5
-version. The model is compared only with external benchmarks: the rank-matched two-step fit
-(EBMF at $w_S$ = 0, then Cox), EBMF at ranks 15 and 40 followed by Cox, DeSurv, elastic-net
-Cox and PurIST. The external cohorts only score a model fixed on training data, and every
-model is named by its configuration. The week's section reports the two prior comparisons,
-methylation alone, the comparison of survival through the latent scores or the projection
-and the training cross-validation of the gene screen, input scaling and rank. Comparisons
-with earlier versions of our own model (the October 15 supervision check, the $\alpha_F$ = 0
-benchmark and its single-log refit, the 40-factor LASSO comparator, historical loading
-matches, the table of past external-cohort uses and the earlier multimodal appendix) are
-removed. No retained number from the November 6 version has changed.
-The [initial plan](_process/plan.md) describes the November 6 version and is kept for reference.
-
-## Reproducibility
-
-The [source](writeup.qmd) evaluates the saved aggregate CSVs and stops if a
-required input is missing. The aggregate PACA-AU donor audit
-transcribes the October 16 [accuracy dispositions](../2026-10-16-writeup/_process/Accuracy_Review_Dispositions_10_16_26.md).
-The [number and figure ledger](NUMBER-SOURCES.md) identifies the input files
-for every table, figure and result in the text.
-
-From the repository root, with Quarto, R, knitr and a working LuaLaTeX
-installation, run:
+The [source](writeup.qmd) reads saved aggregate CSVs. The [number and figure ledger](NUMBER-SOURCES.md) lists the evidence. Rendering does not require patient records, fitted objects or a new analysis. From the repository root, with Quarto, R, knitr and LuaLaTeX installed, run:
 
 ```bash
-quarto render paper/writeup/2026-11-13-writeup/writeup.qmd --to html
-quarto render paper/writeup/2026-11-13-writeup/writeup.qmd --to pdf
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/2026-11-13-writeup/writeup.qmd --to html
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/2026-11-13-writeup/writeup.qmd --to pdf
 ```
 
-The PDF reuses the Chapter 4 vector figures directly. The HTML embeds SVG
-conversions of the same files. To regenerate the SVGs after a Chapter 4
-figure changes, run the command below from the repository root.
+The PDF uses Chapter 4 vector figures. HTML uses SVG conversions in `figures/`. To regenerate the SVGs after a Chapter 4 figure changes:
 
 ```bash
 for svg in paper/writeup/2026-11-13-writeup/figures/sup_*.svg; do
@@ -49,31 +18,8 @@ for svg in paper/writeup/2026-11-13-writeup/figures/sup_*.svg; do
 done
 ```
 
-The writeup needs the committed aggregate evidence and figures. Rendering
-does not need patient records, fitted objects or a new analysis. The
-[HTML](writeup.html) and [PDF](writeup.pdf) of this version are drafts. The
-November 6 version remains the circulated record.
+The source contains methods, evaluation, current analyses, results, program descriptions and discussion. Appendices document the derivation, changes from the prior version, comparator details and prior sensitivity. The HTML and PDF are draft outputs.
 
-## Contents
-
-| Part | Content |
-|---|---|
-| Summary | Aim, model, training and external comparison with the two-step fit, other comparators, simulation results |
-| 1 Methods | Notation, model, fitting and prediction, the two-step comparator, choice of the survival weight, choice of the gene screen, input scaling and rank, the rank-5 working model and the rank-7 fit behind the remaining results |
-| 2 Evaluation | Data, uses of the external cohorts, simulation designs, metrics |
-| 3 Work of November 9–13 | Analyses of the week: the two prior comparisons, methylation alone at rank 5, survival through the latent scores or the projection at rank 5, training cross-validation of the screen, scaling and rank, external scoring of the working model, and placeholders for the fitter for several data types |
-| 4 Results | The rank-5 working model (training CV, programs, external concordance), supervised fit against the rank-7 two-step fit, real-data loadings, the three simulation studies, the weight refit, training cross-validation of the gene screen, input scaling and rank (rank 5 selected for the next fit), pruning, comparison with other prognostic models, risk groups, program stability, mixed-signal and cross-design simulations |
-| 5 Programs | Programs of the rank-7 supervised fit and their correspondence with the rank-5 programs, enrichment and published signatures, individual programs, external associations and Kaplan–Meier curves |
-| 6 Discussion | Interpretation, limitations, continuing work |
-| Appendix A | Summary of the model derivation |
-| Appendix B | Changes since the November 6 version |
-| Appendix C | Comparator calibration by series and numbers at risk |
-| Appendix D | Sensitivity to the priors on the scores and loadings and on the survival coefficients, in simulation and training cross-validation |
-
-## Manuscript-planning extension
-
-The expanded source reports the fixed prognostic comparisons, individual
-program evidence, and the training-cutpoint risk groups. Appendix C gives
-the per-series calibration and risk counts. The two new plots are generated
-by `ggplot2` from saved aggregate CSVs at render time. The rebuild commands
-above also apply to the expanded source.
+The reviewed PDF contains 45 pages. The source evaluates its aggregate checks
+during both renders. Ten Chapter 4 figures are reused, alongside two plots
+generated from aggregate results.

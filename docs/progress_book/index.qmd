@@ -16,13 +16,10 @@ and examples from the saved results.
 Chapters are listed in the sidebar in date order. Click a date to jump
 to that meeting.
 
-The [October 30 update](chapters/2026-10-30.qmd) is the latest account of
-precision balance, numerical posterior checks and the registered survival-supervision
-decision test. Earlier chapters describe their own checkpoints.
-The evaluated single-modality benchmark still uses $\alpha_F=0$. A fully
-validated survival-supervised replacement remains an open research goal.
-The [November 6 chapter](chapters/2026-11-06.qmd) is this week's working
-chapter and is filled in as the work is done.
+The [November 13 chapter](chapters/2026-11-13.qmd) reports the working rank-5 model,
+its rebuilt exhibits, prior comparisons, methylation results, and the initial
+expression–methylation evaluation. The joint comparison is descriptive and not
+validated by simulation. Earlier chapters preserve their own configurations and results.
 
 ## Project synopsis
 
@@ -35,7 +32,7 @@ to recover clinically meaningful structure.
 - **Model:** $Y = LF^\top + E$ (genomics) coupled to a Cox proportional hazards model
   on survival, fit by Coordinate Ascent Variational Inference (CAVI) with Empirical
   Bayes Normal Means (EBNM) sub-updates for sparsity.
-- **Current recommended form:** YFB (`code/fit_cox_on_yf.R`), $\eta = (YF)\beta$. The
+- **Working form:** YFB (`code/fit_ssbmf_yfb.R`), $\eta = (YF)\beta$. The
   survival predictor is computed directly from observed expression, avoiding train/test
   projection mismatch.
 - **Data:** PDAC patient cohorts spanning RNA-seq and microarray platforms

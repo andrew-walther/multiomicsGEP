@@ -163,6 +163,8 @@ for the full comparison and limits.
 Documentation:
 
 - [Progress notebook](https://andrew-walther.github.io/multiomicsGEP/)
+- [November 13 writeup](paper/writeup/2026-11-13-writeup/README.md), with rank-5 exhibits and the descriptive joint evaluation
+- [Chapter 4 numerical sources](paper/prelim/notes/chapter4-number-sources-2026-11-06.md)
 - [Project status](PROJECT_STATUS.qmd)
 - [Decisions](DECISIONS.md)
 - [Roadmap](ROADMAP.md)

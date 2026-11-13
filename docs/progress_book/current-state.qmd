@@ -1,20 +1,27 @@
 # Current project state {.unnumbered}
 
-Updated November 6, 2026. The project aims to learn molecular loadings that
-respond reliably to survival while preserving interpretable molecular programs.
+Updated November 12, 2026. The working model is YFB at K = 5 with point-Laplace
+scores and loadings, per-program Normal survival coefficients, pooled TCGA and CPTAC
+training, per-cohort z-scores on 2,218 genes and w_S = 1. The
+[November 13 chapter](chapters/2026-11-13.qmd) reports the current evidence.
 
 ## Research status
 
 | Stage | Work | Evidence or next checkpoint |
 |---|---|---|
-| Done | Historical benchmark, expression sensitivity, Round2 diagnostics | Historical external prediction benchmark and dated findings |
-| Done | Supervision strength and weight choice (S-9 to S-15) | CV chooses `w_S`. Supervision helps near the detection threshold, and the real-data weight stays at 1. See the [November 6 chapter](chapters/2026-11-06.qmd) |
-| In progress | Stronger supervision on real data | Keep the fit stable at weights near 10⁴, where survival would move the real-data loadings |
-| Next | Registered LB vs YFB study and real-data comparators | Nonnegative input with projection-only centering. PurIST, DeSurv, elastic-net and clinical comparators (issue #6 item 7) |
-| Conditional | LB with fold-in prediction | Investigate if the YFB route stalls |
-| Conditional | Unified multimodal model | Use insights from modality-specific priors or shared factors if they solve supervision at M = 1 |
-| Conditional | R package | Start after the simulation gate and PDAC training cross-validation pass |
-| In progress | Prelim Part III talk | Draft deck in `presentation/prelim-slides/` (2026-11-03). Content freezes 2026-11-30, exam 2026-12-07 |
+| Done | Priors, gene screen, input scaling and rank comparisons | Training CV keeps the signed point-Laplace model and selects K = 5 |
+| Done | Rank-5 working-fit exhibits and weight search | Programs 2, 4 and 5 active, only Program 2 main. Weight search retains w_S = 1 |
+| Done | LB and YFB comparison | YFB retained. On real data the programs and predictions closely agree |
+| Done | Methylation alone and cross-count programs | Prediction lower than expression. 10k CpGs for prediction, 100k for factor description |
+| Done | Feature-group fitter and initial joint evaluation | Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program |
+| Next | Cohort-stratified fit and scale-robust dead-program rule | Evaluate on training data before external scoring |
+| Open | Stronger loading supervision and modality balance | Stable fits at weights that move loadings and a supported role for joint fitting |
+| Later | R package and final analysis snapshot | Follow methodological evaluation and final model decisions |
+
+The sections below preserve earlier model diagrams and technical notes. Their
+nonnegative reconstruction and historical priors describe previous configurations,
+not the working rank-5 model. The checklist counts completed diagnostics separately
+from evidence still needed for a final method.
 
 ## Model architecture
 
@@ -198,9 +205,9 @@ Read the October 30 chapter for the normalization and the replay conditions.
 
 ## Completed Results
 
-<progress value="10" max="23" aria-label="Evidence items completed">10 of 23</progress>
+<progress value="13" max="24" aria-label="Evidence items completed">13 of 24</progress>
 
-**10 of 23 evidence items documented.** Each line of this checklist counts once.
+**13 of 24 evidence items documented.** Each line of this checklist counts once.
 Checked historical or diagnostic items have a saved result, even when it was
 negative. Open items describe evidence still needed for the survival-supervised
 method. Publication readiness depends on the supervision gate and the final
@@ -233,6 +240,8 @@ for the final method.
 - [ ] Freeze the final training and validation protocol. Refit the accepted method and compare held-out C-index and uncertainty across cohorts against matched unsupervised, DeSurv, and applicable clinical baselines.
 - [ ] Report cohort-specific hazard ratios and uncertainty for final programs, donor-aware pooled inference where applicable, and risk-group curves using a training-selected threshold. Assess calibration if reporting absolute risk.
 
+- [x] Rebuild the working rank-5 figures, program tables, risk groups and comparator differences, with donor-aware external intervals and a completed weight-search ledger.
+
 ### Biological characterization
 
 - [x] Characterize historical survival-active factors with enrichment, PurIST concordance, external survival associations, and DeSurv overlap. See the [July 15 chapter](chapters/2026-07-15.qmd).
@@ -249,8 +258,8 @@ for the final method.
 
 ### Conditional multimodal extension
 
-- [ ] Demonstrate single-modality parity at $M=1$ under the unified specification.
-- [ ] Compare expression, methylation, and joint fits on matched samples, including modality-specific priors and feature-count sensitivity.
+- [x] Demonstrate single-group parity in the feature-group extension of the working fitter. Frozen pooled and stratified fixtures reproduce exactly. The older multimodal fitter remains historical.
+- [x] Complete the initial matched expression, methylation and joint comparison with separate and pooled loading priors at 10,000 CpGs. This diagnostic is not validated by simulation and shows no joint prediction gain. Joint feature-count sensitivity remains open.
 - [ ] Validate modality balance, convergence, and the incremental prediction and biological evidence from the joint fit.
 
 The evidence categories draw on DeSurv main Figures 2–4 and supplement

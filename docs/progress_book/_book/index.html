@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.19">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -45,7 +45,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -303,13 +303,13 @@ window.Quarto = {
 <p>For a complete session-by-session build log (every script, test, and decision), see <code>PROJECT_STATUS.qmd</code> at the repo root. This notebook is the meeting-facing summary of that log.</p>
 <p>Open the <a href="./current-state.html">current project state</a> for priorities, milestones and examples from the saved results.</p>
 <p>Chapters are listed in the sidebar in date order. Click a date to jump to that meeting.</p>
-<p>The <a href="./chapters/2026-10-30.html">October 30 update</a> is the latest account of precision balance, numerical posterior checks and the registered survival-supervision decision test. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>. A fully validated survival-supervised replacement remains an open research goal. The <a href="./chapters/2026-11-06.html">November 6 chapter</a> is this week’s working chapter and is filled in as the work is done.</p>
+<p>The <a href="./chapters/2026-11-13.html">November 13 chapter</a> reports the working rank-5 model, its rebuilt exhibits, prior comparisons, methylation results, and the initial expression–methylation evaluation. The joint comparison is descriptive and not validated by simulation. Earlier chapters preserve their own configurations and results.</p>
 <section id="project-synopsis" class="level2">
 <h2 class="anchored" data-anchor-id="project-synopsis">Project synopsis</h2>
 <p>Supervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix (gene expression) and a patient survival outcome, so the resulting gene expression programs (GEPs) are chosen to be both genomically coherent <em>and</em> prognostically relevant. Standard unsupervised factorization (PCA, NMF) has no reason to recover clinically meaningful structure.</p>
 <ul>
 <li><strong>Model:</strong> <span class="math inline">\(Y = LF^\top + E\)</span> (genomics) coupled to a Cox proportional hazards model on survival, fit by Coordinate Ascent Variational Inference (CAVI) with Empirical Bayes Normal Means (EBNM) sub-updates for sparsity.</li>
-<li><strong>Current recommended form:</strong> YFB (<code>code/fit_cox_on_yf.R</code>), <span class="math inline">\(\eta = (YF)\beta\)</span>. The survival predictor is computed directly from observed expression, avoiding train/test projection mismatch.</li>
+<li><strong>Working form:</strong> YFB (<code>code/fit_ssbmf_yfb.R</code>), <span class="math inline">\(\eta = (YF)\beta\)</span>. The survival predictor is computed directly from observed expression, avoiding train/test projection mismatch.</li>
 <li><strong>Data:</strong> PDAC patient cohorts spanning RNA-seq and microarray platforms (TCGA-PAAD and CPTAC for training, with 5 independent cohorts held out for external validation).</li>
 <li><strong>Research question:</strong> does coupling factorization to survival find real prognostic structure, and is that structure worth the added model complexity? Evaluated against three baselines: DeSurv (a published joint method), a two-step factorize-then-Cox baseline, and unsupervised EBMF.</li>
 </ul>

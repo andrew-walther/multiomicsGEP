@@ -9,8 +9,8 @@ and F, per-program Normal β, per-cohort z-scores on 2,218 genes, pooled trainin
 - [x] A. L and F priors: point-Laplace stays, including after the cohort-mean follow-up.
 - [x] B. β prior: per-program Normal stays at K = 7 and K = 5.
 - [x] C. Methylation alone at K = 5: no methylation-only program, descriptive.
-- [ ] D. M-modality fitter: implemented as feature groups in `fit_ssbmf_yfb()`. The
-  registered simulation failed every cell and is being rerun.
+- [x] D. Feature-group fitter, two-modality simulation reruns and descriptive matched-TCGA
+  comparison. No joint model is adopted. The real-data comparison is not validated by simulation.
 - [x] E. LB against YFB: YFB stays.
 - [x] F. Training-CV redo: the 2,218-gene screen and per-cohort z-score stay, K = 5 adopted.
 - [x] G. Results-rebuild design and local pilot.
@@ -24,13 +24,15 @@ and F, per-program Normal β, per-cohort z-scores on 2,218 genes, pooled trainin
   in training CV. This week's tasks were pooled by decision (DECISIONS.md, 2026-11-12).
 - [x] **β prior caveat for C.** C was run with Normal β before B finished. B kept Normal β,
   so C needs no rerun.
-- [ ] **D steps 3 and 4.** Finish the rerun of the two-modality simulation (empty-block fix,
-  true-risk concordance, expression-only arm). Run the descriptive matched-TCGA comparison
-  only if a prior passes the gate.
-- [ ] **Methylation follow-ups.** Characterize the K = 5 methylation programs, extend the
-  capped expression fits to more iterations, and obtain an independent review of C. Later
-  work includes CpG annotation, promoter and enhancer mapping and comparisons of programs
-  across modalities.
+- [x] **Two-modality simulation and matched-TCGA comparison.** The empty-block and
+  informative-scenario reruns are complete. Separate priors show no general advantage.
+  The descriptive joint fits predict less well than expression alone. Further modality
+  balance and joint prediction work remain open.
+- [x] **Methylation characterization and expression convergence.** Cross-count program
+  tracking, promoter mapping and independent review are complete. The eight capped
+  expression fits in the methylation study converged with a 1,000-sweep limit. Report
+  10,000 CpGs for prediction and the first joint fit, and 100,000 for the clearest
+  methylation-specific factor. Enhancer mapping remains future work.
 - [ ] **Dead-program rule that does not depend on scale.** The floors that mark a program
   dead act on standardized scores. Under cohort strata a program that mainly separates the
   cohorts has a small within-cohort SD, is rescaled by a large factor and may not be marked
@@ -39,9 +41,8 @@ and F, per-program Normal β, per-cohort z-scores on 2,218 genes, pooled trainin
   itself averages 3.0 false-active programs per fit in the S-14 cell (limit 1), as do both
   sparse priors. Decide whether the limit applies there or the cell needs its own
   criterion before the next prior comparison.
-- [ ] **Program classification at K = 5.** The rule naming the main prognostic programs was
-  set on the K = 7 fit. The K = 5 active set is {2, 4, 5}, with programs 3 and 4 near the
-  threshold.
+- [x] **Program classification at K = 5.** The active set is {2, 4, 5}, and only Program 2
+  meets the main-program rule. Programs 3 and 4 remain close to the survival-activity threshold.
 
 - [ ] **Reorganize PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md.**
   Requested by Andrew on 2026-11-11, deferred beyond the current housekeeping.

@@ -33,16 +33,18 @@ execute:
 - the 273 TCGA and CPTAC training patients pooled, without Cox strata,
 - K = 5 without pruning (`benchmark$k_working_yfb`).
 
-Every setting was chosen by simulation and five-fold training CV, with folds balanced by
-cohort and event status. The five external series only score the fixed model. Mean
+The current settings were retained or selected using simulation and five-fold training CV,
+with folds balanced by cohort and event status. Earlier screen and scaling decisions also
+used external results. Under the current rule the five external series only score the fixed model. Mean
 within-cohort CV concordance is 0.655. The pooled external concordance, weighted by
 comparable pairs within each series, is 0.628 (donor-bootstrap interval 0.596 to 0.662).
 Results reported earlier at K = 7 keep that label.
 
 **Open priorities.** The [ROADMAP](ROADMAP.md) lists them in order: a fit stratified by
-cohort, the rerun of the M-modality simulation and its real-data step, a dead-program rule that does not depend on scale, the false-activity
-criterion in the near-threshold cell, and a recheck of the program classification at
-K = 5. The open methods problem from November 6 remains: fits are not stable at survival
+cohort, further evaluation of modality balance after the descriptive joint comparison, a
+dead-program rule that does not depend on scale, and the false-activity interpretation
+in the near-threshold cell. The program rule has been reapplied at K = 5 and identifies
+only Program 2 as a main program. The open methods problem from November 6 remains: fits are not stable at survival
 weights large enough to move real-data loadings (about 10⁴).
 
 ## Week of November 9: tasks A to F
@@ -55,21 +57,41 @@ below give the numbers.
 | A | Point-exponential L and F on nonnegative input, against point-Laplace | Point-Laplace stays. Point-exponential fails false activity and CV (0.573 against 0.658), and its programs track cohort. A follow-up that removed the cohort mean difference also failed. | complete, independently reviewed ([findings](docs/findings/2026-11-12-lf-prior-comparison-findings.md), [follow-up](docs/findings/2026-11-12-lf-prior-followup-findings.md)) |
 | B | Shared sparse β priors against per-program Normal β | Normal β stays, at K = 7 and K = 5. | complete, independently reviewed ([findings](docs/findings/2026-11-12-beta-prior-comparison-findings.md)) |
 | C | Methylation alone at 10k to 182,934 CpGs | At K = 5, methylation CV concordance 0.50 to 0.55 against 0.582 for converged PL expression. Zero prognostic methylation-only programs, 19/35 descriptive factor instances meet specificity. | complete at K = 5, including expression restarts and independently reviewed characterization ([findings](docs/findings/2026-11-12-methylation-single-modality-findings.md)) |
-| D | M-modality fitter as feature groups in `fit_ssbmf_yfb()` | Fitter implemented and matches the single-modality fit exactly. The registered two-modality simulation failed every cell. | open: rerun with the empty-block fix underway ([findings](docs/findings/2026-11-12-feature-group-fitter-findings.md)) |
+| D | M-modality fitter as feature groups in `fit_ssbmf_yfb()` | Single-group fixtures reproduce exactly. Both 120-fit simulation reruns and the 24-fit matched-TCGA comparison are complete. The descriptive joint fit is not validated by simulation and predicts less well than expression alone. | complete as an initial evaluation, no joint model adopted ([simulation findings](docs/findings/2026-11-12-feature-group-fitter-findings.md), [TCGA findings](docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md)) |
 | E | LB with fold-in against YFB, same input | YFB stays. LB fails false activity in all three S-9 cells. On real data the two give the same programs and concordance. | complete, independently reviewed ([findings](docs/findings/2026-11-12-lb-yfb-study-findings.md)) |
 | F | Gene screen, input scaling and rank from training CV | The 2,218-gene screen and per-cohort z-score stay. K = 5 by the one-SE rule, also on four more fold partitions. | complete, independently reviewed ([findings](docs/findings/2026-11-12-training-cv-redo-findings.md)) |
 
-## M-modality fitter (2026-11-12, in progress)
+## Joint expression and methylation evaluation (2026-11-12)
 
-Task D adds a feature-group argument to `fit_ssbmf_yfb()`, so that each data type has its
-own loading prior and noise precisions while the scores L are shared. With no groups or
-one group the fitter reproduces the single-modality fit exactly, and the full test suite
-passes. The registered two-modality simulation failed the acceptance gate in every cell:
-38 of 40 grouped fits stopped when one modality's prior refitted to all zeros, and the
-pooled-prior arm recovered the planted program in at most 4 of 10 datasets. The real-data
-step was not run. A rerun with a fix for empty blocks, true-risk concordance and an
-expression-only arm is underway. See the
-[findings](docs/findings/2026-11-12-feature-group-fitter-findings.md).
+The feature-group fitter and its initial evaluation are complete. With no groups or one
+group it reproduces the frozen single-modality fits exactly on the tested pooled and
+stratified datasets. After the empty-block correction, all 120 low-variance simulation
+fits converge, but recovery remains low even for expression alone. All 120 informative
+two-direction fits also converge. In the equal-feature, sparse-methylation cell, the
+expression arm recovers the first direction in 9/10 datasets, separate priors in 10/10 and
+pooled priors in 9/10. The result does not establish a general separate-prior advantage.
+
+The matched-TCGA comparison is **not validated by simulation**. On 144 patients with 75
+events, K = 5, 2,218 genes and 10,000 CpGs, mean five-fold C is 0.591 for expression, 0.545
+for methylation, 0.531 for separate-prior joint fits and 0.536 for pooled-prior joint fits.
+Paired differences from expression are −0.060 with SE 0.024 and −0.055 with SE 0.030. Three
+expression folds reach 300 sweeps. Every other fit converges. No full-data joint program
+qualifies as joint-only under the loading-match rule. The grouped and pooled paths also
+differ in loading-prior KL accounting, so absolute objectives do not isolate prior
+grouping. No joint model is adopted or scored externally. See the
+[simulation findings](docs/findings/2026-11-12-feature-group-fitter-findings.md) and
+[TCGA findings](docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md).
+
+## Rank-5 exhibits and survival-weight search (2026-11-12)
+
+The dependent Chapter 4 and November writeup exhibits have rank-5 versions. Programs 2,
+4 and 5 are survival-active, and only Program 2 meets the main-program rule. The estimated
+supervised-minus-two-step difference is +0.004 with SE 0.004 in the original all-pairs
+training-CV comparison and −0.001 with donor interval −0.010 to 0.008 externally.
+The 216-fit weight search selects w_S = 1, with nested C 0.658 and SE 0.027. Twenty-seven
+inner fits reach the iteration cap, while every selected outer fit and the selected full
+fit converge. The fixed working fit and external scores are unchanged. See the
+[exhibit ledger](docs/findings/2026-11-12-k5-exhibits-findings.md).
 
 ## LB against YFB (2026-11-12)
 

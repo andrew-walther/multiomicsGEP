@@ -5,6 +5,35 @@ The paths headed `outputs/` below are relative to
 follow the builders listed below. The chapter preserves the frozen comparisons
 and distinguishes the two external resampling units.
 
+## Current rank-5 sources, updated November 12
+
+The working-fit exhibits now use rank 5. This section supersedes the rank-7
+working-fit rows below, which retain the original numerical provenance. Simulation
+and prior/input sensitivity results keep their own ranks and designs. The complete
+[file and command ledger](../../../docs/findings/2026-11-12-k5-exhibits-findings.md)
+identifies each old and new source.
+
+| Current chapter result | Aggregate evidence |
+|---|---|
+| Working within-cohort CV 0.655 and program coefficients | `outputs/lb_yfb_training_2026-11-12/{cv_metrics,cv_summary,program_coefficients}.csv` |
+| Supervised versus two-step CV 0.660 versus 0.656 and paired difference +0.004, SE 0.004 | `outputs/k5_working_2026-11-12/s11/{fits,summary}.csv`. All-pairs scoring and scaling prepared before folds differ from the within-cohort working-model CV |
+| Gene-count curve and screening | `outputs/k5_working_2026-11-12/s11/{summary,size_agreement,screen_paired}.csv` |
+| Survival weight, nested C 0.658, SE 0.027, and 27 capped inner fits | `outputs/k5_working_2026-11-12/s15/{weight_curve,nested_cv,verdict,metrics}.csv` |
+| External concordance, calibration and donor-aware paired intervals | `outputs/k5_working_2026-11-12/s12/*.csv`. Pooled means and intervals of the working fit also use `outputs/lb_yfb_external_2026-11-12/external_pooled.csv` |
+| Comparators, training-fixed cutpoints, risk groups and program rule | `outputs/k5_working_2026-11-12/prompt6_comparators/*.csv` and `prompt7_desurv_style/*.csv` under the same root |
+| Program genes, enrichment, signatures, external program HRs and program correspondence | `outputs/k5_working_2026-11-12/prelim_ch4/*.csv` and `program_correspondence/*.csv` |
+| Methylation expression restarts, cross-count program tracking and CpG-count choice | `results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/{expression_iteration1000,cv_summary_iteration1000}.csv` and `factor_characterization/{cross_count_tracking,joint_expression_r2}.csv`. See the methylation findings for the remaining characterization files |
+| Feature-group equivalence and loading-prior divergence checks | `tests/test_feature_groups_yfb.R` and `docs/findings/2026-11-12-feature-group-fitter-findings.md` |
+| Two-modality low-variance and informative-scenario simulations | Output directories and rebuild commands in `docs/findings/2026-11-12-feature-group-fitter-findings.md`. Recovery of the second informative direction is descriptive |
+| Descriptive matched-TCGA joint comparison | `results/multimodal_real/outputs/multimodal_tcga_comparison_2026-11-12/{fits,cv_summary,full_program_matches,precision}.csv`. Not validated by simulation. The expression reference retains three capped folds and is distinct from the converged methylation-study reference |
+
+The current-fit vector figures and table fragments have a `_k5` suffix. Set
+`EXHIBIT_K=5 OMP_NUM_THREADS=1` before the builders below, and include
+`make_figure_fixed_cutpoint_km.R` and `make_tables_comparators.R` for the
+fixed-cutpoint curve and comparator/program-rule tables. Full command order is
+in the exhibit ledger. The archived October verification figures are unchanged
+and are not referenced by the current chapter.
+
 ## Rebuild the figures and tables
 
 Run from the repository root:

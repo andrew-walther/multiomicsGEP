@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.19">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -43,7 +43,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -240,7 +240,10 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#what-the-two-scores-mean" id="toc-what-the-two-scores-mean" class="nav-link" data-scroll-target="#what-the-two-scores-mean"><span class="header-section-number">15.9.1</span> What the two scores mean</a></li>
   </ul></li>
   <li><a href="#earlier-choices-redone-on-training-data" id="toc-earlier-choices-redone-on-training-data" class="nav-link" data-scroll-target="#earlier-choices-redone-on-training-data"><span class="header-section-number">15.10</span> Earlier choices redone on training data</a></li>
-  <li><a href="#external-scoring-of-the-fixed-working-model" id="toc-external-scoring-of-the-fixed-working-model" class="nav-link" data-scroll-target="#external-scoring-of-the-fixed-working-model"><span class="header-section-number">15.11</span> External scoring of the fixed working model</a></li>
+  <li><a href="#external-scoring-of-the-fixed-working-model" id="toc-external-scoring-of-the-fixed-working-model" class="nav-link" data-scroll-target="#external-scoring-of-the-fixed-working-model"><span class="header-section-number">15.11</span> External scoring of the fixed working model</a>
+  <ul class="collapse">
+  <li><a href="#survival-weight-refit-at-k-5" id="toc-survival-weight-refit-at-k-5" class="nav-link" data-scroll-target="#survival-weight-refit-at-k-5"><span class="header-section-number">15.11.1</span> Survival-weight refit at K = 5</a></li>
+  </ul></li>
   <li><a href="#open-items" id="toc-open-items" class="nav-link" data-scroll-target="#open-items"><span class="header-section-number">15.12</span> Open items</a></li>
   </ul>
 </nav>
@@ -270,15 +273,15 @@ ul.task-list li input[type="checkbox"] {
 <p>This chapter covers the week of November 9–13. The plan for the week is <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/plans/2026-11-09-week-plan.md"><code>docs/plans/2026-11-09-week-plan.md</code></a>. It starts with the decision to use the external cohorts only for scoring and the two design decisions of November 12, then the housekeeping completed early in the week, then the six analyses in the order they decide the working model. Each analysis section gives its question and design. Results are added once they are independently reviewed, and until then the section is marked in progress.</p>
 <section id="executive-summary" class="level2" data-number="15.1">
 <h2 data-number="15.1" class="anchored" data-anchor-id="executive-summary"><span class="header-section-number">15.1</span> Executive summary</h2>
-<p><strong>Where things stand.</strong> The working model is YFB with point-Laplace priors on L and F, a Normal prior on β, z-scores within cohort on 2,218 genes, pooled TCGA and CPTAC training, w_S = 1 and K = 5. Every one of these choices now rests on simulation and five-fold training cross-validation alone. The external cohorts only score the fixed model.</p>
+<p><strong>Where things stand.</strong> The working model is YFB with point-Laplace priors on L and F, a Normal prior on β, z-scores within cohort on 2,218 genes, pooled TCGA and CPTAC training, w_S = 1 and K = 5. The current choices were retained or selected using simulation and training cross-validation. Earlier development also used external results for the screen and scaling, so the validation series are not untouched. Under the current rule they only score the fixed model.</p>
 <p><strong>This week’s results</strong></p>
 <ol type="1">
 <li><strong>Priors.</strong> Point-exponential priors on L and F, which would give a nonnegative factorization, predicted worse on the training data (within-cohort C 0.573 to 0.635 against 0.658 at K = 7) and rarely converged, even with the cohort difference removed. The four β priors gave nearly the same fits, so Normal β stays.</li>
 <li><strong>Gene screen, scaling and rank.</strong> Training CV keeps the 2,218-gene screen and z-scores. Concordance is flat from K = 5 to 12, and the one-SE rule picks K = 5 in each of five fold partitions but one.</li>
-<li><strong>The K = 5 model.</strong> Within-cohort CV C is 0.655 and every fold converges. Programs 2 (protective), 4 and 5 (adverse) are survival-active, and only Program 2 is a main program. Externally the equal-series mean C is 0.630 (0.587 to 0.670). At K = 5 the supervised and two-step fits perform the same (training CV +0.004, external −0.001).</li>
+<li><strong>The K = 5 model.</strong> Within-cohort CV C is 0.655 and every fold converges. Programs 2 (protective), 4 and 5 (adverse) are survival-active, and only Program 2 is a main program. Externally the equal-series mean C is 0.630 (0.587 to 0.670). At K = 5 the estimated supervised-minus-two-step differences are small (training CV +0.004, SE 0.004, external −0.001, donor interval −0.010 to 0.008).</li>
 <li><strong>LB and YFB.</strong> On the real data the two give the same programs and nearly the same risk scores (r = 0.998, CV C 0.652 and 0.655). YFB is kept: in simulation LB marks more unmatched programs survival-active at w_S = 1 in the three variance cells, and YFB scores new patients without fold-in.</li>
 <li><strong>Methylation alone.</strong> Methylation predicts worse than expression on the same 144 patients (CV C 0.50 to 0.55 against 0.58) and shows no survival-active program that expression lacks, though some methylation programs are not explained by expression.</li>
-<li><strong>Still in progress.</strong> The fitter for several data types and the K = 5 survival-weight refit.</li>
+<li><strong>Joint fit and survival weight.</strong> The feature-group fitter is implemented. Its descriptive matched-TCGA joint fit predicts less well than expression alone and is not validated by simulation. The completed K = 5 weight search keeps w_S = 1.</li>
 </ol>
 </section>
 <section id="external-cohorts-are-used-only-to-score-a-fixed-model" class="level2" data-number="15.2">
@@ -538,23 +541,58 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <p>The expression reference uses the 2,218 genes on the same patients and folds: 0.582 under point-Laplace and 0.620 under point-exponential. The eight expression fits that had stopped at 300 sweeps were restarted with a 1,000-sweep limit and all converged (305 to 438 sweeps). The point-exponential methylation full fits at 10k to 50k CpGs did not converge in 300 sweeps and were not cross-validated, and one 100k point-exponential fold did not converge.</p>
 <p><strong>Methylation and expression programs.</strong> The two sets of patient scores share two strong directions: the first two canonical correlations are 0.90 to 0.92 and 0.85 to 0.88 across the seven fits, and the fifth is 0.00 to 0.17. Under a descriptive rule without any survival requirement (correlation below 0.5 with every expression program, matched in at least three folds and recurring at another CpG count), 19 of 35 program fits are methylation-specific. They are recurring programs, not 19 separate ones. Regressed on all five expression programs, 12 of the 19 have R² below 0.25 and 3 have R² above 0.5. The clearest is a point-Laplace program at 100k and all CpGs (R² 0.06 and 0.04), whose strongest gene-set associations are allograft rejection and TNF-α signaling, suggesting an immune component. The most purity-related methylation program correlates up to 0.87 with ABSOLUTE purity and overlaps the first expression program. Among 9,086 promoter-CpG and gene pairs, 76.5% have a negative methylation-expression correlation (not adjusted for purity).</p>
-<p><strong>Open question.</strong> Prediction is best at 10k CpGs under point-Laplace, but the methylation programs that expression does not explain appear only at 100k and all CpGs. The CpG count for the joint fit is not yet chosen. No ICGC scoring was run.</p>
+<p><strong>CpG counts.</strong> Both counts are reported: 10k under point-Laplace predicts best alone and is the first count for the joint fit, and 100k shows the methylation-specific factor most clearly. The 100k factor is split across 10k programs 2 and 4, with absolute score correlations 0.61 and 0.59. Regressed on all expression programs, those two 10k programs have R² of 0.52 and 0.43. At 50k it has a single-program match of 0.89 and R² of 0.25 on expression. Even at 10k, methylation contains structure not explained by expression. From 50k upward that structure forms a separate program more clearly. These comparisons are in-sample and descriptive. No ICGC scoring was run.</p>
 </section>
 <section id="one-fitter-for-several-data-types" class="level2" data-number="15.8">
 <h2 data-number="15.8" class="anchored" data-anchor-id="one-fitter-for-several-data-types"><span class="header-section-number">15.8</span> One fitter for several data types</h2>
 <p><strong>Question.</strong> Can one fitter with shared scores L and a separate loading matrix F<sub>m</sub> and prior for each data type fit expression alone, methylation alone or both, and so replace the single-modality fitter? Does the joint fit add prognostic or interpretive information over each data type alone?</p>
-<p><strong>Design.</strong></p>
-<ol type="1">
-<li>The fitter’s M = 1 path must reproduce the single-modality canonical fit. The test was written before the code and does not depend on the prior comparisons.</li>
-<li>The multimodal fitter’s KL helpers are checked against the two November 6 KL fixes (the scalar-precision normalizer and the exactly flat β likelihood), or replaced with the shared helpers.</li>
-<li>A two-modality simulation plants programs in each data type and one shared prognostic program, and checks whether methylation, with more features, dominates L.</li>
-<li>On the matched TCGA patients, expression alone, methylation alone and both are fitted with the same folds as the methylation-alone study.</li>
-</ol>
-<p><strong>Decision rule.</strong> Step 1 passes if E[L], E[F], E[β] and the final ELBO agree with the single-modality fit to a relative tolerance of 10<sup>−6</sup> on two fixtures, one of them stratified. Step 3 requires recovery of the shared program in at least 8 of 10 seeds, a mean of at most one false-active program and at least 9 of 10 converged fits. Step 4 is descriptive.</p>
-<p><strong>Result.</strong> In progress.</p>
-<!-- RESULT (M-modality fitter): step 1 largest relative difference per quantity and fixture;
-step 2 outcome; step 3 recovery, false-active and convergence; step 4 CV C for the three fits
-and programs that appear only in the joint fit. -->
+<p><strong>Implementation.</strong> Feature groups in <code>fit_ssbmf_yfb()</code> give each modality and program a separate loading prior while retaining the shared scores, feature-specific noise and joint projection. Omitting groups or supplying one group follows the existing single-modality path. On frozen pooled and stratified test datasets, the score, loading and coefficient means and the ELBO history agree exactly. The grouped loading divergence is evaluated against the refitted prior and checked against numerical integration and analytic calculations. The historical pooled path keeps its incoming-prior accounting, so objective values and stopping times do not isolate the effect of separate priors. Empty blocks that shrink to a point mass are set to zero in both their moments and joint projection.</p>
+<p><strong>Simulation.</strong> After the empty-block correction, all 120 low-variance simulation fits converged, but recovery was low even for expression alone. All 120 fits in the informative two-direction simulation also converged. In the equal-feature cell with 3% nonzero methylation loadings, expression alone recovered the first direction in 9/10 datasets, separate priors in 10/10 and pooled priors in 9/10. The joint fits averaged 0.4 and 0.1 false-active programs. With 250 methylation features against 50 expression features, joint recovery fell to 4 or 5 of 10. These results do not establish a general advantage from separate priors. The informative simulation does not change the descriptive status of the real-data comparison.</p>
+<p><strong>Matched TCGA comparison: not validated by simulation.</strong> The fixed comparison uses 144 patients, 75 events, 2,218 expression genes, 10,000 CpGs, K = 5 and the same five folds. Feature selection and imputation use the saved preparation. Each fold fits its scaling on training patients only.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Fit</th>
+<th>Mean CV C</th>
+<th>Joint − expression (paired SE)</th>
+<th>Converged, full fit plus five folds</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Expression alone</td>
+<td>0.591</td>
+<td></td>
+<td>3/6</td>
+</tr>
+<tr class="even">
+<td>Methylation alone</td>
+<td>0.545</td>
+<td></td>
+<td>6/6</td>
+</tr>
+<tr class="odd">
+<td>Joint, separate loading priors</td>
+<td>0.531</td>
+<td>−0.060 (0.024)</td>
+<td>6/6</td>
+</tr>
+<tr class="even">
+<td>Joint, pooled loading priors</td>
+<td>0.536</td>
+<td>−0.055 (0.030)</td>
+<td>6/6</td>
+</tr>
+</tbody>
+</table>
+<p>Three expression folds reached the 300-sweep limit and remain in the paired comparison. The 0.582 converged expression reference in the methylation section belongs to a separate 1,000-sweep follow-up. It cannot replace this table’s reference without rerunning the joint comparison. Every joint program matches a program in each single-modality loading block at absolute correlation at least 0.5, so none qualifies as joint-only. Methylation supplies 29% to 97% of the shared-score reconstruction precision in the separate-prior full fit. Those are precision contributions, not shares of explained variance or prediction. No joint model is adopted, and no external joint score has been evaluated.</p>
+<p><strong>Sources.</strong> <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-feature-group-fitter-findings.md">Feature-group implementation and simulation findings</a> and <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md">matched-TCGA findings</a>.</p>
 </section>
 <section id="lb-and-yfb-compared" class="level2" data-number="15.9">
 <h2 data-number="15.9" class="anchored" data-anchor-id="lb-and-yfb-compared"><span class="header-section-number">15.9</span> LB and YFB compared</h2>
@@ -665,7 +703,7 @@ and programs that appear only in the joint fit. -->
 <p>For the rank, CV concordance is flat from K = 5 to 12 (0.649 to 0.666) and lower from K = 2 to 4 (0.611 to 0.620). The best mean is at K = 10 (0.666, SE 0.027), so the one-SE threshold is 0.639 and the smallest K above it is 5. K = 5 is 0.003 below K = 7 (paired SE 0.007), converges in all five folds against three at K = 7, and has three survival-active programs, as do K = 6 to 8. Every column keeps nonzero loadings at every K. On paired differences K = 5 to 8 are indistinguishable, so the rule picks the smallest rank on the plateau rather than showing that K = 5 predicts better.</p>
 <p>Because these comparisons are close, the five-fold CV was repeated with four more random partitions of the patients. Averaged over the five partitions, the one-SE rule again selects K = 5 (0.643, against a best of 0.651 at K = 12). Four of the five partitions select K = 5 on their own and one selects K = 10. K = 2 to 4 are lower in every partition. K = 5 converges in all 25 fold fits, K = 7 in 18 and K = 12 in 1. The variance screen is 0.002 lower than the current screen on average (SE 0.008), so the 2,218-gene screen stays. The partitions reuse the same 273 patients, so they show that the choices do not depend on the fold assignment, not how much they would vary in new samples. K = 6 to 12 do not converge in every fold (K = 6 in 4 of 5). At K = 5 the point-exponential prior still loses (0.519 against 0.655).</p>
 <p>Andrew adopted K = 5 for the working model on November 12, and the repeated partitions support it (new key <code>benchmark$k_working_yfb: 5</code> in <code>config/globals.yml</code>, while the historical key stays 7). Results already reported at K = 7, including the November external scores and this week’s prior comparisons, stay on record labeled with K = 7.</p>
-<p>The five K = 5 programs match K = 7 programs 1 to 5 (score correlations 0.92 to 0.995). K = 7 programs 6 and 7 are dropped, and neither was survival-active. Program 2 (protective, z −4.5) and program 5 (adverse, z 2.8) stay survival-active. Programs 3 and 4 sit near the 1.96 threshold in both fits: program 3 falls from z 3.0 to 1.5 and program 4 rises from 1.9 to 2.4, so the active set changes from {2, 3, 5} to {2, 4, 5}. The program-classification rule that named programs 2 and 3 needs rechecking at K = 5.</p>
+<p>The five K = 5 programs match K = 7 programs 1 to 5 (score correlations 0.92 to 0.995). K = 7 programs 6 and 7 are dropped, and neither was survival-active. Program 2 (protective, z −4.5) and program 5 (adverse, z 2.8) stay survival-active. Programs 3 and 4 sit near the 1.96 threshold in both fits: program 3 falls from z 3.0 to 1.5 and program 4 rises from 1.9 to 2.4, so the active set changes from {2, 3, 5} to {2, 4, 5}. The program-classification rule has been reapplied at K = 5. Only Program 2 meets the main-program rule.</p>
 </section>
 <section id="external-scoring-of-the-fixed-working-model" class="level2" data-number="15.11">
 <h2 data-number="15.11" class="anchored" data-anchor-id="external-scoring-of-the-fixed-working-model"><span class="header-section-number">15.11</span> External scoring of the fixed working model</h2>
@@ -713,12 +751,16 @@ and programs that appear only in the joint fit. -->
 </tbody>
 </table>
 <p>The equal-series mean is 0.630 (donor-bootstrap interval 0.587 to 0.670) and the pair-weighted mean 0.628 (0.596 to 0.662), against 0.620 for the K = 7 fit.</p>
-<p>The other exhibits that came from the K = 7 fit were rebuilt at K = 5 (<a href="{G}docs/findings/2026-11-12-k5-exhibits-findings.md">findings</a>). At K = 5 the supervised and two-step fits perform the same: the training CV difference is +0.004 (SE 0.004, 0.660 against 0.656 on all pairs) and the external pooled difference is −0.001 (donor interval −0.010 to 0.008), where K = 7 gave +0.011 and +0.007. Every fold converges in both arms. The hazard ratio per SD is 1.39 (1.26 to 1.53) against 1.40 for two-step, and the supervised calibration slopes range from 0.35 to 1.85. The gene-count curve is level from 2,218 to about 8,000 genes in both arms and lower above. The training cutpoint moves to 0.618 SD, putting 128 of 616 external records in the high-risk group (pooled HR 1.69, 1.34 to 2.14). Only Program 2 meets the main-program rule. Program 4 has acinar genes at its adverse pole and B-cell and interferon genes at the other, and its external direction agrees with training in all five series. The supervised score’s mean C exceeds DeSurv’s by 0.016 (−0.009 to 0.043) and elastic-net Cox’s by 0.011 (−0.008 to 0.031). The survival-weight refit at K = 5 is still running.</p>
+<p>The other exhibits that came from the K = 7 fit were rebuilt at K = 5 (<a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-k5-exhibits-findings.md">findings</a>). At K = 5 the supervised and two-step fits have small estimated differences: the training CV difference is +0.004 (SE 0.004, 0.660 against 0.656 on all pairs) and the external pooled difference is −0.001 (donor interval −0.010 to 0.008), where K = 7 gave +0.011 and +0.007. Every fold converges in both arms. The hazard ratio per SD is 1.39 (1.26 to 1.53) against 1.40 for two-step, and the supervised calibration slopes range from 0.35 to 1.85. The gene-count curve is level from 2,218 to about 8,000 genes in both arms and lower above. The training cutpoint moves to 0.618 SD, putting 128 of 616 external records in the high-risk group (pooled HR 1.69, 1.34 to 2.14). Only Program 2 meets the main-program rule. Program 4 has acinar genes at its adverse pole and B-cell and interferon genes at the other, and its external direction agrees with training in all five series. The supervised score’s mean C exceeds DeSurv’s by 0.016 (−0.009 to 0.043) and elastic-net Cox’s by 0.011 (−0.008 to 0.031). The completed survival-weight refit at K = 5 keeps w_S = 1.</p>
+<section id="survival-weight-refit-at-k-5" class="level3" data-number="15.11.1">
+<h3 data-number="15.11.1" class="anchored" data-anchor-id="survival-weight-refit-at-k-5"><span class="header-section-number">15.11.1</span> Survival-weight refit at K = 5</h3>
+<p>All 216 fits completed without fit errors. Of these, 189 converged and 27 inner fits reached the 300-sweep limit. The five folds at every weight in the overall weight curve converged, as did every selected outer fit and the selected full fit. The CV partial log-likelihood chooses w_S = 1, with a range of 0.635 over weights 1 to 50. Nested CV gives C = 0.658 with fold SE 0.027, with outer choices 1, 1, 1, 10 and 50. Scaling was prepared before these splits, so this evaluates weight selection conditional on that matrix, with all-pairs fold scoring. The 27 capped inner fits remain eligible under the original finite-likelihood selection rule. The full unit-weight fit exactly reproduces the saved K = 5 fit. Its external scores therefore stay unchanged. The <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-k5-exhibits-findings.md">completed exhibit ledger</a> gives every file and rebuild command.</p>
+</section>
 </section>
 <section id="open-items" class="level2" data-number="15.12">
 <h2 data-number="15.12" class="anchored" data-anchor-id="open-items"><span class="header-section-number">15.12</span> Open items</h2>
 <ul>
-<li>The survival-weight refit at K = 5 is still running. Every other K = 7 exhibit has been rebuilt at K = 5.</li>
+<li>Check whether the 10,000-CpG joint fit recovers the methylation-specific direction described at 100,000 CpGs. A 100,000-CpG joint fit remains conditional on that result and a modality-balance check. No new joint fit or external evaluation is part of this update.</li>
 <li>Independent review of every result before it enters this chapter, Chapter 4 or the writeup.</li>
 <li>A stratified version of the model, with a scale-robust rule that tells a genomics-only program from a collapsed one.</li>
 <li>Pruning stays set aside. The full-posterior pruning rerun is revisited only if the CV-chosen rank is unstable across folds or seeds.</li>
