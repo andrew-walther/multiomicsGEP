@@ -18,6 +18,11 @@ records the remaining differences between the fitters and the KL regression chec
 Run `Rscript tests/test_multimodal_m1_equivalence.R` for the acceptance test,
 which currently fails because the multimodal interface lacks required options.
 
+The [modality-weight study](docs/findings/2026-11-12-modality-weights-findings.md)
+derives reconstruction-only power weights for the grouped YFB model. Verify the
+weighted equations with
+`Rscript derivations/SSBMF-YFB-model-derivations/verify_derivation.R`.
+
 ## Getting started
 
 Developed with R 4.5. Install the core dependencies, then run code from the

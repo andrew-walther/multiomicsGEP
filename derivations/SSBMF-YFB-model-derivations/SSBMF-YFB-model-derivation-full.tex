@@ -1085,12 +1085,100 @@ update keeps the form derived here:
 \end{itemize}
 With $M = 1$ every formula reduces to the one in this document.
 
+\subsection{Modality weights}\label{sec:modality-weights}
+
+\begin{keybox}[Reconstruction weights $w_m$]
+For fixed positive weights, the objective is
+\[
+ \mathcal F_w=\sum_m w_m\E\log p(Y_m\mid L,F_m,\tau_m)
+ +\ws\E\ell_{\mathrm{Cox}}(Z\bm\beta)
+ -\sum_k\KL(q_{l_k}\Vert g_{l_k})
+ -\sum_{m,k}\KL(q_{f_{mk}}\Vert g_{f_{mk}})
+ -\sum_k\KL(q_{\beta_k}\Vert g_{\beta_k}),\qquad Z=\sum_mY_mF_m.
+\]
+The priors and KL terms retain weight 1. This is the variational objective
+for a power posterior with reconstruction likelihoods raised to $w_m$.
+The weights do not enter $Z$, its uncertainty, or the survival updates.
+\end{keybox}
+
+\paragraph{Weighted coordinate updates.} Write $R^{-k}_{m,ij}$ for the
+reconstruction residual excluding program $k$. The Gaussian likelihood
+precision and signal for $l_{ik}$ become
+\[
+ A_{l_k}=\sum_m w_m\sum_j\tau_{mj}\overline{f^2_{m,jk}},\qquad
+ B_{l_{ik}}=\sum_m w_m\sum_j\tau_{mj}R^{-k}_{m,ij}\bar f_{m,jk}.
+\]
+The loading update uses
+\begin{align*}
+ A_{f_{m,jk}}&=w_m\tau_{mj}\sum_i\overline{l^2_{ik}}
+                  +\ws A^{\mathrm{surv}}_{m,jk},\\
+ B_{f_{m,jk}}&=w_m\tau_{mj}\sum_iR^{-k}_{m,ij}\bar l_{ik}
+                  +\ws B^{\mathrm{surv}}_{m,jk}.
+\end{align*}
+The survival terms are those of Eq.~\eqref{eq:AB-F-surv}, evaluated with
+the joint projection and refreshed sequentially across all features.
+Each EBNM problem receives $x=B/A$ and $s=A^{-1/2}$. Each modality fits
+its own loading prior for each program. The $\beta$ update is unchanged.
+
+The weighted reconstruction contribution of feature $j$ is
+$w_m[n\log\tau_{mj}/2-\tau_{mj}\sum_i\bar R^2_{m,ij}/2]$,
+up to a parameter-independent constant. Thus
+\[
+ \widehat\tau_{mj}=\frac{n}{\sum_i\bar R^2_{m,ij}}.
+\]
+The positive weight cancels from this point estimate. It still changes
+the posterior moments used in the denominator. Weighting only the
+residual penalty, but not the log-precision term, would give a different
+update. The monitored reconstruction objective must weight both terms.
+
+\paragraph{Program scale and block scale.} For any $c_k>0$, the common
+program transformation $F_{m,k}\mapsto F_{m,k}/c_k$ for every $m$,
+$L_k\mapsto c_kL_k$, and $\beta_k\mapsto c_k\beta_k$ preserves every
+reconstruction and the survival predictor. Transform the variances and
+the scale-family priors with their variables. Each KL is invariant under
+this change of variables, so $\mathcal F_w$ is invariant for fixed $w_m$.
+The canonical choice remains $c_k=\mathrm{sd}_i(\bar z_{ik})$.
+
+Changing a data block's units is a different transformation. With
+$Y_m\mapsto aY_m$, $F_m\mapsto aF_m$, and
+$\tau_m\mapsto\tau_m/a^2$, its reconstruction contribution changes only
+by the constant $-nw_mp_m\log a$. Its contribution to $Z$ changes by
+$a^2$. Hence the supervised model depends on relative block scale.
+Per-feature training-fold z-scoring is part of the model and removes
+positive changes of raw measurement units before fitting. At $\ws=0$,
+the reconstruction equations are equivariant under the block transformation,
+before projection-based canonicalization. Canonicalization itself depends
+on the changed $Z$, even when survival has weight zero. Reconstruction
+scale-equivariance checks therefore compare uncanonicalized coordinates.
+The modality precision $w_m\sum_j\tau_{mj}\overline{f^2_{m,jk}}$
+is unchanged under that block transformation.
+
+\paragraph{Training-only weight rules.} With expression as the reference,
+$w_{\mathrm{expression}}=1$. The feature-count rule sets
+$w_m=p_{\mathrm{expression}}/p_m$, giving $1/q$ for a block with $q$
+times as many features. The leading-eigenvalue rule sets
+$w_m=\lambda_1(X_{\mathrm{expression}}^\top
+X_{\mathrm{expression}}/n)/\lambda_1(X_m^\top X_m/n)$,
+where each $X_m$ is z-scored using only training-fold observations.
+The nonzero eigenvalues can equivalently be computed from $X_mX_m^\top/n$,
+which avoids a feature-by-feature matrix for large CpG sets.
+Correlated features can make this rule differ from feature counts.
+
+\paragraph{Empty blocks.} A small $w_m$ strengthens the loading prior
+relative to reconstruction information. The fitted prior can become a
+point mass at zero, emptying a modality-program block. Dividing the whole
+genomics term by $p$ previously collapsed the LB fit, as recorded in the
+July 12 decision. Empty blocks and repeated point-mass resets must be
+reported. They are not prevented by changing the prior or adding a floor
+to the modality weight.
+
 \paragraph{New balance questions.} The precision of $l_k$ sums over all
 $p = \sum_m p_m$ features, so the modality with more features (methylation)
 dominates the shared scores. Survival's share of each loading precision falls
 as in Eq.~\eqref{eq:rho-approx}, with the total $p$. Both point to
-modality-specific weights on the reconstruction terms, which need their own
-derivation and simulation check.
+modality-specific weights on the reconstruction terms, derived in
+Section~\ref{sec:modality-weights}. Their empirical balance and recovery
+still require the registered simulation check.
 
 \paragraph{Convergence: what failed and what has changed since.}
 \begin{center}

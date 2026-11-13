@@ -352,6 +352,83 @@ results[nrow(results) + 1, ] <- list(
   "negative control: global centering under strata keeps a between-stratum precision term",
   sum(Ws * dlt^2) > 1e-3 * sum(Ws * Ycs[, 9]^2), sum(Ws * dlt^2))
 
+# Modality reconstruction weights ----
+# Two unequal blocks and nonunit weights catch accidentally weighting survival
+# or omitting the log(τ) term. These checks evaluate the objective directly.
+modality <- rep(c("expression", "methylation"), c(10, p - 10))
+omega <- ifelse(modality == "expression", 1, 0.2)
+
+#' Expected weighted likelihood at arbitrary posterior moments
+#' @param L,L2,F,F2,b,b2 Posterior means and second moments.
+#' @param tau Feature noise precisions.
+#' @return Weighted reconstruction plus the unchanged Cox Taylor term.
+#' @examples
+#' weighted_objective(EL, EL2, EF, EF2, EB, EB2)
+weighted_objective <- function(L, L2, F, F2, b, b2, tau = Tau) {
+  r2 <- (Y - L %*% t(F))^2 + L2 %*% t(F2) - L^2 %*% t(F^2)
+  gen <- sum(omega * (n / 2 * log(tau) - tau / 2 * colSums(r2)))
+  zb <- Y %*% F
+  ez2 <- zb^2 + Y^2 %*% (F2 - F^2)
+  eta <- drop(zb %*% b)
+  var_eta <- drop(ez2 %*% b2 - zb^2 %*% b^2)
+  gen - w_S / 2 * sum(W * ((z - eta)^2 + var_eta))
+}
+for (k in seq_len(K)) {
+  rk <- Y - EL[, -k, drop = FALSE] %*% t(EF[, -k, drop = FALSE])
+  for (i in c(1L, n)) {
+    ab <- c(sum(omega * Tau * EF2[, k]), sum(omega * Tau * rk[i, ] * EF[, k]))
+    brute <- brute_AB(function(m, s2) {
+      l <- EL; l2 <- EL2; l[i, k] <- m; l2[i, k] <- s2
+      weighted_objective(l, l2, EF, EF2, EB, EB2)
+    })
+    check_close(sprintf("weighted L_%d,%d: A/B from objective", i, k), ab, unname(brute))
+  }
+  zb <- Y %*% EF
+  zmk <- z - drop(zb[, -k, drop = FALSE] %*% EB[-k])
+  for (j in c(1L, p)) {
+    y <- Y[, j]
+    ab <- c(omega[j] * Tau[j] * sum(EL2[, k]) + w_S * EB2[k] * sum(W * y^2),
+      omega[j] * Tau[j] * sum(rk[, j] * EL[, k]) + w_S *
+        (EB[k] * sum(W * y * zmk) - EB2[k] * sum(W * y * (zb[, k] - y * EF[j, k]))))
+    brute <- brute_AB(function(m, s2) {
+      f <- EF; f2 <- EF2; f[j, k] <- m; f2[j, k] <- s2
+      weighted_objective(EL, EL2, f, f2, EB, EB2)
+    })
+    check_close(sprintf("weighted F_%d,%d: A/B from objective", j, k), ab, unname(brute))
+  }
+  brute <- brute_AB(function(m, s2) {
+    b <- EB; b2 <- EB2; b[k] <- m; b2[k] <- s2
+    weighted_objective(EL, EL2, EF, EF2, b, b2)
+  })
+  vz <- Y^2 %*% (EF2 - EF^2)
+  check_close(sprintf("weighted beta_%d: survival unchanged", k),
+    c(w_S * sum(W * (zb[, k]^2 + vz[, k])), w_S * sum(W * zmk * zb[, k])), unname(brute))
+}
+r2w <- compute_expected_residual_sq(Y, EL, EL2, EF, EF2)
+tau_opt <- n / colSums(r2w)
+check_close("weighted tau: derivative zero at unweighted point estimate",
+  omega * (n / tau_opt - colSums(r2w)) / 2, rep(0, p))
+for (j in c(1L, p)) {
+  opt <- optimize(function(t) -omega[j] * (n / 2 * log(t) - t / 2 * sum(r2w[, j])),
+    c(tau_opt[j] / 2, tau_opt[j] * 2), tol = 1e-10)$minimum
+  check_close(sprintf("weighted tau_%d: numeric maximizer", j), opt, tau_opt[j], tol = 1e-6)
+}
+czw <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, EB, EB2, K)
+check_close("weighted canonicalization preserves likelihood objective",
+  weighted_objective(czw$EL, czw$EL2, czw$EF, czw$EF2, czw$EBeta, czw$EBeta2),
+  weighted_objective(EL, EL2, EF, EF2, EB, EB2))
+# Gaussian q/g provide an independently computable KL change-of-variable check.
+qvar <- EF2 - EF^2; prior_var <- rep(0.8, K)
+kl_before <- sum(sweep(EF2, 2, prior_var, "/") - 1 +
+  log(sweep(1 / qvar, 2, prior_var, "*"))) / 2
+kl_after <- sum(sweep(czw$EF2, 2, prior_var / czw$scale^2, "/") - 1 +
+  log(sweep(1 / (czw$EF2 - czw$EF^2), 2, prior_var / czw$scale^2, "*"))) / 2
+check_close("weighted canonicalization preserves KL under transformed priors", kl_after, kl_before)
+# Negative control: block units affect the supervised projection.
+e <- c(1, -1, 0); m <- c(0, 1, -1)
+results[nrow(results) + 1, ] <- list("block scaling changes canonical joint projection",
+  abs(cor(e + m, e + 4 * m)) < 0.7, cor(e + m, e + 4 * m))
+
 # Report ----
 
 print(results, row.names = FALSE, digits = 3)
