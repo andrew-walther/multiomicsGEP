@@ -39,8 +39,11 @@ factors at 100k. Andrew chose 10k as the first joint fit and 100k for this facto
   data by empirical Bayes. On TCGA both fitted priors were dense (point-mass weight about
   10⁻⁷), so they shrink nothing. Fixing the methylation prior by hand would abandon
   empirical Bayes and would set sparsity, not balance.
-- *Rescaling the data cancels out.* Because τ is feature-specific and estimated, scaling
-  a modality's data by c only rescales τ by 1/c² and F by c. The fit is unchanged.
+- *Rescaling the data cancels out in the reconstruction terms.* Because τ is
+  feature-specific and estimated, scaling a modality's data by c rescales τ by 1/c² and F
+  by c, and each modality's share of the L precision is unchanged. Rescaling would change
+  only the block's survival projection, by c², which is not a way to balance the
+  reconstruction.
 
 **The fix is a power weight on each modality's reconstruction likelihood.** This is the
 same device as w_S on the survival term: log p(Y_m | L, F_m, τ_m) is multiplied by w_m.
@@ -94,8 +97,14 @@ Tests first:
 - all-ones weights equal the unweighted grouped fit bit for bit;
 - the L precision equals the derived formula on a fixture;
 - the recomputed weighted objective matches the recorded value;
-- multiplying a block's data by a constant leaves the weighted fit unchanged (τ absorbs
-  it);
+- scaling, corrected 2026-11-12 after Codex's question. Multiplying a prepared block by
+  c leaves the reconstruction terms unchanged (F_m → cF_m, τ_m → τ_m/c²), but it scales
+  that block's survival projection Y_m F_m by c², so the supervised fit is not invariant.
+  The per-feature training-fold z-scoring is part of the model. Test instead that:
+  (a) positive rescaling of the raw data before z-scoring leaves the fit unchanged; and
+  (b) with w_S = 0, a block scaled by c gives the same E[L], F_m scaled by c, τ_m scaled by
+  1/c², and the same modality precision shares Σ_j w_m τ_mj E[F²_mjk]. Say in the
+  derivation that the survival projection depends on block scale;
 - prediction is unchanged in form.
 
 Then run the full suite. Commit.
