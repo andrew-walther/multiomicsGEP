@@ -656,7 +656,7 @@ In the 50 ICGC donors with matched data and 30 deaths, concordance was 0.660 for
 
 # Discussion {#sec-discussion}
 
-## Relevance of the results
+## Relevance of Results
 
 On the PDAC data the supervised and two-step fits gave the same loadings and nearly the same predictions, in training cross-validation and in the validation series. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, but at the survival weight chosen from the data, survival supplied almost none of the loading precision. These results therefore do not show improved molecular program discovery on these data.
 
