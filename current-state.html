@@ -301,15 +301,10 @@ window.Quarto = {
 </header>
 
 
-<p>Updated November 12, 2026. The working model is YFB at K = 5 with point-Laplace scores and loadings, per-program Normal survival coefficients, pooled TCGA and CPTAC training, per-cohort z-scores on 2,218 genes and w_S = 1. The <a href="./chapters/2026-11-13.html">November 13 chapter</a> reports the current evidence.</p>
+<p>Updated November 13, 2026. The working model is YFB at K = 5 with point-Laplace scores and loadings, per-program Normal survival coefficients, pooled TCGA and CPTAC training, per-cohort z-scores on 2,218 genes and w_S = 1. The <a href="./chapters/2026-11-13.html">November 13 chapter</a> reports the current evidence.</p>
 <section id="research-status" class="level2">
 <h2 class="anchored" data-anchor-id="research-status">Research status</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Stage</th>
@@ -335,13 +330,13 @@ window.Quarto = {
 </tr>
 <tr class="even">
 <td>Done</td>
-<td>Methylation alone and cross-count programs</td>
-<td>Prediction lower than expression. 10k CpGs for prediction, 100k for factor description</td>
+<td>Single-modality methylation fit</td>
+<td>Shares two strong axes with expression (canonical correlations about 0.9) and adds a recurring methylation-specific, immune-like program from about 50k CpGs. Prediction is lower than expression</td>
 </tr>
 <tr class="odd">
 <td>Done</td>
 <td>Feature-group fitter and initial joint evaluation</td>
-<td>Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program</td>
+<td>Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program. The weight path is done and the multimodal work is paused. At balanced feature counts separate priors find one-modality programs better than pooled priors, but methylation dominates when CpGs outnumber genes, and likelihood weights empty the methylation loadings</td>
 </tr>
 <tr class="even">
 <td>Next</td>
@@ -350,10 +345,15 @@ window.Quarto = {
 </tr>
 <tr class="odd">
 <td>Open</td>
-<td>Stronger loading supervision and modality balance</td>
-<td>Stable fits at weights that move loadings and a supported role for joint fitting</td>
+<td>Stronger loading supervision</td>
+<td>Stable fits at weights that move loadings</td>
 </tr>
 <tr class="even">
+<td>Paused</td>
+<td>Multimodal modality balance</td>
+<td>Next ideas in <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md">balance-ideas notes</a>, starting with weighting methylation only in the score update</td>
+</tr>
+<tr class="odd">
 <td>Later</td>
 <td>R package and final analysis snapshot</td>
 <td>Follow methodological evaluation and final model decisions</td>
@@ -492,10 +492,10 @@ Inspect the fixed diagnostic replays
 </section>
 <section id="completed-results" class="level2">
 <h2 class="anchored" data-anchor-id="completed-results">Completed Results</h2>
-<progress value="13" max="24" aria-label="Evidence items completed">
-13 of 24
+<progress value="14" max="25" aria-label="Evidence items completed">
+14 of 25
 </progress>
-<p><strong>13 of 24 evidence items documented.</strong> Each line of this checklist counts once. Checked historical or diagnostic items have a saved result, even when it was negative. Open items describe evidence still needed for the survival-supervised method. Publication readiness depends on the supervision gate and the final evidence, not on this count.</p>
+<p><strong>14 of 25 evidence items documented.</strong> Each line of this checklist counts once. Checked historical or diagnostic items have a saved result, even when it was negative. Open items describe evidence still needed for the survival-supervised method. Publication readiness depends on the supervision gate and the final evidence, not on this count.</p>
 <p><strong>Re-verification required.</strong> Many checked results use the historical <span class="math inline">\(\alpha_F=0\)</span> fit, which turns off survival feedback into the molecular loadings. Once a supervised fit passes the registered gate, re-verify the completed results against that fit before carrying them forward as evidence for the final method.</p>
 <section id="methodology" class="level3">
 <h3 class="anchored" data-anchor-id="methodology">Methodology</h3>
@@ -548,6 +548,7 @@ Inspect the fixed diagnostic replays
 <ul class="task-list">
 <li><label><input type="checkbox" checked="">Demonstrate single-group parity in the feature-group extension of the working fitter. Frozen pooled and stratified fixtures reproduce exactly. The older multimodal fitter remains historical.</label></li>
 <li><label><input type="checkbox" checked="">Complete the initial matched expression, methylation and joint comparison with separate and pooled loading priors at 10,000 CpGs. This diagnostic is not validated by simulation and shows no joint prediction gain. Joint feature-count sensitivity remains open.</label></li>
+<li><label><input type="checkbox" checked="">Run the modality-weight path in simulation and on TCGA. No weight was usable: at w = 0.7 the methylation share of the prognostic program fell from 52% and 60% to 21% and 9%, and 42 and 46 of 50 methylation blocks were empty. The work is paused, with next ideas in the <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md">balance-ideas notes</a>.</label></li>
 <li><label><input type="checkbox">Validate modality balance, convergence, and the incremental prediction and biological evidence from the joint fit.</label></li>
 </ul>
 <p>The evidence categories draw on DeSurv main Figures 2–4 and supplement Figures S1–S10. Their examples include null and mixed simulations, initialization, rank selection, factor correspondence, training-derived risk thresholds, external cohort hazard ratios, subtype composition and the tradeoff between expression variance and survival contribution. The DeSurv figures are available in the <a href="https://github.com/rashidlab/DeSurv-paper">DeSurv reproduction materials</a>.</p>
