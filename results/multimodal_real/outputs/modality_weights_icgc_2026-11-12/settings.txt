@@ -1,0 +1,13 @@
+registration=docs/prompts/2026-11-12-codex-d-modality-weights-prompt.md Part5
+models=fixed K5 point-Laplace full fits; no refitting, tuning, sign or rank changes
+population=build_multiomics_cohorts validation_primary; one record per donor
+scaling=primary external series mean and sample SD per feature, before training-order alignment
+missing=zero after scaling; constant external features also zero, counted separately
+projection=sum_m Y_m F_m / training EF_norms; frozen training beta and Cox orientation
+interval=donor percentile bootstrap; B=2000; seed=1; flip=FALSE
+paired=joint minus expression_only, identical donor draws; flip_a=flip_b=FALSE
+direction=largest absolute TCGA patient-score correlation to expression; match abs-r>=0.5
+direction_readout=same correlation sign on ICGC; no orientation change
+status=descriptive; joint fit not validated by simulation; external chooses nothing
+imputation=existing ICGC reader on all available Task C design CpGs before primary restriction
+workers=1; numerical_threads=1

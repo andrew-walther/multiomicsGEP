@@ -73,6 +73,7 @@ test_files <- c(
   "tests/test_modality_weights_yfb.R",
   "tests/test_modality_exclusive_generator.R",
   "tests/test_modality_weight_simulation.R",
+  "tests/test_modality_weight_external.R",
   "tests/test_feature_group_simulation.R",
   "tests/test_feature_group_informative.R",
   "tests/test_multimodal_tcga_comparison.R",

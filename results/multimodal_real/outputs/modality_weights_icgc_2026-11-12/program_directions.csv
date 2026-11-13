@@ -1,0 +1,6 @@
+"program","expression_program","tcga_correlation","matched_on_tcga","icgc_correlation","kept_direction","model"
+1,1,0.665436856699866,TRUE,0.381884921021878,TRUE,"joint_unweighted_10k"
+2,1,0.715244380071019,TRUE,0.712887238017263,TRUE,"joint_unweighted_10k"
+3,4,0.716118476828261,TRUE,0.506568644593335,TRUE,"joint_unweighted_10k"
+4,3,-0.598670161356408,TRUE,-0.831257573951765,TRUE,"joint_unweighted_10k"
+5,1,0.722371667910365,TRUE,0.76146572907327,TRUE,"joint_unweighted_10k"

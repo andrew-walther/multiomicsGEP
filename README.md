@@ -31,6 +31,9 @@ Run `Rscript tests/test_modality_weights_yfb.R` for the focused checks.
 The registered balance and exclusive-program studies run with
 `Rscript results/benchmark_sim/run_modality_weight_simulation.R` (`--smoke` for one
 seed). These studies selected no weight rule, so the conditional TCGA fits did not run.
+`Rscript results/multimodal_real/score_modality_weight_external.R` scores the four
+existing fixed fits on primary matched ICGC donors without refitting. Both runners
+refuse to overwrite completed outputs.
 
 ## Getting started
 

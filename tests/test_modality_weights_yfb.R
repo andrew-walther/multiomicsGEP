@@ -104,19 +104,24 @@ run_test("Modality weights: positive raw unit changes vanish before supervised f
 })
 run_test("Modality weights: reconstruction coordinates are block-scale equivariant at zero survival", {
   set.seed(52)
-  Y <- matrix(rnorm(60), 10, 6)
   F <- seq(-0.8, 1, length.out = 6); F2 <- F^2 + 0.1
+  # A strong aligned signal prevents equivariance from passing on collapsed
+  # posterior means. Both modalities must remain nonzero after the update.
+  Y <- outer(seq(-6, 6, length.out = 10), F) + matrix(rnorm(60, sd = 0.05), 10, 6)
   tau <- seq(1, 2, length.out = 6); labels <- rep(c("expression", "methylation"), each = 3)
   weight <- unname(mw_weights[labels]); c <- c(rep(1, 3), rep(2, 3))
   # Corresponding posterior states, without projection canonicalization or SVD.
   l <- update_L_surv_YFB_k(weight * tau, F, F2, Y, prior_family = "normal")
   l_scaled <- update_L_surv_YFB_k(weight * tau / c^2, F * c, F2 * c^2,
     sweep(Y, 2, c, "*"), prior_family = "normal")
+  assert_true(sqrt(sum(l$mean^2)) > 1, "L fixture must carry a nonzero signal")
   assert_near(l$mean, l_scaled$mean, 1e-10)
   f <- update_F_surv_YFB_k(weight * tau, l$mean, l$second, Y,
     prior_family = "normal", w_surv = 0, feature_group = labels)
   f_scaled <- update_F_surv_YFB_k(weight * tau / c^2, l_scaled$mean, l_scaled$second,
     sweep(Y, 2, c, "*"), prior_family = "normal", w_surv = 0, feature_group = labels)
+  assert_true(all(vapply(split(f$mean, labels), function(v) sqrt(sum(v^2)) > 0.1, logical(1))),
+              "both F blocks must carry nonzero signal")
   assert_near(f_scaled$mean, f$mean * c, 1e-9)
   assert_near(f_scaled$second, f$second * c^2, 1e-9)
   t <- update_tau(Y, matrix(l$mean), matrix(l$second), matrix(f$mean), matrix(f$second))$Tau
