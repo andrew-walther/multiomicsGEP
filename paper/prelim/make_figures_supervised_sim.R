@@ -61,13 +61,20 @@ theme_prelim <- function() {
 ## capabilities("cairo") can report TRUE when the library cannot load, so test by opening a device.
 CAIRO_OK <- tryCatch({ f <- tempfile(fileext = ".pdf"); suppressWarnings(cairo_pdf(f)); dev.off(); file.exists(f) },
                      error = function(e) FALSE, warning = function(w) FALSE)
-if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() and their fonts are NOT embedded",
-                       call. = FALSE)
-PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
+## Without cairo, macOS's Quartz PDF device (type = "pdf") also embeds font subsets (it maps
+## Helvetica to Arial). plain pdf() is the last resort and does not embed fonts.
+QUARTZ_OK <- !CAIRO_OK && isTRUE(capabilities("aqua")) &&
+  tryCatch({ f <- tempfile(fileext = ".pdf"); grDevices::quartz(type = "pdf", file = f); dev.off(); file.exists(f) },
+           error = function(e) FALSE, warning = function(w) FALSE)
+if (!CAIRO_OK && !QUARTZ_OK) warning("cairo_pdf and quartz unavailable: figures are written with pdf() and their fonts are NOT embedded",
+                                     call. = FALSE)
+PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else if (QUARTZ_OK) {
+  function(filename, ...) grDevices::quartz(type = "pdf", file = filename, ...)
+} else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
 #' Save a figure as vector PDF at printed size.
 #' @param p ggplot/patchwork object. @param name file name. @param h height in inches.
 save_fig <- function(p, name, h) {
-  # cairo_pdf (fonts embedded) where the cairo library loads; plain pdf() otherwise, with the warning above
+  # cairo_pdf or quartz (fonts embedded) where available; plain pdf() otherwise, with the warning above
   name <- sub("\\.pdf$", paste0(SFX, ".pdf"), name)
   ggsave(file.path(FIG_DIR, name), p, width = FIG_W, height = h, device = PDF_DEVICE)
   cat("Wrote", file.path(FIG_DIR, name), sprintf("(%.1f x %.1f in)\n", FIG_W, h))

@@ -319,16 +319,18 @@ was also the weakest series at K = 7 (1.06).
 | Model | Mean C | Slope range | HR per SD (donor-clustered 95% CI) | Supervised minus model (95% CI) |
 |---|---|---|---|---|
 | Supervised (w_S = 1) | 0.630 | 0.35 to 1.85 | 1.39 (1.24, 1.56) | |
-| Two-step (rank-5 EBMF + Cox) | 0.631 | 0.33 to 1.60 | 1.40 (1.24, 1.57) | −0.001 (−0.010, 0.008) |
+| Two-step (rank-5 fit with w_S = 0 + Cox) | 0.631 | 0.33 to 1.60 | 1.40 (1.24, 1.57) | −0.001 (−0.010, 0.008) |
 | DeSurv | 0.614 | 0.45 to 0.67 | 1.43 (1.25, 1.64) | +0.016 (−0.009, 0.043) |
 | Elastic-net Cox (2,218 genes) | 0.619 | 0.49 to 1.29 | 1.34 (1.20, 1.49) | +0.011 (−0.008, 0.031) |
 | PurIST | 0.599 | 0.20 to 0.98 | 1.25 (1.13, 1.38) | +0.031 (−0.004, 0.066) |
 | EBMF rank 15 + Cox | 0.575 | 0.10 to 0.49 | 1.16 (1.04, 1.29) | +0.055 (0.027, 0.084) |
 | EBMF rank 40 + Cox | 0.581 | 0.10 to 0.31 | 1.16 (1.05, 1.29) | +0.049 (0.013, 0.087) |
 
-The two-step row keeps the K = 7 table's label convention, but the score
-is built from the YFB fit with w_S = 0 (`twostep` in
-`run_prompt6_comparators.R`), not from flashier. The comparator rows equal the K = 7 table, apart from the two-step row,
+The two-step score is the same factorization at rank 5 fitted with
+w_S = 0, followed by Cox regression on its program scores (`twostep` in
+`run_prompt6_comparators.R`), not flashier's EBMF. The table builder and
+Chapter 4 previously labeled it "rank-K EBMF + Cox" and now say "rank-K
+fit with w_S = 0 + Cox" at both ranks. The comparator rows equal the K = 7 table, apart from the two-step row,
 which is now rank 5, and the differences, which are now taken against the
 K = 5 supervised score. Every interval includes zero except those against
 the rank-15 and rank-40 EBMF fits. The rank-5 flashier EBMF fit with Cox
@@ -459,11 +461,13 @@ For PROJECT_STATUS.qmd and the progress book (owners decide):
 - The supervised-versus-two-step comparison is closer at K = 5 than at
   K = 7. Its sign in training CV (+0.004) and externally (−0.001) differs,
   and both are well within their SEs.
-- `cairo_pdf` cannot load on this machine (XQuartz is not installed), so
-  every builder fell back to `pdf()` and the K = 5 PDFs, like the
-  committed K = 7 ones, do not embed their fonts. The Chapter 4 figure
-  rule asks for embedded fonts. This predates this work and affects both
-  ranks equally.
+- `cairo_pdf` cannot load on this machine (XQuartz is not installed).
+  The figure builders first fell back to `pdf()`, which does not embed
+  fonts, for both ranks. They now fall back to macOS's Quartz PDF device,
+  which embeds font subsets (Arial in place of Helvetica), before `pdf()`.
+  All Chapter 4 figures at both ranks were rebuilt this way. Every font is
+  embedded, and each figure's extracted text matches the earlier version
+  except for how the minus sign is encoded.
 - The program builder's correspondence with the historical α_F = 0
   benchmark is not interpretable at K = 5 and is not reported.
 - During the fits, up to four R processes ran at once for a few minutes

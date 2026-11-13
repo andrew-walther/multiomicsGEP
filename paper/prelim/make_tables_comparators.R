@@ -53,7 +53,9 @@ rk <- rd("prompt7_desurv_style", "rank_paired.csv")
 rke <- rd("prompt7_desurv_style", "rank_external.csv")
 rkh <- rd("prompt7_desurv_style", "rank_pooled_hr.csv")
 lab <- c(w1 = "Supervised ($w_S = 1$)",
-         twostep = sprintf("Two-step (rank-%d EBMF + Cox)", K_TWOSTEP),
+         # Two-step: the same factorization at the same rank fitted with w_S = 0 (no
+         # survival term), then Cox regression on its program scores. It is not flashier.
+         twostep = sprintf("Two-step (rank-%d fit with $w_S = 0$ + Cox)", K_TWOSTEP),
          DeSurv = "DeSurv", elastic_net = "Elastic-net Cox (2,218 genes)", PurIST = "PurIST",
          EBMF_15 = "EBMF rank 15 + Cox", EBMF_40 = "EBMF rank 40 + Cox")
 allE <- rbind(e[, c("model", "C", "cal_slope")], rke[grepl("EBMF_(15|40)", rke$model), c("model", "C", "cal_slope")])

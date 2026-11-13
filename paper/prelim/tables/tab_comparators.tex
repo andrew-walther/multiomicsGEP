@@ -7,7 +7,7 @@
 Model & Mean $C$ & \shortstack{Calibration\\slope range} & \shortstack{HR per SD\\(95\% CI)} & \shortstack{Supervised minus\\model (95\% CI)} \\
 \midrule
 Supervised ($w_S = 1$) & 0.620 & 0.36 to 1.57 & 1.37 (1.22, 1.53) &  \\
-Two-step (rank-7 EBMF + Cox) & 0.613 & 0.28 to 1.26 & 1.35 (1.21, 1.51) & $+$0.007 ($-$0.003, 0.017) \\
+Two-step (rank-7 fit with $w_S = 0$ + Cox) & 0.613 & 0.28 to 1.26 & 1.35 (1.21, 1.51) & $+$0.007 ($-$0.003, 0.017) \\
 DeSurv & 0.614 & 0.45 to 0.67 & 1.43 (1.25, 1.64) & $+$0.007 ($-$0.017, 0.030) \\
 Elastic-net Cox (2,218 genes) & 0.619 & 0.49 to 1.29 & 1.34 (1.20, 1.49) & $+$0.001 ($-$0.015, 0.018) \\
 PurIST & 0.599 & 0.20 to 0.98 & 1.25 (1.13, 1.38) & $+$0.021 ($-$0.013, 0.057) \\
