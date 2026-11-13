@@ -65,7 +65,9 @@ Model it on the `w_S` keybox near line 232, and cover the following.
    - *Canonicalization:* show that the rescaling c_k leaves the weighted objective
      invariant.
 3. **Two weight rules, both relative to expression (w_expression = 1):**
-   - *feature count:* w_m = p_expression / p_m;
+   - *feature count:* w_m = p_expression / p_m. If methylation has q times as many
+     features as expression, its weight is 1/q. This is Andrew's proposal, and it aims to
+     reproduce the balance of the 50:50 simulation;
    - *leading eigenvalue (multiple factor analysis):* w_m = λ₁(expression) / λ₁(m), where
      λ₁ is the largest eigenvalue of the training-fold z-scored block's X′X / n.
      Methylation features are highly correlated, so this gives a different weight from
@@ -115,32 +117,49 @@ they passed. Four arms:
 
 That is 120 fits.
 
-**Block B, modality-exclusive programs (`methylation_only`).** In this scenario the two
-prognostic programs load on methylation only, and program 3 loads on both. Two cells:
-50:50 and 50:250, with 15% nonzero. Three arms:
+**Block B, joint and modality-exclusive programs (the main test of Andrew's aims).** Add a
+generator option (default off, so existing scenarios are unchanged) that plants:
 
-1. grouped with the weight rule selected below (or feature-count weights if none is
-   selected);
-2. pooled with the same weights;
-3. grouped, unweighted.
+- program 1 on expression only, by zeroing its methylation loadings;
+- program 2 on methylation only, by zeroing its expression loadings;
+- program 3 on both.
 
-That is 60 fits. Recovery is scored against the methylation part of g_k. Also report
-**exclusivity detection**: for each recovered program, whether its expression block is
-empty (empty-block event) or carries under 5% of the program's L precision. This is the
-case where grouped and pooled priors should differ, because only a grouped prior can
-switch a whole modality off for one program.
+Use β = (0.70, 0.35, 0) as in `both_informative`, so the expression-only and
+methylation-only programs are prognostic. Two cells, 50:50 and 50:250 with 15% nonzero,
+and four arms, for 80 fits:
+
+1. grouped, feature-count weights;
+2. grouped, eigenvalue weights;
+3. pooled, feature-count weights;
+4. grouped, unweighted.
+
+For each true program and arm, report:
+
+- *Loading recovery:* the matched fitted program, with |cor| ≥ 0.7 against its standardized
+  loading over all features. Program 3 is not prognostic, so this is loading recovery only.
+- *Modality pattern:* whether the matched program has the right modality pattern. For
+  programs 1 and 2, the absent modality's block is empty or carries under 5% of the
+  program's L precision. For program 3, both blocks carry at least 5%.
+- *Survival activity and sign* for programs 1 and 2.
+
+A seed counts as a **full pattern success** when all three programs are recovered with the
+right modality pattern. Report full pattern successes out of 10 per arm and cell. This is
+the case where grouped and pooled priors should differ, because only a grouped prior can
+shrink one modality's block for one program without shrinking the other.
 
 **Registered rules, set before any fit.**
 
 - *Gate:* unchanged (recovery ≥ 8/10, mean false activity ≤ 1, convergence ≥ 9/10).
 - *When a weight rule counts as effective:* it passes the gate in at least one 50:250
   cell where the unweighted grouped arm fails, and it still passes the 50:50 control.
-- *Selecting a rule:* if both are effective, select the one with more program-1
-  recoveries summed over the two 50:250 cells. Break ties with the feature-count rule.
-  If neither is effective, report that and do not run Part 4.
-- *Block B is descriptive:* report recovery and exclusivity detection per arm. If grouped
-  detects exclusivity in more seeds than pooled, report that separate priors served
-  their purpose.
+- *Selecting a rule:* if only one rule is effective in Block A, select it. If both are,
+  select the one with more full pattern successes in Block B, summed over its two cells.
+  Break ties first with program-1 recoveries over the two 50:250 cells in Block A, then
+  with the feature-count rule. If neither rule is effective, report that and do not run
+  Part 4.
+- *Separate priors:* report whether grouped beats pooled on full pattern successes under
+  feature-count weights. That is the evidence on whether separate priors serve their
+  purpose.
 
 Report empty-block counts and precision shares in every arm. Use new output directories,
 for example `feature_group_simulation_2026-11-12_weights`. Commit the aggregates.
@@ -158,12 +177,10 @@ fits:
 3. grouped, unweighted, 100k CpGs. The unweighted 10k fit already exists from Part A of
    the next-steps prompt.
 
-Report, labelled **not validated by simulation** where the gate was not passed for this
-setting:
+The readouts are listed in order of importance. Andrew's interest is in what the
+methylation data add to the programs, not in prediction. Label the results **not validated
+by simulation** where the gate was not passed for this setting.
 
-- *Prediction:* CV C per fold and the mean, with paired differences against expression
-  alone (from the next-steps run) and SEs. This is descriptive only. Prediction is not
-  expected to improve.
 - *Balance:* the weights used, each modality's L-precision share per live program, and
   empty-block counts by modality and program.
 - *Modality-exclusive programs:* programs whose expression or methylation block is empty
@@ -176,6 +193,9 @@ setting:
   top-20 CpGs with their island and promoter annotation. Count the top CpGs annotated to
   a promoter of one of the program's top-50 genes, and the sign of each such pair's
   loadings. Expression and methylation are expected to be anti-correlated at promoters.
+- *Prediction:* CV C per fold and the mean, with paired differences against expression
+  alone (from the next-steps run) and SEs. This is descriptive only. Prediction is not
+  expected to improve.
 - *Cost:* convergence, iteration caps and run time. Task C's 100k methylation fits took
   7–15 minutes each.
 
