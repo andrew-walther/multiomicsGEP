@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Andrew Walther">
-<meta name="dcterms.date" content="2026-11-12">
+<meta name="dcterms.date" content="2026-11-13">
 
 <title>SSBMF Progress Notebook</title>
 <style>
@@ -286,7 +286,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 12, 2026</p>
+      <p class="date">November 13, 2026</p>
     </div>
   </div>
   
@@ -304,13 +304,13 @@ window.Quarto = {
 <p>For a complete session-by-session build log (every script, test, and decision), see <code>PROJECT_STATUS.qmd</code> at the repo root. This notebook is the meeting-facing summary of that log.</p>
 <p>Open the <a href="./current-state.html">current project state</a> for priorities, milestones and examples from the saved results.</p>
 <p>Chapters are listed in the sidebar in date order. Click a date to jump to that meeting.</p>
-<p>The <a href="./chapters/2026-10-30.html">October 30 update</a> is the latest account of precision balance, numerical posterior checks and the registered survival-supervision decision test. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>. A fully validated survival-supervised replacement remains an open research goal. The <a href="./chapters/2026-11-06.html">November 6 chapter</a> is this week’s working chapter and is filled in as the work is done.</p>
+<p>The <a href="./chapters/2026-11-13.html">November 13 chapter</a> reports the working rank-5 model, its rebuilt exhibits, prior comparisons, methylation results, and the initial expression–methylation evaluation. The joint comparison is descriptive and not validated by simulation. Earlier chapters preserve their own configurations and results.</p>
 <section id="project-synopsis" class="level2">
 <h2 class="anchored" data-anchor-id="project-synopsis">Project synopsis</h2>
 <p>Supervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix (gene expression) and a patient survival outcome, so the resulting gene expression programs (GEPs) are chosen to be both genomically coherent <em>and</em> prognostically relevant. Standard unsupervised factorization (PCA, NMF) has no reason to recover clinically meaningful structure.</p>
 <ul>
 <li><strong>Model:</strong> <span class="math inline">\(Y = LF^\top + E\)</span> (genomics) coupled to a Cox proportional hazards model on survival, fit by Coordinate Ascent Variational Inference (CAVI) with Empirical Bayes Normal Means (EBNM) sub-updates for sparsity.</li>
-<li><strong>Current recommended form:</strong> YFB (<code>code/fit_cox_on_yf.R</code>), <span class="math inline">\(\eta = (YF)\beta\)</span>. The survival predictor is computed directly from observed expression, avoiding train/test projection mismatch.</li>
+<li><strong>Working form:</strong> YFB (<code>code/fit_ssbmf_yfb.R</code>), <span class="math inline">\(\eta = (YF)\beta\)</span>. The survival predictor is computed directly from observed expression, avoiding train/test projection mismatch.</li>
 <li><strong>Data:</strong> PDAC patient cohorts spanning RNA-seq and microarray platforms (TCGA-PAAD and CPTAC for training, with 5 independent cohorts held out for external validation).</li>
 <li><strong>Research question:</strong> does coupling factorization to survival find real prognostic structure, and is that structure worth the added model complexity? Evaluated against three baselines: DeSurv (a published joint method), a two-step factorize-then-Cox baseline, and unsupervised EBMF.</li>
 </ul>
