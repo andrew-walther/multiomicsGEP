@@ -267,3 +267,14 @@ the ignored `K05/R-library/` directory and writes aggregate CSVs under
 `K05/factor_characterization/`. No external scores or model adoption are involved.
 The K = 5 synthetic checks are `tests/test_expression_iteration_extension_k5.R`
 and `tests/test_methylation_factor_characterization_k5.R`.
+
+The final fixed modality-weight path is registered in
+`docs/prompts/2026-11-12-codex-d-weight-path-prompt.md`. Run its separate smoke
+study with `Rscript results/benchmark_sim/run_modality_weight_simulation.R --weight-path --smoke`,
+then omit `--smoke` for the 150-fit study. The runner freezes the usable-weight
+rule before fitting and stops if repeated arms differ from the earlier study.
+After Part A, run `Rscript results/multimodal_real/run_modality_weight_path.R`
+for the four approved descriptive TCGA fits. These commands refuse to overwrite
+existing output directories. Fits remain under ignored `data/`, and aggregate
+results go to the corresponding `weight_path` output directories. No CV or
+external scoring is part of this final study.

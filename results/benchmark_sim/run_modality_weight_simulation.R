@@ -231,4 +231,249 @@ mwsim_run <- function(smoke = FALSE) {
   print(A); print(B); print(selection)
   invisible(list(A = A, B = B, selection = selection))
 }
-if (sys.nframe() == 0L) mwsim_run("--smoke" %in% commandArgs(trailingOnly = TRUE))
+#' Correlate nonconstant fitted and truth loading blocks
+#' @param truth,fitted Equal-length loading vectors, normalized implicitly by cor().
+#' @return Signed Pearson correlation, NA for an absent/constant block.
+#' @examples
+#' mwpath_cor(1:4, 2*(1:4))
+mwpath_cor <- function(truth, fitted) {
+  if (sd(truth) == 0 || sd(fitted) == 0) return(NA_real_)
+  cor(truth, fitted)
+}
+
+#' Apply all four registered usability conditions and fixed tie break
+#' @param A Two-cell summaries with fraction, weight and primary retention counts.
+#' @param B Per-truth loading-plus-pattern summaries.
+#' @return One row per candidate, with component checks and selected_weight.
+#' @examples
+#' # mwpath_select(A, B)
+mwpath_select <- function(A, B) {
+  candidates <- sort(unique(A$weight[A$weight < 1]), decreasing = TRUE)
+  base <- A[A$weight == 1, ]; baseB <- B[B$weight == 1, ]
+  rows <- lapply(candidates, function(w) {
+    a <- A[A$weight == w, ]; a <- a[match(base$fraction, a$fraction), ]
+    b <- B[B$weight == w, ]; b <- b[match(baseB$truth_program, b$truth_program), ]
+    data.frame(weight = w,
+      no_loss_A = nrow(a)==2 && all(a$recovered >= base$recovered & a$mean_false_active <= 1),
+      methylation_stays = all(a$methylation_retained >= 8),
+      no_loss_B = all(b$loading_and_pattern[baseB$truth_program < 3] >=
+        baseB$loading_and_pattern[baseB$truth_program < 3]),
+      gain = sum(a$recovered)>sum(base$recovered) ||
+        sum(b$loading_and_pattern)>sum(baseB$loading_and_pattern),
+      B_total = sum(b$loading_and_pattern))
+  })
+  result <- do.call(rbind, rows)
+  result$usable <- apply(result[c('no_loss_A','methylation_stays','no_loss_B','gain')], 1, all)
+  eligible <- result[result$usable, ]
+  selected <- if(nrow(eligible)) eligible$weight[order(-eligible$B_total,-eligible$weight)[1]] else NA_real_
+  result$selected_weight <- selected
+  result
+}
+
+#' Require exactly equal repeated-arm outcomes, excluding wall-clock timing
+#' @param metrics New path metrics, complete or one fit.
+#' @param old Earlier registered metrics.
+#' @return TRUE or an error identifying the mismatching repeated fit.
+#' @examples
+#' # mwpath_reproduce(metrics, old_metrics)
+mwpath_reproduce <- function(metrics, old) {
+  fields <- c('recovered','recovered2','false_active','converged','n_iter','empty_blocks',
+    'point_mass_resets','full_pattern_success','c_validation','n_warnings','error')
+  repeats <- metrics[metrics$weight %in% c(1,.2), ]
+  for(i in seq_len(nrow(repeats))) {
+    x <- repeats[i, ]; arm <- if(x$weight==1) 'grouped_unweighted' else 'grouped_count'
+    y <- old[old$block==x$block & old$feature_ratio==5 &
+      old$methylation_active_fraction==x$methylation_active_fraction & old$seed==x$seed & old$arm==arm, ]
+    if(nrow(y)!=1 || !isTRUE(all.equal(x[fields], y[fields], tolerance=0, check.attributes=FALSE)))
+      stop('Reproducibility check failed: ',x$block,' fraction ',x$methylation_active_fraction,
+           ' seed ',x$seed,' weight ',x$weight)
+  }
+  TRUE
+}
+
+#' Run the approved fixed weight path, checking repeated arms before interpretation
+#' @param smoke Run one seed per cell and weight in separate directories.
+#' @return Invisible aggregate tables, also checkpointed after every fit.
+#' @examples
+#' # mwpath_run(TRUE)
+mwpath_run <- function(smoke=FALSE) {
+  suffix <- paste0('2026-11-12_weight_path',if(smoke) '_smoke' else '')
+  out <- paste0('results/benchmark_sim/outputs/feature_group_simulation_',suffix)
+  private <- paste0('data/feature_group_simulation_',suffix)
+  if(dir.exists(out)||dir.exists(private)) stop('Refusing to overwrite a path run.')
+  dir.create(out,recursive=TRUE); dir.create(private,recursive=TRUE)
+  cfg <- yaml::read_yaml('config/globals.yml')
+  if(cfg$benchmark$k_working_yfb!=5) stop('Registered K must be five.')
+  weights <- c(1,.7,1/sqrt(5),.3,.2); seeds <- if(smoke) 1L else 1:10
+  writeLines(c('registration=docs/prompts/2026-11-12-codex-d-weight-path-prompt.md',
+    paste0('weights=',paste(format(weights,digits=17),collapse=',')),
+    paste0('seeds=',paste(seeds,collapse=',')),
+    'cells=A ratio5 fraction.15,A ratio5 fraction.03,B ratio5 fraction.15',
+    'all generator, survival regeneration, training scaling and signed SVD starts unchanged from weights run',
+    'grouped point-Laplace L/F, Normal beta, K5,wS1,no pruning; workers1,numerical_threads1',
+    paste0('max_iter=',cfg$cavi$max_iter,';tol=',cfg$cavi$tol,';alpha=',cfg$benchmark$alpha),
+    'matching=independent largest absolute full loading Pearson correlation per truth',
+    'block_cor=signed Pearson within modality; NA for zero/constant fitted or truth block; report defined denominator',
+    'precision=weighted Tau*EF2; retention>=.05; zero-total share NA counts as not retained',
+    'usable=w<1; BOTH A recovery>=w1 and mean false<=1; BOTH A primary retention>=8/10;',
+    'B exclusive1,2 loading+pattern>=w1; strict gain summed A recovery OR summed B loading+pattern',
+    'selection=largest B loading+pattern sum, then larger weight; convergence reported separately',
+    'reproducibility=exact per-fit prior metric outcomes, precision and pattern tables for w1 and w.2; elapsed excluded'),
+    file.path(out,'settings.txt'))
+  sources <- c('results/benchmark_sim/run_modality_weight_simulation.R',
+    'results/benchmark_sim/run_feature_group_simulation.R','code/fit_ssbmf_yfb.R',
+    'code/modality_weights_yfb.R','code/simulate_multimodal_yfb.R','config/globals.yml')
+  write.csv(data.frame(path=sources,md5=unname(tools::md5sum(sources))),file.path(out,'source_hashes.csv'),row.names=FALSE)
+  previous <- 'results/benchmark_sim/outputs/feature_group_simulation_2026-11-12_weights'
+  old <- read.csv(file.path(previous,'metrics.csv'),colClasses=c(error='character'))
+  oldp <- read.csv(file.path(previous,'precision.csv')); oldb <- read.csv(file.path(previous,'patterns.csv'))
+  tables <- list(metrics=NULL,precision=NULL,matched=NULL,patterns=NULL,warnings=NULL)
+  cells <- data.frame(block=c('A','A','B'),fraction=c(.15,.03,.15))
+  for(cell in seq_len(nrow(cells))) for(seed in seeds) {
+    row <- cells[cell, ]; exclusive <- row$block=='B'
+    data <- simulate_multimodal_yfb_data('both_informative',p_methylation=250L,seed=seed,
+      methylation_active_fraction=row$fraction,modality_exclusive_programs=exclusive)
+    x <- fgsim_prepare(data,seed,programs=1:2)
+    inputs <- fgsim_arm_inputs(x,5L)$grouped
+    g3 <- unlist(Map(function(F,s) F[,3]/s,data$truth$F,x$scaled$sd),use.names=FALSE)
+    g3 <- g3/sqrt(sum(g3^2)); truth <- if(exclusive) cbind(x$g,g3) else x$g
+    for(w in weights) {
+      base <- data.frame(block=row$block,feature_ratio=5,methylation_active_fraction=row$fraction,seed=seed,weight=w)
+      start <- proc.time()[['elapsed']]; warnings <- character()
+      answer <- tryCatch(withCallingHandlers({
+        fit <- mwsim_fit(inputs,c(expression=1,methylation=w),FALSE,cfg)
+        rec <- fgsim_recovery_two(fit,inputs$g,inputs$groups,cfg$multimodal_yfb$prognostic_z_threshold)
+        precision <- mwsim_precision(fit,inputs$groups)
+        matched <- do.call(rbind,lapply(seq_len(ncol(truth)),function(t) {
+          r <- vapply(seq_len(ncol(fit$EF)),function(k) mwpath_cor(truth[,t],fit$EF[,k]),numeric(1))
+          k <- if(any(is.finite(r))) which.max(replace(abs(r),!is.finite(r),-Inf)) else NA_integer_
+          do.call(rbind,lapply(unique(inputs$groups),function(m) {
+            j <- inputs$groups==m
+            p <- precision[precision$program==k & precision$modality==m & !is.na(k), ]
+            data.frame(truth_program=t,matched_program=k,modality=m,
+              full_correlation=if(is.na(k)) NA_real_ else r[k],
+              block_correlation=if(is.na(k)) NA_real_ else mwpath_cor(truth[j,t],fit$EF[j,k]),
+              share=if(nrow(p)) p$share else NA_real_,empty=if(nrow(p)) p$empty else NA,
+              retained=if(nrow(p)) isTRUE(p$share>=.05) else FALSE)
+          }))
+        }))
+        pattern <- if(exclusive) mwsim_patterns(fit,truth,inputs$groups,cfg$multimodal_yfb$prognostic_z_threshold) else NULL
+        score <- predict_ssbmf_yfb(inputs$Y_validation,fit$EF,fit$EBeta,fit$EF_norms)$risk_scores
+        metrics <- data.frame(error='',recovered=rec$recovered,recovered2=rec$recovered2,
+          false_active=rec$false_active,converged=isTRUE(fit$history$converged),n_iter=fit$history$n_iter,
+          empty_blocks=sum(precision$empty),point_mass_resets=sum(fit$empty_blocks),
+          full_pattern_success=if(exclusive) all(pattern$loading_recovered & pattern$pattern_correct) else NA,
+          c_validation=frozen_reverse_cindex(score,inputs$time_validation,inputs$event_validation))
+        saveRDS(list(fit=fit,inputs=inputs,truth=data$truth),file.path(private,
+          sprintf('%s_fraction%s_seed%d_weight%.10f.rds',row$block,row$fraction,seed,w)))
+        list(metrics=metrics,precision=precision,matched=matched,patterns=pattern)
+      },warning=function(e) {warnings <<- c(warnings,conditionMessage(e));invokeRestart('muffleWarning')}),
+      error=function(e) list(metrics=data.frame(error=conditionMessage(e),recovered=FALSE,recovered2=FALSE,
+        false_active=NA_real_,converged=FALSE,n_iter=NA_integer_,empty_blocks=NA_integer_,
+        point_mass_resets=NA_integer_,full_pattern_success=if(exclusive) FALSE else NA,c_validation=NA_real_)))
+      answer$metrics$elapsed_seconds <- proc.time()[['elapsed']]-start
+      answer$metrics$n_warnings <- length(warnings)
+      if(length(warnings)) answer$warnings <- data.frame(warning_number=seq_along(warnings),warning=warnings)
+      for(type in names(tables)) if(!is.null(answer[[type]])) {
+        rows <- cbind(base[rep(1,nrow(answer[[type]])), ],answer[[type]])
+        tables[[type]] <- rbind(tables[[type]],rows)
+        write.csv(tables[[type]],file.path(out,paste0(type,'.csv')),row.names=FALSE)
+      }
+      # Compare repeats immediately; never interpret changed reproductions.
+      # Compare serialized aggregates with serialized aggregates at identical CSV precision.
+      current <- tail(read.csv(file.path(out,'metrics.csv'),colClasses=c(error='character')),1L)
+      mwpath_reproduce(current,old)
+      if(w %in% c(1,.2) && !nzchar(answer$metrics$error)) {
+        arm <- if(w==1) 'grouped_unweighted' else 'grouped_count'
+        for(type in c('precision',if(exclusive) 'patterns')) {
+          prior <- if(type=='precision') oldp else oldb
+          prior <- prior[prior$block==row$block & prior$feature_ratio==5 &
+            prior$methylation_active_fraction==row$fraction & prior$seed==seed & prior$arm==arm, ]
+          current_rows <- tail(read.csv(file.path(out,paste0(type,'.csv'))),nrow(answer[[type]]))
+          fields <- names(answer[[type]])
+          # Earlier precision includes an explicit weight column absent here.
+          if(!isTRUE(all.equal(current_rows[fields],prior[fields],tolerance=0,check.attributes=FALSE)))
+            stop('Reproducibility ',type,' check failed.')
+        }
+      }
+      cat(sprintf('%s %.2f seed%d w%.10f converged=%s error=%s\n',row$block,row$fraction,seed,w,
+        answer$metrics$converged,answer$metrics$error));flush.console()
+    }
+  }
+  writeLines('PASS: all repeated metric, precision and pattern rows match exactly',file.path(out,'reproducibility.txt'))
+  mwpath_summarize(out,smoke)
+  invisible(tables)
+}
+
+#' Summarize path cells and truth-specific block recovery without refitting
+#' @param out Completed path aggregate directory.
+#' @param smoke Whether selection is prohibited for a smoke run.
+#' @return Invisible list of summaries.
+#' @examples
+#' # mwpath_summarize(out)
+mwpath_summarize <- function(out,smoke=FALSE) {
+  read <- function(name) read.csv(file.path(out,paste0(name,'.csv')),colClasses=if(name=='metrics') c(error='character') else NA)
+  m <- read('metrics'); p <- read('precision'); t <- read('matched'); b <- read('patterns')
+  if(nrow(m)!=(if(smoke) 15L else 150L) || anyDuplicated(m[c('block','methylation_active_fraction','seed','weight')]))
+    stop('Incomplete or duplicate path metrics.')
+  group <- function(x,cols) split(x,interaction(x[cols],drop=TRUE,lex.order=TRUE))
+  expected <- expand.grid(cell=1:3,seed=if(smoke) 1L else 1:10,
+    weight=c(1,.7,1/sqrt(5),.3,.2))
+  expected$block <- c('A','A','B')[expected$cell]
+  expected$methylation_active_fraction <- c(.15,.03,.15)[expected$cell]
+  #' Check exact table identities after common CSV precision rounding
+  #' @param actual,wanted Data frames whose keys must agree exactly.
+  #' @param cols Key column names.
+  #' @return NULL, or an error for missing, extra or duplicate rows.
+  #' @examples
+  #' # check_rows(m, expected, c('block','seed','weight'))
+  check_rows <- function(actual,wanted,cols) {
+    key <- function(x) do.call(paste,lapply(x[cols],function(z)
+      if(is.numeric(z)) format(z,digits=14,trim=TRUE) else z))
+    a <- key(actual); w <- key(wanted)
+    if(anyDuplicated(a) || length(a)!=length(w) || !setequal(a,w))
+      stop('Aggregate rows do not match the registered path design.')
+  }
+  fitkeys <- c('block','methylation_active_fraction','seed','weight')
+  check_rows(m,expected,fitkeys)
+  successful <- m[!nzchar(m$error),fitkeys]
+  wantp <- merge(successful,expand.grid(program=1:5,modality=c('expression','methylation')))
+  check_rows(p,wantp,c(fitkeys,'program','modality'))
+  wantt <- do.call(rbind,lapply(seq_len(nrow(successful)),function(i)
+    merge(successful[i,,drop=FALSE],expand.grid(truth_program=if(successful$block[i]=='B') 1:3 else 1:2,
+      modality=c('expression','methylation')))))
+  check_rows(t,wantt,c(fitkeys,'truth_program','modality'))
+  wantb <- merge(successful[successful$block=='B',],data.frame(truth_program=1:3))
+  check_rows(b,wantb,c(fitkeys,'truth_program'))
+  keys <- c('block','methylation_active_fraction','weight')
+  summary <- do.call(rbind,lapply(group(m,keys),function(x) {
+    primary <- t[t$block==x$block[1] & t$methylation_active_fraction==x$methylation_active_fraction[1] &
+      t$weight==x$weight[1] & t$truth_program==1 & t$modality=='methylation', ]
+    data.frame(x[1,keys],seeds=nrow(x),failed=sum(nzchar(x$error)),recovered=sum(x$recovered),
+      mean_false_active=mean(x$false_active),converged=sum(x$converged),
+      methylation_retained=sum(primary$retained),n_warnings=sum(x$n_warnings))
+  }))
+  matched <- do.call(rbind,lapply(group(t,c(keys,'truth_program','modality')),function(x) {
+    defined <- is.finite(x$block_correlation); shares <- is.finite(x$share)
+    data.frame(x[1,c(keys,'truth_program','modality')],seeds=nrow(x),
+      mean_signed_correlation=if(any(defined)) mean(x$block_correlation[defined]) else NA_real_,
+      mean_abs_correlation=if(any(defined)) mean(abs(x$block_correlation[defined])) else NA_real_,
+      correlation_defined=sum(defined),mean_share=if(any(shares)) mean(x$share[shares]) else NA_real_,
+      share_defined=sum(shares),retained=sum(x$retained),empty=sum(x$empty),
+      empty_or_under5=sum(x$empty | (is.finite(x$share) & x$share<.05),na.rm=TRUE))
+  }))
+  empty <- do.call(rbind,lapply(group(p,c(keys,'modality')),function(x)
+    data.frame(x[1,c(keys,'modality')],empty=sum(x$empty),denominator=nrow(x))))
+  patterns <- do.call(rbind,lapply(group(b,c(keys,'truth_program')),function(x)
+    data.frame(x[1,c(keys,'truth_program')],seeds=nrow(x),loading=sum(x$loading_recovered),
+      pattern=sum(x$pattern_correct),loading_and_pattern=sum(x$loading_recovered & x$pattern_correct))))
+  a <- summary[summary$block=='A', ]; a$fraction <- a$methylation_active_fraction
+  selection <- if(smoke || any(summary$failed>0)) data.frame(selected_weight=NA_real_,status='smoke_or_failed') else mwpath_select(a,patterns)
+  result <- list(summary=summary,summary_matched=matched,summary_empty=empty,summary_patterns=patterns,selection=selection)
+  for(name in names(result)) write.csv(result[[name]],file.path(out,paste0(name,'.csv')),row.names=FALSE)
+  print(summary);print(selection);invisible(result)
+}
+if (sys.nframe() == 0L) {
+  args <- commandArgs(trailingOnly=TRUE)
+  if('--weight-path' %in% args) mwpath_run('--smoke' %in% args) else mwsim_run('--smoke' %in% args)
+}
