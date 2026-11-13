@@ -1,0 +1,9 @@
+registration=docs/prompts/2026-11-12-codex-d-weight-path-prompt.md
+scope=four new full-data fits; reused unweighted baseline; no CV; no external scoring
+count_weight_exact=2218/10000=0.2218; prompt rounded display 0.22
+data=144 matched patients;2218 D4 genes;10000 ranked CpGs;all-patient feature z-scores
+fit=grouped point-Laplace L/F;Normal beta;K5;canonicalize TRUE;wS1;common SVD starts
+classification=exclusive if other block empty or precision<5%;joint if both>=5%
+new_program=best absolute patient-score correlation<0.5 with both fixed single-modality fits
+promoter=any 450K UCSC region TSS1500,TSS200,5'UTR,1stExon;island=450K Relation_to_Island
+workers=1;numerical_threads=1
