@@ -35,9 +35,13 @@ so the validation series are not untouched. Under the current rule they only sco
 5. **Methylation alone.** Methylation predicts worse than expression on the same 144
    patients (CV C 0.50 to 0.55 against 0.58) and shows no survival-active program that
    expression lacks, though some methylation programs are not explained by expression.
-6. **Joint fit and survival weight.** The feature-group fitter is implemented. Its descriptive
-   matched-TCGA joint fit predicts less well than expression alone and is not validated by
-   simulation. The completed K = 5 weight search keeps w_S = 1.
+6. **Joint fit.** The feature-group fitter gives each data type its own loading prior. With
+   equal feature counts in simulation, separate priors found expression-only, methylation-only
+   and joint programs more often than one pooled prior. When CpG sites outnumber genes,
+   methylation dominates the shared programs, and likelihood weights did not fix this: any
+   weight below 1 emptied the methylation loadings. The joint model stays in development
+   and is paused for now.
+7. **Survival weight.** The completed K = 5 weight search keeps w_S = 1.
 
 ## External cohorts are used only to score a fixed model
 
@@ -401,10 +405,59 @@ joint comparison. Every joint program matches a program in each single-modality 
 block at absolute correlation at least 0.5, so none qualifies as joint-only. Methylation
 supplies 29% to 97% of the shared-score reconstruction precision in the separate-prior full
 fit. Those are precision contributions, not shares of explained variance or prediction.
-No joint model is adopted, and no external joint score has been evaluated.
+No joint model is adopted.
+
+**What the joint model is for.** The aim is interpretive: which genes and CpG sites load on
+the same programs, whether methylation contributes joint programs, and whether some programs
+load on methylation or expression alone. A gain in prediction over expression is not
+expected. Chapter 4 presents the joint model as a proposed contribution still in development.
+
+**Programs on one data type.** A third simulation planted an expression-only, a
+methylation-only and a joint program (50 genes, 50 CpGs, 15% nonzero, 120 training
+patients, 10 datasets). With these equal feature counts, separate priors found the right
+loading and data-type pattern more often than a pooled prior:
+
+| True program | Separate priors | Pooled prior |
+|---|---|---|
+| Expression-only | 5/10 | 1/10 |
+| Methylation-only (β = 0.35) | 2/10 | 0/10 |
+| Joint, not prognostic | 7/10 | 5/10 |
+
+No fit recovered all three programs in the same dataset. The methylation-only program has
+the smaller coefficient and was rarely found by either prior.
+
+**Balancing the data types.** Each data type's reconstruction likelihood was raised to a
+power w~m~, as w_S does for the survival term. With 250 methylation features against 50 genes,
+the feature-count weight (w = 0.2) and the leading-eigenvalue weight emptied the methylation
+loadings in nearly every program. A path of fixed weights (simulation, two cells):
+
+| Methylation weight | Recovery /10 | Methylation share of prognostic program | Empty methylation blocks /50 |
+|---|---|---|---|
+| 1 | 4, 5 | 52%, 60% | 8, 5 |
+| 0.7 | 4, 1 | 21%, 9% | 42, 46 |
+| 0.45 | 1, 0 | 3%, <0.1% | 47, 48 |
+| 0.3 and 0.2 | 0, 0 | <0.1% | 48 |
+
+The weight lowers each CpG's evidence for its own loading by the same factor that it lowers
+methylation's influence on the scores, so empirical Bayes shrinks the methylation loadings
+to zero before the data types are balanced. On the matched TCGA patients at 10k CpGs,
+lowering the weight to 0.3 or below changed two programs from joint to expression-only,
+while the most methylation-heavy program stayed above 94% methylation at every weight. No
+program at any weight was distinct from both single-data-type fits.
+
+**ICGC, descriptive.** In 50 matched ICGC donors (30 deaths), C was 0.660 for expression
+alone, 0.636 and 0.594 for methylation alone at 10k and 100k CpGs, and 0.692 for the
+unweighted joint fit (difference 0.032, donor-bootstrap interval −0.093 to 0.147).
+
+**Status.** Paused. Separate priors behave as intended at balanced feature counts, and a
+power on the reconstruction likelihood does not balance unequal counts. Untested
+alternatives are weighting methylation only in the score update and summarizing CpGs by
+region before fitting.
 
 **Sources.** [Feature-group implementation and simulation findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-feature-group-fitter-findings.md)
-and [matched-TCGA findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md).
+[matched-TCGA findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md),
+[modality-weight findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-modality-weights-findings.md)
+and [weight-path findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-weight-path-findings.md).
 
 ## LB and YFB compared
 

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.10.19">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -43,7 +43,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -281,7 +281,8 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>The K = 5 model.</strong> Within-cohort CV C is 0.655 and every fold converges. Programs 2 (protective), 4 and 5 (adverse) are survival-active, and only Program 2 is a main program. Externally the equal-series mean C is 0.630 (0.587 to 0.670). At K = 5 the estimated supervised-minus-two-step differences are small (training CV +0.004, SE 0.004, external −0.001, donor interval −0.010 to 0.008).</li>
 <li><strong>LB and YFB.</strong> On the real data the two give the same programs and nearly the same risk scores (r = 0.998, CV C 0.652 and 0.655). YFB is kept: in simulation LB marks more unmatched programs survival-active at w_S = 1 in the three variance cells, and YFB scores new patients without fold-in.</li>
 <li><strong>Methylation alone.</strong> Methylation predicts worse than expression on the same 144 patients (CV C 0.50 to 0.55 against 0.58) and shows no survival-active program that expression lacks, though some methylation programs are not explained by expression.</li>
-<li><strong>Joint fit and survival weight.</strong> The feature-group fitter is implemented. Its descriptive matched-TCGA joint fit predicts less well than expression alone and is not validated by simulation. The completed K = 5 weight search keeps w_S = 1.</li>
+<li><strong>Joint fit.</strong> The feature-group fitter gives each data type its own loading prior. With equal feature counts in simulation, separate priors found expression-only, methylation-only and joint programs more often than one pooled prior. When CpG sites outnumber genes, methylation dominates the shared programs, and likelihood weights did not fix this: any weight below 1 emptied the methylation loadings. The joint model stays in development and is paused for now.</li>
+<li><strong>Survival weight.</strong> The completed K = 5 weight search keeps w_S = 1.</li>
 </ol>
 </section>
 <section id="external-cohorts-are-used-only-to-score-a-fixed-model" class="level2" data-number="15.2">
@@ -591,8 +592,83 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 </tbody>
 </table>
-<p>Three expression folds reached the 300-sweep limit and remain in the paired comparison. The 0.582 converged expression reference in the methylation section belongs to a separate 1,000-sweep follow-up. It cannot replace this table’s reference without rerunning the joint comparison. Every joint program matches a program in each single-modality loading block at absolute correlation at least 0.5, so none qualifies as joint-only. Methylation supplies 29% to 97% of the shared-score reconstruction precision in the separate-prior full fit. Those are precision contributions, not shares of explained variance or prediction. No joint model is adopted, and no external joint score has been evaluated.</p>
-<p><strong>Sources.</strong> <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-feature-group-fitter-findings.md">Feature-group implementation and simulation findings</a> and <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md">matched-TCGA findings</a>.</p>
+<p>Three expression folds reached the 300-sweep limit and remain in the paired comparison. The 0.582 converged expression reference in the methylation section belongs to a separate 1,000-sweep follow-up. It cannot replace this table’s reference without rerunning the joint comparison. Every joint program matches a program in each single-modality loading block at absolute correlation at least 0.5, so none qualifies as joint-only. Methylation supplies 29% to 97% of the shared-score reconstruction precision in the separate-prior full fit. Those are precision contributions, not shares of explained variance or prediction. No joint model is adopted.</p>
+<p><strong>What the joint model is for.</strong> The aim is interpretive: which genes and CpG sites load on the same programs, whether methylation contributes joint programs, and whether some programs load on methylation or expression alone. A gain in prediction over expression is not expected. Chapter 4 presents the joint model as a proposed contribution still in development.</p>
+<p><strong>Programs on one data type.</strong> A third simulation planted an expression-only, a methylation-only and a joint program (50 genes, 50 CpGs, 15% nonzero, 120 training patients, 10 datasets). With these equal feature counts, separate priors found the right loading and data-type pattern more often than a pooled prior:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>True program</th>
+<th>Separate priors</th>
+<th>Pooled prior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Expression-only</td>
+<td>5/10</td>
+<td>1/10</td>
+</tr>
+<tr class="even">
+<td>Methylation-only (β = 0.35)</td>
+<td>2/10</td>
+<td>0/10</td>
+</tr>
+<tr class="odd">
+<td>Joint, not prognostic</td>
+<td>7/10</td>
+<td>5/10</td>
+</tr>
+</tbody>
+</table>
+<p>No fit recovered all three programs in the same dataset. The methylation-only program has the smaller coefficient and was rarely found by either prior.</p>
+<p><strong>Balancing the data types.</strong> Each data type’s reconstruction likelihood was raised to a power w<sub>m</sub>, as w_S does for the survival term. With 250 methylation features against 50 genes, the feature-count weight (w = 0.2) and the leading-eigenvalue weight emptied the methylation loadings in nearly every program. A path of fixed weights (simulation, two cells):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Methylation weight</th>
+<th>Recovery /10</th>
+<th>Methylation share of prognostic program</th>
+<th>Empty methylation blocks /50</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>4, 5</td>
+<td>52%, 60%</td>
+<td>8, 5</td>
+</tr>
+<tr class="even">
+<td>0.7</td>
+<td>4, 1</td>
+<td>21%, 9%</td>
+<td>42, 46</td>
+</tr>
+<tr class="odd">
+<td>0.45</td>
+<td>1, 0</td>
+<td>3%, &lt;0.1%</td>
+<td>47, 48</td>
+</tr>
+<tr class="even">
+<td>0.3 and 0.2</td>
+<td>0, 0</td>
+<td>&lt;0.1%</td>
+<td>48</td>
+</tr>
+</tbody>
+</table>
+<p>The weight lowers each CpG’s evidence for its own loading by the same factor that it lowers methylation’s influence on the scores, so empirical Bayes shrinks the methylation loadings to zero before the data types are balanced. On the matched TCGA patients at 10k CpGs, lowering the weight to 0.3 or below changed two programs from joint to expression-only, while the most methylation-heavy program stayed above 94% methylation at every weight. No program at any weight was distinct from both single-data-type fits.</p>
+<p><strong>ICGC, descriptive.</strong> In 50 matched ICGC donors (30 deaths), C was 0.660 for expression alone, 0.636 and 0.594 for methylation alone at 10k and 100k CpGs, and 0.692 for the unweighted joint fit (difference 0.032, donor-bootstrap interval −0.093 to 0.147).</p>
+<p><strong>Status.</strong> Paused. Separate priors behave as intended at balanced feature counts, and a power on the reconstruction likelihood does not balance unequal counts. Untested alternatives are weighting methylation only in the score update and summarizing CpGs by region before fitting.</p>
+<p><strong>Sources.</strong> <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-feature-group-fitter-findings.md">Feature-group implementation and simulation findings</a> <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md">matched-TCGA findings</a>, <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-modality-weights-findings.md">modality-weight findings</a> and <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-weight-path-findings.md">weight-path findings</a>.</p>
 </section>
 <section id="lb-and-yfb-compared" class="level2" data-number="15.9">
 <h2 data-number="15.9" class="anchored" data-anchor-id="lb-and-yfb-compared"><span class="header-section-number">15.9</span> LB and YFB compared</h2>
