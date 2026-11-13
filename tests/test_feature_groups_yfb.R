@@ -57,10 +57,11 @@ fg_fit <- function(d, extra = list()) {
 #' record the calls needed to check the objective independently of its cache.
 #' @param d Fixture, normally run for one sweep.
 #' @param groups One label per feature.
+#' @param extra Additional named fitter arguments.
 #' @return List containing fit, F update calls/results, scalar KLs and rescaling.
 #' @examples
 #' # fg_observe(fg_fixture(), rep(c("rna", "meth"), each = 12))
-fg_observe <- function(d, groups) {
+fg_observe <- function(d, groups, extra = list()) {
   original_F <- multimodal_yfb_update_F_mk
   original_kl <- compute_ebnm_kl
   original_cz <- canonicalize_yf_factors
@@ -87,7 +88,7 @@ fg_observe <- function(d, groups) {
     assign("compute_ebnm_kl", original_kl, envir = .GlobalEnv)
     assign("canonicalize_yf_factors", original_cz, envir = .GlobalEnv)
   })
-  fit <- fg_fit(d, list(feature_group = groups))
+  fit <- fg_fit(d, c(list(feature_group = groups), extra))
   list(fit = fit, calls = calls, kls = kls, scales = scales)
 }
 

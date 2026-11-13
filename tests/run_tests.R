@@ -70,6 +70,7 @@ test_files <- c(
   "tests/test_survival_block_weight.R",
   "tests/test_projection_centering.R",
   "tests/test_feature_groups_yfb.R",
+  "tests/test_modality_weights_yfb.R",
   "tests/test_feature_group_simulation.R",
   "tests/test_feature_group_informative.R",
   "tests/test_multimodal_tcga_comparison.R",
