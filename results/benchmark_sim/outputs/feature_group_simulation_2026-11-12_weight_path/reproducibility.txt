@@ -1,0 +1,1 @@
+PASS: all repeated metric, precision and pattern rows match exactly

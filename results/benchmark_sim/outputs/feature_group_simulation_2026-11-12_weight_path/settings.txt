@@ -1,0 +1,14 @@
+registration=docs/prompts/2026-11-12-codex-d-weight-path-prompt.md
+weights=1.00000000000000000,0.69999999999999996,0.44721359549995793,0.29999999999999999,0.20000000000000001
+seeds=1,2,3,4,5,6,7,8,9,10
+cells=A ratio5 fraction.15,A ratio5 fraction.03,B ratio5 fraction.15
+all generator, survival regeneration, training scaling and signed SVD starts unchanged from weights run
+grouped point-Laplace L/F, Normal beta, K5,wS1,no pruning; workers1,numerical_threads1
+max_iter=300;tol=1e-05;alpha=0.5
+matching=independent largest absolute full loading Pearson correlation per truth
+block_cor=signed Pearson within modality; NA for zero/constant fitted or truth block; report defined denominator
+precision=weighted Tau*EF2; retention>=.05; zero-total share NA counts as not retained
+usable=w<1; BOTH A recovery>=w1 and mean false<=1; BOTH A primary retention>=8/10;
+B exclusive1,2 loading+pattern>=w1; strict gain summed A recovery OR summed B loading+pattern
+selection=largest B loading+pattern sum, then larger weight; convergence reported separately
+reproducibility=exact per-fit prior metric outcomes, precision and pattern tables for w1 and w.2; elapsed excluded
