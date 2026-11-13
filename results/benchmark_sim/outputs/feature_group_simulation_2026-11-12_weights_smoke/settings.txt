@@ -1,0 +1,25 @@
+registration=docs/prompts/2026-11-12-codex-d-modality-weights-prompt.md
+seeds=1
+n_train=120; n_validation=120; K=5
+A_cells=50:250/15%,50:250/3%,50:50/3%
+A_arms=grouped_unweighted,grouped_count,grouped_eigenvalue,expression_only
+B_cells=50:50/15%,50:250/15%
+B_arms=grouped_count,grouped_eigenvalue,pooled_count,grouped_unweighted
+generator=both_informative; existing defaults; exclusive option only for B
+B_truth=expression_only1,methylation_only2,joint3; beta=0.70,0.35,0
+scaling=per-feature training-only z-score; weights from training rows only
+survival=fgsim_prepare programs1:2; seed+12000; preserve original training eta SD
+initialization=common joint signed SVD; expression uses corresponding F rows
+fit=point_laplace L/F; per-program Normal beta; canonicalize TRUE; wS1; no pruning
+max_iter=300; tol=1e-05; alpha=0.5
+A_recovery=program1 loading abs-cor>=0.7, posterior activity, correct beta sign
+A_false_active=active outside unique abs-cor>=0.7 matches to truths1,2, regardless beta sign
+gate=recovery>=8/10; mean false-active<=1; convergence>=9/10; no errors
+effective=passes a 50:250 cell unweighted fails AND passes 50:50/3% control
+selection=only effective rule; else B grouped full successes, then A 50:250 primary recoveries, then count
+B_matching=independent largest abs loading correlation per truth
+B_pattern=absent modality empty or precision share<0.05; joint both>=0.05
+B_full_success=all three loading recoveries and correct modality patterns; survival separately reported
+empty=final all-zero second moments per block; reset events separately, NA when pooled not instrumented
+warnings=retain each event; failed fits retained; zero-total precision shares NA
+workers=1; numerical_threads=1

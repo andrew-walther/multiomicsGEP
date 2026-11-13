@@ -28,6 +28,9 @@ per feature and `modality_weight = c(expression = 1, methylation = 0.2)` to
 `yf_modality_weight_rules(Y_train, feature_group)`. The default uses separate F
 priors. `F_prior_by_group = FALSE` pools them for the registered comparison.
 Run `Rscript tests/test_modality_weights_yfb.R` for the focused checks.
+The registered balance and exclusive-program studies run with
+`Rscript results/benchmark_sim/run_modality_weight_simulation.R` (`--smoke` for one
+seed). These studies selected no weight rule, so the conditional TCGA fits did not run.
 
 ## Getting started
 

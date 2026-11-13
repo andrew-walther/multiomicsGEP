@@ -150,6 +150,8 @@ simulate_multimodal_yfb_cohort <- function(parameters, n, id_prefix) {
 #'   the Gaussian data as generated, for signed loading priors and centering.
 #' @param methylation_active_fraction NULL preserves the existing 0.15 loading
 #'   fraction. Otherwise a fraction in (0, 1] for methylation only.
+#' @param modality_exclusive_programs If TRUE, plant expression-only program 1,
+#'   methylation-only program 2 and joint program 3 in `both_informative`.
 #' @return Training/validation data plus true model parameters and scenario name.
 #' @examples
 #' simulate_multimodal_yfb_data("both_informative", n_train = 20, n_validation = 10)
@@ -159,7 +161,11 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
                                          p_expression = 50L, p_methylation = 50L,
                                          K_true = 3L, target_censoring = 0.30,
                                          seed = 1L, truncate = TRUE, noise_scale = 1,
-                                         beta = NULL, methylation_active_fraction = NULL) {
+                                         beta = NULL, methylation_active_fraction = NULL,
+                                         modality_exclusive_programs = FALSE) {
+  if (!is.logical(modality_exclusive_programs) ||
+      length(modality_exclusive_programs) != 1L || is.na(modality_exclusive_programs))
+    stop("modality_exclusive_programs must be a single nonmissing logical.")
   if (!is.null(methylation_active_fraction) &&
       (!is.numeric(methylation_active_fraction) || length(methylation_active_fraction) != 1L ||
        !is.finite(methylation_active_fraction) || methylation_active_fraction <= 0 ||
@@ -169,6 +175,8 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
   if (!scenario %in% names(scenarios)) {
     stop("scenario must be one of: ", paste(names(scenarios), collapse = ", "), ".")
   }
+  if (modality_exclusive_programs && scenario != "both_informative")
+    stop("modality_exclusive_programs requires the both_informative scenario.")
   if (K_true != 3L) stop("The current approved scenario definitions require K_true = 3.")
   if (n_train < 2L || n_validation < 2L || p_expression < 2L || p_methylation < 2L) {
     stop("Training/validation sample sizes and feature counts must be at least two.")
@@ -192,6 +200,10 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
   )
   for (m in seq_along(F)) {
     if (!setting$active_modalities[m]) F[[m]][, which(setting$beta != 0)] <- 0
+  }
+  if (modality_exclusive_programs) {
+    F$methylation[, 1] <- 0
+    F$expression[, 2] <- 0
   }
   feature_names <- list(expression = paste0("g", seq_len(p_expression)),
                         methylation = paste0("cg", seq_len(p_methylation)))

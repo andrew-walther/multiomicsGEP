@@ -1,0 +1,13 @@
+"block","feature_ratio","methylation_active_fraction","arm","seeds","primary_recovered","secondary_recovered"
+"A",1,0.03,"expression_only",10,9,4
+"A",1,0.03,"grouped_count",10,10,6
+"A",1,0.03,"grouped_eigenvalue",10,9,6
+"A",1,0.03,"grouped_unweighted",10,10,6
+"A",5,0.03,"expression_only",10,5,4
+"A",5,0.03,"grouped_count",10,0,0
+"A",5,0.03,"grouped_eigenvalue",10,0,1
+"A",5,0.03,"grouped_unweighted",10,5,3
+"A",5,0.15,"expression_only",10,7,2
+"A",5,0.15,"grouped_count",10,0,0
+"A",5,0.15,"grouped_eigenvalue",10,0,0
+"A",5,0.15,"grouped_unweighted",10,4,0

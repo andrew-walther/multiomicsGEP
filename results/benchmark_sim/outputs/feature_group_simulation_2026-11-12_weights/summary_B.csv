@@ -1,0 +1,9 @@
+"feature_ratio","arm","seeds","failed","full_pattern_successes","converged","empty_blocks","mean_false_active"
+1,"grouped_count",10,0,0,10,32,0.5
+5,"grouped_count",10,0,0,10,84,0.2
+1,"grouped_eigenvalue",10,0,0,10,39,0.5
+5,"grouped_eigenvalue",10,0,0,10,86,0.2
+1,"grouped_unweighted",10,0,0,10,32,0.5
+5,"grouped_unweighted",10,0,0,10,33,0.7
+1,"pooled_count",10,0,0,10,18,0.8
+5,"pooled_count",10,0,0,10,82,0

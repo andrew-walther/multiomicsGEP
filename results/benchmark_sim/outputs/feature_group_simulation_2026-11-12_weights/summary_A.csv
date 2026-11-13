@@ -1,0 +1,13 @@
+"feature_ratio","methylation_active_fraction","arm","seeds","failed","recovered","mean_false_active","converged","total_empty_blocks","empty_blocks_defined","true_c_defined","mean_true_c","c_defined","mean_c","passed"
+1,0.03,"expression_only",10,0,9,0.2,10,28,10,0,NA,10,0.746014049286131,TRUE
+5,0.03,"expression_only",10,0,5,0.3,10,33,10,0,NA,10,0.693046575400026,FALSE
+5,0.15,"expression_only",10,0,7,0.4,10,31,10,0,NA,9,0.70594009315017,FALSE
+1,0.03,"grouped_count",10,0,10,0.4,10,29,10,0,NA,10,0.797021542836267,TRUE
+5,0.03,"grouped_count",10,0,0,1.2,10,82,10,0,NA,10,0.688128177257318,FALSE
+5,0.15,"grouped_count",10,0,0,1.5,10,79,10,0,NA,9,0.707775782837032,FALSE
+1,0.03,"grouped_eigenvalue",10,0,9,0,10,26,10,0,NA,10,0.783886294434872,TRUE
+5,0.03,"grouped_eigenvalue",10,0,0,1.1,10,85,10,0,NA,10,0.689250749790188,FALSE
+5,0.15,"grouped_eigenvalue",10,0,0,1.2,10,82,10,0,NA,9,0.702991992268098,FALSE
+1,0.03,"grouped_unweighted",10,0,10,0.4,10,29,10,0,NA,10,0.797021542836267,TRUE
+5,0.03,"grouped_unweighted",10,0,5,0.9,10,18,10,0,NA,10,0.706102009895036,FALSE
+5,0.15,"grouped_unweighted",10,0,4,1.6,10,19,10,0,NA,10,0.732830166659551,FALSE
