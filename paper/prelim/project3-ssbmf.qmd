@@ -656,7 +656,7 @@ In the 50 ICGC donors with matched data and 30 deaths, concordance was 0.660 for
 
 # Discussion {#sec-discussion}
 
-## Loading and Coefficient Estimates
+## Relevance of the results
 
 On the PDAC data the supervised and two-step fits gave the same loadings and nearly the same predictions, in training cross-validation and in the validation series. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, but at the survival weight chosen from the data, survival supplied almost none of the loading precision. These results therefore do not show improved molecular program discovery on these data.
 
@@ -668,7 +668,7 @@ Placing the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsy
 
 The rank-5 weight search retains 27 inner fits that reached the iteration cap, although the selected full and outer fits converged. The survival-active label of Programs 3 and 4 differs between ranks 5 and 7, so it is not stable for those two programs. Training cross-validation supports the gene screen and the input scaling. Comparisons on the five validation series had informed these choices earlier, so those series are not untouched by development. The rank and screen comparisons were repeated over five random partitions of the same 273 patients. That shows the choices do not depend on how patients are assigned to folds, but it does not measure sampling variability. The reported fit pools the two training cohorts with one baseline hazard, so it does not model a difference in baseline hazard between TCGA-PAAD and CPTAC. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its reported settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
 
-## Continuing Work
+## Future Considerations
 
 We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be compared in simulation and in training cross-validation on PDAC. The extension to several data types (@sec-mmodal) is the second contribution still in development. Its fitter reproduces the current model for one data type, and separate loading priors found programs on one data type more often than a pooled prior when the feature counts were equal. The open problem is balance when methylation sites far outnumber genes, which a power on the reconstruction likelihood does not solve. Two alternatives will be derived and tested in simulation: weighting methylation only in the score update, and summarizing CpG sites, for example by genomic region, so that the feature counts are closer while every site still contributes. The balanced model will then be fitted to the matched TCGA patients at 10,000 and 100,000 sites and judged mainly on the programs it finds: which genes and sites load together, whether methylation adds programs the expression fit lacks, and whether the joint fit recovers the methylation-specific program seen at 100,000 sites. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 
