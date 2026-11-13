@@ -778,18 +778,9 @@ Every result for the real data comes from this fit, except the comparison of the
 prior comparisons ([Appendix D](#sec-appendix-d)). These use the rank-7 reference, the same
 supervised YFB configuration ($w_S = 1$, 2,218 genes) fitted at rank 7, and say so. The five
 programs of the rank-`r tcv_K` fit match Programs 1 to 5 of the rank-7 reference one to one
-(@tbl-correspondence). Rank-7 Programs 6 and 7 have no rank-`r tcv_K` counterpart, and neither
+(@tbl-correspondence in Appendix C). Rank-7 Programs 6 and 7 have no rank-`r tcv_K` counterpart, and neither
 was survival-active.
 
-```{r}
-#| label: tbl-correspondence
-#| tbl-cap: "Programs of the supervised YFB fit (w_S = 1, 2,218 genes, rank 5) matched to the rank-7 reference. r is the correlation of the two fits' program scores over the 273 training patients, and the next column gives the largest absolute correlation with any other rank-7 program. Overlap counts shared genes among the 25 largest loadings at the positive and negative poles. z is the coefficient divided by its posterior SD."
-kable(data.frame(Program = k5_match$k5_program, r = num(k5_match$score_r),
-  `Next best |r|` = num(k5_match$next_best_abs_r, 2),
-  `Top-25 overlap (+ / −)` = paste(k5_match$top25_overlap_pos, k5_match$top25_overlap_neg, sep = " / "),
-  `z, rank 5` = num(k5_match$k5_z, 1), `z, rank 7` = num(k5_match$k7_z, 1), check.names = FALSE),
-  row.names = FALSE, align = "cccccc")
-```
 
 # Evaluation {#sec-evaluation}
 
@@ -1983,7 +1974,7 @@ programs are not explained by the expression programs.
 
 The gene screen, the input scaling, pooling without a cohort indicator and the starting-value
 constraints were chosen with external concordance among the evidence before the
-training-only rule, and every external series informed at least one of the choices recorded in
+current selection procedure, and every external series informed at least one of the choices recorded in
 the audit (@sec-external-uses). Training cross-validation now supports the screen and the
 scaling and selected rank `r tcv_K` (@sec-results-rank). Because the external series informed
 the screen and scaling first, the external results still describe a model whose setup those
@@ -2008,7 +1999,7 @@ likelihood terms. Each would be compared in simulation, on recovery of the plant
 calibration slopes, convergence and the risk-score contribution of programs that match no
 planted program, before application to the real data.
 
-The working model uses rank `r tcv_K`, the projection link, point-Laplace priors on the scores and loadings and a Normal prior on each coefficient (@sec-week). The joint model for expression and methylation remains in development (@sec-week-multimodal). Its open problem is balancing the data types when CpG sites far outnumber genes, which a power on the reconstruction likelihood does not solve. Weighting methylation only in the score update and summarizing CpG sites by region are the next candidates, followed by joint fits at 10,000 and 100,000 sites judged mainly on the programs they find. Every later choice follows the training-only rule of @sec-external-uses.
+The working model uses rank `r tcv_K`, the projection link, point-Laplace priors on the scores and loadings and a Normal prior on each coefficient (@sec-week). The joint model for expression and methylation remains in development (@sec-week-multimodal). Its open problem is balancing the data types when CpG sites far outnumber genes, which a power on the reconstruction likelihood does not solve. Weighting methylation only in the score update and summarizing CpG sites by region are the next candidates, followed by joint fits at 10,000 and 100,000 sites judged mainly on the programs they find. Later choices will use simulation and training data as described in @sec-external-uses.
 
 {{< pagebreak >}}
 
@@ -2045,7 +2036,17 @@ This version reports the rank-5 working model and its rebuilt external compariso
 
 {{< pagebreak >}}
 
-# Appendix C. Comparator and risk-group details {#sec-appendix-c .unnumbered}
+# Appendix C. Program matching, comparator and risk-group details {#sec-appendix-c .unnumbered}
+
+```{r}
+#| label: tbl-correspondence
+#| tbl-cap: "Programs of the supervised YFB fit (w_S = 1, 2,218 genes, rank 5) matched to the rank-7 reference. r is the correlation of the two fits' program scores over the 273 training patients, and the next column gives the largest absolute correlation with any other rank-7 program. Overlap counts shared genes among the 25 largest loadings at the positive and negative poles. z is the coefficient divided by its posterior SD."
+kable(data.frame(Program = k5_match$k5_program, r = num(k5_match$score_r),
+  `Next best |r|` = num(k5_match$next_best_abs_r, 2),
+  `Top-25 overlap (+ / −)` = paste(k5_match$top25_overlap_pos, k5_match$top25_overlap_neg, sep = " / "),
+  `z, rank 5` = num(k5_match$k5_z, 1), `z, rank 7` = num(k5_match$k7_z, 1), check.names = FALSE),
+  row.names = FALSE, align = "cccccc")
+```
 
 ```{r}
 #| label: tbl-comparator-series

@@ -18,7 +18,7 @@ for svg in paper/writeup/2026-11-13-writeup/figures/sup_*.svg; do
 done
 ```
 
-The source contains methods, evaluation, current analyses, results, program descriptions and discussion. Appendices document the derivation, changes from the prior version, comparator details and prior sensitivity. The HTML and PDF are draft outputs.
+The source contains methods, evaluation, current analyses, results, program descriptions and discussion. Appendices document the derivation, changes from the prior version, program matching, comparator details and prior sensitivity. The HTML and PDF are draft outputs.
 
 The PDF contains 47 pages. The source evaluates its aggregate checks
 during both renders. Ten Chapter 4 figures are reused, alongside two plots
