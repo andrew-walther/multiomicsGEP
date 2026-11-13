@@ -201,16 +201,51 @@ by simulation** where the gate was not passed for this setting.
 
 Patient-level data stay under ignored `data/`. Commit only aggregates.
 
+## Part 5: external scoring on the matched ICGC set, descriptive
+
+Train on TCGA, validate on ICGC. Score each fixed full-data fit once on the ICGC donors
+with matched expression, methylation and survival. Load them with
+`build_multiomics_cohorts()` in `code/load_multiomics_data.R`, which reads
+`icgc/icgc_matched_data.rds`: 79 donors before filtering. Use the loader's primary PDAC
+and primary-tumour filter, and report the donors and events kept.
+
+Fits to score:
+
+- expression alone and methylation alone at 10k and 100k (task C's fixed full-data fits);
+- the unweighted joint fit at 10k (next-steps Part A);
+- the weighted joint fits at 10k and 100k, if Part 4 ran.
+
+Rules:
+
+- No refitting, tuning, sign changes or rank changes on ICGC.
+- Prepare each modality as S-12 does: within-series z-scores, then align to the training
+  features in training order. Set features missing in ICGC to zero after scaling, and
+  report how many genes and CpGs are missing per fit.
+- YFB risk is the training-normalized projection Σ_m Y_m F_m β. Evaluate it with
+  `frozen_reverse_cindex()` in the fixed Cox orientation.
+- Report the C with a donor-bootstrap 95% interval (2,000 replicates, seed 1) for each
+  fit. For each joint fit, report the paired difference from expression alone with its
+  bootstrap interval.
+- For the joint fits, also report whether each full-data program's ICGC patient scores
+  keep their direction. Compare each program's score correlation with the expression-only
+  program it matched on TCGA, computed on ICGC.
+
+These results are descriptive and labelled **not validated by simulation** where that
+applies. They choose nothing, and nothing in Parts 3 or 4 is revisited because of them.
+Write aggregates only. Donor-level scores stay under ignored `data/`.
+
 ## Order and commits
 
 1. Derivation and its checks, then independent review. Commit.
 2. Tests (failing first), then implementation and the full suite. Commit each.
 3. Simulation smoke run, full run and aggregates. Commit.
 4. TCGA (if allowed). Commit aggregates.
-5. Findings in a new note, `docs/findings/2026-11-12-modality-weights-findings.md`, with
+5. ICGC scoring of the fits that exist. Commit aggregates.
+6. Findings in a new note, `docs/findings/2026-11-12-modality-weights-findings.md`, with
    a "Text for the shared status files" section and a row in `docs/findings/README.md`.
    Independent review of the code and findings, then the final commit and push.
 
 **Done when.** The derivation is reviewed and its checks pass. The weighted fitter is
 tested, and the full suite passes. Both simulation blocks are reported against their
-rules. Part 4 is reported or marked not run with the reason. The review is recorded.
+rules. Part 4 is reported or marked not run with the reason. Part 5 is reported for
+every fit that exists. The review is recorded.
