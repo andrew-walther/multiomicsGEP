@@ -15,7 +15,8 @@ and F, per-program Normal β, per-cohort z-scores on 2,218 genes, pooled trainin
 - [x] F. Training-CV redo: the 2,218-gene screen and per-cohort z-score stay, K = 5 adopted.
 - [x] G. Results-rebuild design and local pilot.
 - [x] External scoring of the K = 5 working model (within E).
-- [ ] November 13 progress-book chapter, writeup version and prelim Chapter 4 update.
+- [x] November 13 progress-book chapter, writeup version and prelim Chapter 4 update,
+  including independent numerical review and the tested full-prelim rebuild.
 
 **Next priorities (after 2026-11-12).**
 

@@ -84,6 +84,10 @@ grouping. No joint model is adopted or scored externally. See the
 
 ## Rank-5 exhibits and survival-weight search (2026-11-12)
 
+Chapter 4, the November 13 writeup and the progress-book chapter now report these
+results and the initial joint evaluation. Their numerical review and rendered-output
+checks are recorded in the [document completion review](docs/reviews/2026-11-12-documents-completion-review.md).
+
 The dependent Chapter 4 and November writeup exhibits have rank-5 versions. Programs 2,
 4 and 5 are survival-active, and only Program 2 meets the main-program rule. The estimated
 supervised-minus-two-step difference is +0.004 with SE 0.004 in the original all-pairs

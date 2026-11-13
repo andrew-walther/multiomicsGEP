@@ -22,3 +22,5 @@ Reports from independent reviewers, and external advice recorded as received.
 | 2026-11-06 | [Comparator and program review handoff](2026-11-06-comparator-and-program-review-handoff.md) | Independent checks and review priorities for Prompts 6 and 7 | independent review pending |
 | 2026-11-10 | [Gemini end-to-end specification](2026-11-10-gemini-end-to-end-spec.md) | October 30 external advice, copied verbatim for the usefulness review | external advice, not adopted |
 | 2026-11-10 | [Gemini revised end-to-end specification](2026-11-10-gemini-end-to-end-v2-spec.md) | Revised October 30 external advice, copied verbatim for the usefulness review | external advice, not adopted |
+
+| 2026-11-12 | [Document completion review](2026-11-12-documents-completion-review.md) | Independent numerical review, rank-5 exhibit integration, multimodal qualifications and rendered-document verification | complete; six full-prelim assembly checks passed |
