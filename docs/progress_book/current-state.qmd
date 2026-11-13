@@ -1,6 +1,6 @@
 # Current project state {.unnumbered}
 
-Updated November 12, 2026. The working model is YFB at K = 5 with point-Laplace
+Updated November 13, 2026. The working model is YFB at K = 5 with point-Laplace
 scores and loadings, per-program Normal survival coefficients, pooled TCGA and CPTAC
 training, per-cohort z-scores on 2,218 genes and w_S = 1. The
 [November 13 chapter](chapters/2026-11-13.qmd) reports the current evidence.
@@ -12,10 +12,11 @@ training, per-cohort z-scores on 2,218 genes and w_S = 1. The
 | Done | Priors, gene screen, input scaling and rank comparisons | Training CV keeps the signed point-Laplace model and selects K = 5 |
 | Done | Rank-5 working-fit exhibits and weight search | Programs 2, 4 and 5 active, only Program 2 main. Weight search retains w_S = 1 |
 | Done | LB and YFB comparison | YFB retained. On real data the programs and predictions closely agree |
-| Done | Methylation alone and cross-count programs | Prediction lower than expression. 10k CpGs for prediction, 100k for factor description |
-| Done | Feature-group fitter and initial joint evaluation | Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program |
+| Done | Single-modality methylation fit | Shares two strong axes with expression (canonical correlations about 0.9) and adds a recurring methylation-specific, immune-like program from about 50k CpGs. Prediction is lower than expression |
+| Done | Feature-group fitter and initial joint evaluation | Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program. The weight path is done and the multimodal work is paused. At balanced feature counts separate priors find one-modality programs better than pooled priors, but methylation dominates when CpGs outnumber genes, and likelihood weights empty the methylation loadings |
 | Next | Cohort-stratified fit and scale-robust dead-program rule | Evaluate on training data before external scoring |
-| Open | Stronger loading supervision and modality balance | Stable fits at weights that move loadings and a supported role for joint fitting |
+| Open | Stronger loading supervision | Stable fits at weights that move loadings |
+| Paused | Multimodal modality balance | Next ideas in [balance-ideas notes](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md), starting with weighting methylation only in the score update |
 | Later | R package and final analysis snapshot | Follow methodological evaluation and final model decisions |
 
 The sections below preserve earlier model diagrams and technical notes. Their
@@ -205,9 +206,9 @@ Read the October 30 chapter for the normalization and the replay conditions.
 
 ## Completed Results
 
-<progress value="13" max="24" aria-label="Evidence items completed">13 of 24</progress>
+<progress value="14" max="25" aria-label="Evidence items completed">14 of 25</progress>
 
-**13 of 24 evidence items documented.** Each line of this checklist counts once.
+**14 of 25 evidence items documented.** Each line of this checklist counts once.
 Checked historical or diagnostic items have a saved result, even when it was
 negative. Open items describe evidence still needed for the survival-supervised
 method. Publication readiness depends on the supervision gate and the final
@@ -260,6 +261,7 @@ for the final method.
 
 - [x] Demonstrate single-group parity in the feature-group extension of the working fitter. Frozen pooled and stratified fixtures reproduce exactly. The older multimodal fitter remains historical.
 - [x] Complete the initial matched expression, methylation and joint comparison with separate and pooled loading priors at 10,000 CpGs. This diagnostic is not validated by simulation and shows no joint prediction gain. Joint feature-count sensitivity remains open.
+- [x] Run the modality-weight path in simulation and on TCGA. No weight was usable: at w = 0.7 the methylation share of the prognostic program fell from 52% and 60% to 21% and 9%, and 42 and 46 of 50 methylation blocks were empty. The work is paused, with next ideas in the [balance-ideas notes](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md).
 - [ ] Validate modality balance, convergence, and the incremental prediction and biological evidence from the joint fit.
 
 The evidence categories draw on DeSurv main Figures 2–4 and supplement
