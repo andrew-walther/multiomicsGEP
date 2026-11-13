@@ -141,7 +141,7 @@ cohort_platform <- c(Dijk = "RNA-seq", Moffitt_GEO_array = "Microarray",
 
 ```{r load-evidence}
 # ---- Training data (S-11) ----
-# The folds and the permuted-outcome simulation do not depend on the rank and are read
+# The folds do not depend on the rank, and the permuted-outcome simulation (fitted at rank 7) is read
 # from the rank-7 folder. Every other result of the working model is read from the
 # rank-5 rebuild (docs/findings/2026-11-12-k5-exhibits-findings.md), whose subfolders
 # mirror the rank-7 folders: s11, s12, prompt6_comparators, prompt7_desurv_style, prelim_ch4.
@@ -176,7 +176,20 @@ ext  <- rd(K5, "s12", "external_cindex.csv")
 extd <- rd(K5, "s12", "external_paired_diff.csv")
 pool_donor <- rd(K5, "s12", "external_paired_diff_donor.csv")
 exth <- rd(K5, "s12", "external_pooled_hr.csv")
+# The same pooled HR with donor-clustered intervals (the two PACA-AU series share donors).
+exth_donor <- rd(K5, "prompt6_comparators", "pooled_hr.csv")
+exth_donor <- exth_donor[match(exth$model, exth_donor$model), ]
+stopifnot(isTRUE(all.equal(exth_donor$hr, exth$hr_per_sd)))
 e_w1 <- ext[ext$model == "w1", ]; e_ts <- ext[ext$model == "twostep", ]
+# Calibration-slope SEs of the two fits, from the comparator panel's series table.
+cal_tab <- subset(rd(K5, "prompt6_comparators", "external.csv"), model %in% c("w1", "twostep"))
+cal_w1 <- cal_tab[cal_tab$model == "w1", ][match(e_w1$cohort, cal_tab$cohort[cal_tab$model == "w1"]), ]
+cal_ts <- cal_tab[cal_tab$model == "twostep", ][match(e_w1$cohort, cal_tab$cohort[cal_tab$model == "twostep"]), ]
+stopifnot(isTRUE(all.equal(cal_w1$cal_slope, e_w1$cal_slope)),
+          isTRUE(all.equal(cal_ts$cal_slope, e_ts$cal_slope[match(e_w1$cohort, e_ts$cohort)])))
+cal_gap <- abs(cal_w1$cal_slope - cal_ts$cal_slope)
+stopifnot(all(cal_gap < pmin(cal_w1$cal_se, cal_ts$cal_se)))
+cal_se_rng <- range(c(cal_w1$cal_se, cal_ts$cal_se))
 pool5  <- extd[grepl("5 cohorts", extd$cohort), ]
 poolns <- extd[grepl("without", extd$cohort), ]
 ext_records <- sum(e_w1$n); ext_deaths <- sum(e_w1$events)
@@ -387,7 +400,7 @@ stopifnot(isTRUE(all.equal(unname(tcv_rank[, "mean"]), tcv_k$mean_C_within)),
           all(subset(tcv_fits, input == "D4_Z")$n_alive == subset(tcv_fits, input == "D4_Z")$K),
           # The K = 7 reference equals the point-Laplace arm of the prior comparison.
           isTRUE(all.equal(unname(tcv_rank[tcv_k$K == 7, "mean"]), lf_real["PL", "C"])))
-# One-SE rule: smallest K whose mean C is at least the best mean minus that K's fold SE.
+# One-SE rule: smallest K whose mean C is at least the best mean minus the best K's fold SE.
 tcv_best <- tcv_k[which.max(tcv_k$mean_C_within), ]
 tcv_thr  <- tcv_best$mean_C_within - tcv_best$se_C_within
 tcv_K    <- min(tcv_k$K[tcv_k$mean_C_within >= tcv_thr])
@@ -399,7 +412,7 @@ tcv_low     <- range(tcv_k$mean_C_within[tcv_k$K < tcv_K])
 tcv_r <- function(k, col) tcv_rank[tcv_k$K == k, col]
 # Gene screen and input scaling at K = 7: keep the current input unless an alternative
 # is better by more than one paired SE.
-tcv_inputs <- c(D4_Z = "Current screen, z-scores within cohort (reported fit)",
+tcv_inputs <- c(D4_Z = "Current screen, z-scores within cohort (rank-7 reference)",
                 D2_Z = "Variance screen after quantile normalization, z-scores within cohort",
                 D4_XSD = "Current screen, divided by within-cohort SD",
                 D4_RANKZ = "Current screen, within-patient ranks then z-scores")
@@ -541,6 +554,13 @@ stopifnot(nrow(meth_x1k) == nrow(meth_ex), all(meth_x1k$status == "converged"),
 meth_xC  <- tapply(meth_cv1k$expression_mean_C_1000, meth_cv1k$arm, unique)
 meth_ok1 <- subset(meth_cv1k, !is.na(mean_difference_1000))
 meth_d   <- function(a) -meth_ok1$mean_difference_1000[meth_ok1$arm == a]
+# Expression minus methylation in paired SEs, over the seven comparisons.
+meth_zd  <- -meth_ok1$mean_difference_1000 / meth_ok1$paired_SE_1000
+stopifnot(all(meth_zd > 0))
+# Methylation fits that reached the 300-sweep cap were not rerun.
+meth_capped_fold <- subset(meth_cvm, !converged)
+stopifnot(nrow(meth_capped_fold) == 1, meth_capped_fold$arm == "PE",
+          !is.na(meth_ok$mean_C[meth_ok$arm == "PE" & meth_ok$count == meth_capped_fold$count]))
 
 ## Methylation programs compared with expression programs ----
 rdc <- function(f) rdm(file.path("factor_characterization", f))
@@ -603,8 +623,8 @@ paired difference of `r sgn(pool5$diff)` (95% donor-bootstrap interval
 loading precision across programs, gene-set sizes and fits was `r sci(share_rng[2])`, and the supervised and unsupervised loadings correlate at 1.000. Against
 DeSurv, elastic-net Cox and PurIST, all trained on the same patients, every paired difference
 in mean external concordance had a 95% interval that included zero
-(@sec-results-comparators). In simulation, supervision matches the two-step fit
-when a prognostic program is easy to find. Supervision improved recovery near the detection
+(@sec-results-comparators). In simulations fitted at rank 7, supervision matches the two-step fit
+when a prognostic program is easy to find, and it improved recovery near the detection
 threshold under strong survival. Choosing the weight by cross-validated partial log-likelihood
 on the training data kept $w_S = 1$. The fit is not pruned, because ELBO pruning lost the
 planted program in simulation, and its rank comes from training cross-validation.
@@ -614,7 +634,8 @@ cross-validation on the `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` TCGA and
 patients. This covers preprocessing, gene screening, priors, rank, survival weight and
 comparator tuning. The five external expression series and the matched ICGC methylation set
 only score a model that is already fixed. Earlier development used external concordance
-to choose the screen and scaling, so these series are not untouched validation data
+to choose the screen and scaling, to pool the training cohorts without a cohort indicator and
+to constrain the starting values, so these series are not untouched validation data
 (@sec-external-uses). Training cross-validation kept the gene screen and
 the per-cohort standardization and selected rank `r tcv_K` for the working model
 (@sec-results-rank).
@@ -629,10 +650,13 @@ coefficient ([Appendix D](#sec-appendix-d)). It also keeps the gene screen and t
 within cohort, and the one-standard-error rule selects rank `r tcv_K` (@sec-results-rank). At
 rank `r tcv_K` the projection and latent-score models had small paired differences in
 training and external concordance, and the projection model is kept (@sec-week-lb). Methylation alone,
-on `r meth_aud$n` matched TCGA patients, predicted survival less well than expression on the
-same patients and found no survival-active program that the expression fit lacks. Its
+on `r meth_aud$n` matched TCGA patients, had mean cross-validated concordance of
+`r num(min(meth_ok$mean_C), 2)` to `r num(max(meth_ok$mean_C), 2)`, close to 0.5. It was below
+expression on the same patients in all `r nrow(meth_ok1)` comparisons, but only
+`r sum(meth_zd > 2)` differences exceeded two paired standard errors. It found no
+survival-active program that the expression fit lacks. Its
 programs share two strong directions with the expression programs, and a few recurring
-programs are specific to methylation (@sec-week-methylation). The feature-group fitter and its descriptive matched-TCGA comparison are reported in @sec-week-multimodal.
+programs are specific to methylation (@sec-week-methylation). Preliminary results for the feature-group fitter and its descriptive matched-TCGA comparison are reported in @sec-week-multimodal.
 
 # Methods {#sec-methods}
 
@@ -710,7 +734,7 @@ how $\beta$ was estimated.
 ## Choosing the survival weight {#sec-weight}
 
 The real-data fit uses $w_S = 1$, fixed by five-fold training cross-validation
-(@sec-results-fair). Two refinements were tested in simulation. In the survival-block form,
+(@sec-results-s15). Two refinements were tested in simulation. In the survival-block form,
 $w_S$ multiplies the Cox term and the Kullback–Leibler term of $\beta$ together, so $\beta$ gets
 an ordinary Bayesian Cox fit while the loadings see survival at weight $w_S$. The weight is
 chosen for each dataset from $\{1, 2, 5, 10, 20, 50\}$ by five-fold cross-validated partial
@@ -745,19 +769,21 @@ point-Laplace priors on $L$ and $F$ and a Normal prior on $\beta$. The survival 
 gene-set size, the choice not to screen genes on survival, the priors and the rank were fixed by
 training cross-validation. The gene screen and the input scaling were first set with external
 concordance (@sec-external-uses), and training cross-validation has since kept both
-(@sec-results-rank). Its training cross-validation, survival-active programs and external
+(@sec-results-rank). External concordance also informed two earlier choices: pooling the
+training cohorts without a cohort indicator and the constraints on the singular value
+decomposition used to start the fit. Its training cross-validation, survival-active programs and external
 concordance are reported in @sec-working-model.
 
 Every result for the real data comes from this fit, except the comparison of the gene screen and input scaling (@tbl-inputs) and the
-prior comparisons ([Appendix D](#sec-appendix-d)), which use the earlier supervised YFB fit
-($w_S = 1$, 2,218 genes, rank 7) and say so. The five programs of the rank-`r tcv_K` fit match
-Programs 1 to 5 of the rank-7 fit one to one (@tbl-correspondence). Rank-7 Programs 6 and 7
-have no rank-`r tcv_K` counterpart, and neither was survival-active. Programs 2 and 5 are
-survival-active at both ranks, Program 3 at rank 7 only and Program 4 at rank `r tcv_K` only.
+prior comparisons ([Appendix D](#sec-appendix-d)). These use the rank-7 reference, the same
+supervised YFB configuration ($w_S = 1$, 2,218 genes) fitted at rank 7, and say so. The five
+programs of the rank-`r tcv_K` fit match Programs 1 to 5 of the rank-7 reference one to one
+(@tbl-correspondence). Rank-7 Programs 6 and 7 have no rank-`r tcv_K` counterpart, and neither
+was survival-active.
 
 ```{r}
 #| label: tbl-correspondence
-#| tbl-cap: "Programs of the supervised YFB fit (w_S = 1, 2,218 genes, rank 5) matched to the earlier rank-7 fit. r is the correlation of the two fits' program scores over the 273 training patients, and the next column gives the largest absolute correlation with any other rank-7 program. Overlap counts shared genes among the 25 largest loadings at the positive and negative poles. z is the coefficient divided by its posterior SD."
+#| tbl-cap: "Programs of the supervised YFB fit (w_S = 1, 2,218 genes, rank 5) matched to the rank-7 reference. r is the correlation of the two fits' program scores over the 273 training patients, and the next column gives the largest absolute correlation with any other rank-7 program. Overlap counts shared genes among the 25 largest loadings at the positive and negative poles. z is the coefficient divided by its posterior SD."
 kable(data.frame(Program = k5_match$k5_program, r = num(k5_match$score_r),
   `Next best |r|` = num(k5_match$next_best_abs_r, 2),
   `Top-25 overlap (+ / −)` = paste(k5_match$top25_overlap_pos, k5_match$top25_overlap_neg, sep = " / "),
@@ -805,12 +831,15 @@ preprocessing, gene screening, the priors, the rank, the survival weight and the
 comparators. The five external expression series (Dijk, Moffitt, PACA-AU array, PACA-AU RNA-seq
 and Puleo) and the matched ICGC methylation set only score a model after it is fixed. Under this rule, their
 results are reported and do not choose between models or settings. The DeSurv comparator
-used its published settings rather than a new search on our folds. The gene screen, the
-per-cohort standardization without a rank transform and rank 7 of the earlier fit were set
-before this rule, using external concordance. They have since been redone by training
-cross-validation, which kept the screen and the standardization and selected rank `r tcv_K`
-(@sec-rank, @sec-results-rank). The audit in `docs/findings/2026-11-06-external-cohort-uses.md`
-records which earlier choices used which series.
+used its published settings rather than a new search on our folds. Four choices were made
+before this rule with external concordance among the evidence: the gene screen, the
+per-cohort standardization without a rank transform, pooling the training cohorts without a
+cohort indicator and the constraints on the singular value decomposition that starts the fit.
+Training cross-validation has since kept the screen and the standardization and selected rank
+`r tcv_K` (@sec-rank, @sec-results-rank). The audit in
+`docs/findings/2026-11-06-external-cohort-uses.md` records which earlier choices used which
+series. It also notes that the matched ICGC methylation set overlaps the PACA-AU donors and
+has been examined in earlier analyses.
 
 The rule follows the protocol DeSurv used on the same cohorts [@Young2026]. DeSurv was trained on
 TCGA and CPTAC pooled. Every hyperparameter was chosen by five-fold cross-validation on the
@@ -822,7 +851,8 @@ With 273 patients, a held-out fifth would estimate concordance with a standard e
 ## Simulation designs {#sec-sim-designs}
 
 All three simulation studies plant a single prognostic program among unsupervised structure and
-ask whether the fit recovers it. Recovery requires absolute loading correlation of at least 0.7, an active coefficient and the correct coefficient sign after loading alignment. A **false-active** program is one
+ask whether the fit recovers it. All three fit rank 7, as do the permuted-survival and
+mixed-signal simulations of @sec-results. Recovery requires absolute loading correlation of at least 0.7, an active coefficient and the correct coefficient sign after loading alignment. A **false-active** program is one
 whose coefficient lies more than 1.96 posterior standard deviations from zero but which does not
 match the planted program.
 
@@ -861,7 +891,7 @@ This section reports the analyses of the week of November 9. Unless a subsection
 the simulation cells are the three planted variance shares of the fixed-weight simulation
 (0.25%, 1% and 5% at 2,000 genes) and the near-threshold cell with a 0.05% share and strong
 survival. The real-data comparisons use the five training folds of @sec-results-fair, balanced
-by cohort and event. The prior comparisons were run at rank 7. The rank was then reselected, and
+by cohort and event. The prior comparisons use the rank-7 reference (@sec-model-states), and
 the comparison of the two survival links and the methylation fits use rank `r tcv_K`. All fits
 use the unit survival weight unless the subsection varies it. None of these analyses uses an
 external cohort to make a choice.
@@ -880,12 +910,15 @@ cross-validation metric, with pooled concordance reported beside it.
 
 **Result.** The point-Laplace prior on z-scores within cohort is kept. In simulation the
 point-exponential prior recovered the planted program at least as often. It also marked more
-programs survival-active that matched no planted program, but these carried small coefficients
-relative to the planted program's. The difference appeared in training cross-validation, where its within-cohort
+programs survival-active that matched no planted program in the three variance cells
+(`r num(min(lf_pe$mean_false_active[-1]), 1)` to `r num(max(lf_pe$mean_false_active[-1]), 1)` per fit
+against `r num(min(lf_pl$mean_false_active[-1]), 1)` to `r num(max(lf_pl$mean_false_active[-1]), 1)`),
+though fewer at the `r cell_share[[1]]` share (`r num(lf_pe$mean_false_active[1], 1)` against
+`r num(lf_pl$mean_false_active[1], 1)`). In the shifted-input fits, the only fits where their size
+was measured, these programs had small coefficients relative to the planted program's. The difference appeared in training cross-validation, where its within-cohort
 concordance was `r num(min(lf_real[pe_alt, "C"]))` to `r num(max(lf_real[pe_alt, "C"]))` across
 four input setups, against `r num(lf_real["PL", "C"])` for the rank-7 point-Laplace fit, and no setup
-converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds. An independent review on
-November 12 confirmed these comparisons. Tables and details are in [Appendix D](#sec-appendix-d).
+converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds. Tables and details are in [Appendix D](#sec-appendix-d).
 
 ## Prior on the survival coefficients {#sec-week-beta}
 
@@ -915,17 +948,16 @@ patients (`r big(meth_cpg)` CpGs) are ranked by variance, and the fit is run on 
 Normal prior on $\beta$. The first z-scores each CpG and uses point-Laplace priors on $L$ and
 $F$, as in the working model. The second divides each CpG by its standard deviation and uses
 point-exponential priors with a centered Cox projection, as in @sec-week-lf. The comparison is
-with an expression fit on the 2,218 genes for the same patients, folds and setup. A methylation
-program counts as not seen in expression if its patient scores correlate below 0.5 with every
-expression program score and it is survival-active in the full fit and in at least three of five
-folds. A full fit at each count is run first, and cross-validation runs only for counts and
+with an expression fit on the 2,218 genes for the same patients, folds and setup. We looked
+for methylation programs whose patient scores correlate below 0.5 with every expression program
+score and that are survival-active in the full fit and in at least three of five folds. A full fit at each count is run first, and cross-validation runs only for counts and
 setups whose full fit converges. CpG screening and imputation of missing values used all
 `r meth_aud$n` patients before the folds were split, so the held-out patients helped choose the
 CpGs. Neither step uses outcomes. With `r meth_aud$n` patients the comparison is descriptive.
 
 ```{r}
 #| label: tbl-methylation
-#| tbl-cap: "Methylation alone at rank 5 on the matched TCGA patients, five-fold cross-validation. The expression row of each setup uses the 2,218 genes on the same patients and folds. Full fit gives whether the fit to all patients converged, with its number of sweeps. Methylation fits stopped at 300 sweeps and expression fits at 1,000. For methylation, cross-validation was run only when the full fit converged. Concordance counts all pairs of these patients. The difference is methylation minus expression in the same setup, paired over folds, with its standard error."
+#| tbl-cap: "Methylation alone at rank 5 on the matched TCGA patients, five-fold cross-validation. The expression row of each setup uses the 2,218 genes on the same patients and folds. Full fit gives whether the fit to all patients converged, with its number of sweeps. Methylation fits stopped at 300 sweeps and expression fits at 1,000. The eight expression fits that reached 300 sweeps were rerun to a 1,000-sweep limit. Capped methylation fits were not rerun. These are the point-exponential full fits at 10,000, 25,000 and 50,000 CpGs and one point-exponential fold at 100,000 CpGs, whose capped state is included in that row's mean. For methylation, cross-validation was run only when the full fit converged. Concordance counts all pairs of these patients. The difference is methylation minus expression in the same setup, paired over folds, with its standard error."
 setup_lab <- c(PL = "z-scores, point-Laplace", PE = "Divided by SD, point-exponential")
 mf <- meth_full[order(match(meth_full$arm, names(setup_lab)), meth_full$modality != "expression", meth_full$count), ]
 mc <- meth_cv1k[match(paste(mf$arm, mf$count), paste(meth_cv1k$arm, meth_cv1k$count)), ]
@@ -944,16 +976,19 @@ kable(data.frame(Setup = unname(setup_lab[mf$arm]),
   check.names = FALSE), row.names = FALSE, align = "llcccc")
 ```
 
-**Result.** Methylation alone predicted survival less well than expression on the same
-patients and found no survival-active program that the expression fit lacks
-(@tbl-methylation). All `r nrow(meth_all)` fits ran without errors or warnings. The
+**Result.** Methylation alone had concordance close to 0.5 and below expression on the same
+patients in every comparison, though most differences were within two paired standard errors.
+It found no survival-active program that the expression fit lacks (@tbl-methylation). All `r nrow(meth_all)` fits ran without errors or warnings. The
 `r nrow(meth_rr)` expression fits that stopped at 300 sweeps were restarted from the same
 initialization with a 1,000-sweep limit. All converged, in `r min(meth_rr$iterations)` to
 `r max(meth_rr$iterations)` sweeps, and reproduced their first 300 ELBO values exactly, so
 every expression fit now converges. The point-exponential methylation full fits reached the
 300-sweep cap at `r paste(paste(big(sort(meth_pe_capped))[-length(meth_pe_capped)], collapse = ", "), "and", big(max(meth_pe_capped)))` CpGs, so those counts were not
 cross-validated, and `r sum(meth_cvm$converged)` of the `r nrow(meth_cvm)` methylation fold fits
-converged. A full fit took `r num(min(meth_min("PL")), 1)` to `r num(max(meth_min("PL")), 1)`
+converged. The capped methylation fits were not rerun with a higher limit. The one capped fold
+is a point-exponential fold at `r big(meth_capped_fold$count)` CpGs, and the mean of
+`r num(meth_ok$mean_C[meth_ok$arm == "PE" & meth_ok$count == meth_capped_fold$count])` for that
+setting includes it. A full fit took `r num(min(meth_min("PL")), 1)` to `r num(max(meth_min("PL")), 1)`
 minutes with the point-Laplace setup and `r num(min(meth_min("PE")), 1)` to
 `r num(max(meth_min("PE")), 1)` minutes with the point-exponential setup, growing with the
 number of CpGs.
@@ -965,7 +1000,10 @@ point-exponential setup. Methylation was below expression in all `r nrow(meth_ok
 comparisons, by `r num(min(meth_d("PL")))` to `r num(max(meth_d("PL")))` with the
 point-Laplace setup and by `r andj(num(sort(meth_d("PE"))))` with the point-exponential setup.
 The paired standard errors were `r num(min(meth_ok1$paired_SE_1000))` to
-`r num(max(meth_ok1$paired_SE_1000))`. Single methylation folds ranged from
+`r num(max(meth_ok1$paired_SE_1000))`, so the differences were
+`r num(min(meth_zd), 1)` to `r num(max(meth_zd), 1)` standard errors, and
+`r sum(meth_zd > 2)` of the `r nrow(meth_ok1)` exceeded two. The comparisons within each setup
+share one expression reference, so they are not independent. Single methylation folds ranged from
 `r num(min(meth_cvm$C), 2)` to `r num(max(meth_cvm$C), 2)`.
 
 Every full fit kept `r tcv_K` programs with nonzero loadings. With the point-Laplace setup the
@@ -973,7 +1011,7 @@ only survival-active methylation program was Program `r meth_act$program` at
 `r big(meth_act$count)` CpGs, with coefficient `r num(meth_act$beta_mean)` (SD
 `r num(meth_act$beta_sd)`). It was survival-active in `r meth_act$active_converged_folds` of 5
 folds, and its scores correlated `r num(meth_act$max_abs_expression_r)` with an expression
-program, so it does not count as a program unseen in expression. Neither converged
+program, so it is not distinct from the expression programs. Neither converged
 point-exponential full fit had a survival-active program.
 
 **Methylation programs compared with expression programs.** We then compared the patient
@@ -995,7 +1033,7 @@ and above 0.5 for
 methylation-specific program is point-Laplace Program 2 at 100,000 and at all CpGs ($R^2$
 `r num(meth_clr$R2[meth_clr$count == 100000], 2)` and
 `r num(meth_clr$R2[meth_clr$count == meth_cpg], 2)`). At 100,000 CpGs its strongest Hallmark
-associations were allograft rejection and TNF-α signaling, which suggests an immune component.
+associations were allograft rejection and TNF-$\alpha$ signaling, which suggests an immune component.
 The gene-set analysis covers only the 2,218 genes. The methylation program most related to
 purity, point-Laplace Program `r meth_pur_top$factor`, correlated up to
 `r num(meth_pur_top$abs_correlation, 2)` in absolute value with ABSOLUTE tumor purity
@@ -1009,25 +1047,25 @@ of a methylation program rarely annotate to the top 100 genes of its closest exp
 program (`r min(meth_ovl$observed)` to `r max(meth_ovl$observed)` of 100), and no comparison
 was significant after a Bonferroni correction over the `r nrow(meth_ovl)` comparisons.
 
-The 100,000-CpG point-Laplace Program 2 was tracked across CpG counts on the same patients. At 10,000 CpGs its signal was split between Programs 2 and 4, with absolute correlations 0.61 and 0.59. Their $R^2$ values on the five expression programs were 0.52 and 0.43. The five 10,000-CpG programs together explained 80% of the 100,000-CpG program's score variance. At 50,000 CpGs the best single match had absolute correlation 0.89 and $R^2$ 0.25 on expression. The 100,000-CpG and all-CpG matches had $R^2$ 0.06 and 0.04. These in-sample comparisons show that 10,000 CpGs already contain methylation information not captured by expression, although it is split across programs.
+The 100,000-CpG point-Laplace Program 2 was tracked across CpG counts on the same patients. At 10,000 CpGs its signal was split between Programs 2 and 4, with absolute correlations 0.61 and 0.59. Their $R^2$ values on the five expression programs were 0.52 and 0.43. The five 10,000-CpG programs together explained 80% of the 100,000-CpG program's score variance. At 50,000 CpGs the best single match had absolute correlation 0.89 and $R^2$ 0.25 on expression. The 100,000-CpG and all-CpG matches had $R^2$ 0.06 and 0.04. These in-sample comparisons suggest that 10,000 CpGs already contain methylation information not captured by expression. That information is split across two programs, and both share part of their variation with the expression programs.
 
-The fixed methylation and expression models were not scored in the matched ICGC methylation set. We report 10,000 CpGs under point-Laplace for prediction and for the first joint fit, and 100,000 CpGs to describe the methylation-specific program. With `r meth_aud$n` patients these comparisons are descriptive.
+We report 10,000 CpGs under point-Laplace for prediction and for the first joint fit, and 100,000 CpGs to describe the methylation-specific program. At 10,000 CpGs the full fit and all five folds converged, the fit already contains the recurring methylation-specific signal, and its methylation cross-validated concordance was the highest of the seven settings. Because it was the best of seven, that concordance is optimistic. The choice was made before any ICGC scoring. The fixed models were later scored once in the matched ICGC set, and those results are in @sec-week-multimodal. With `r meth_aud$n` patients these comparisons are descriptive.
 
 ## One fitter for several data types {#sec-week-multimodal}
 
-The YFB fitter now accepts feature groups with shared scores $L$ and separate loading priors for each data type. Its single-group path reproduced the existing fitter bit for bit on pooled and stratified-centered test fixtures. Checks also cover the Gaussian activity Kullback–Leibler term, the flat coefficient likelihood, grouped prior updates and the loading divergence under the returned prior.
+The results in this section are preliminary. The YFB fitter now accepts feature groups with shared scores $L$ and separate loading priors for each data type. Its single-group path reproduced the existing fitter bit for bit on pooled and stratified-centered test fixtures. Checks also cover the Gaussian activity Kullback–Leibler term, the flat coefficient likelihood, grouped prior updates and the loading divergence under the returned prior.
 
-A two-data-type simulation examined grouped and pooled loading priors. In the informative scenario with equal feature counts and 3% nonzero methylation loadings, the grouped and pooled fits recovered the target in 10 of 10 and 9 of 10 datasets, with mean false-active counts 0.4 and 0.1. All 120 fits in that scenario converged. The comparison did not establish a separation between the prior configurations. The grouped path corrects loading KL to the returned prior, while the historical pooled path retains the incoming-prior KL. Absolute objective and stopping comparisons therefore do not isolate prior grouping. The matched TCGA analysis below is **not validated by simulation**.
+A two-data-type simulation examined grouped and pooled loading priors. In the informative scenario with equal feature counts and 3% nonzero methylation loadings, the grouped and pooled fits recovered the target in 10 of 10 and 9 of 10 datasets, with mean false-active counts 0.4 and 0.1. All 120 fits across the four cells of the informative scenario converged. The comparison did not establish a separation between the prior configurations. The grouped path corrects loading KL to the returned prior, while the historical pooled path retains the incoming-prior KL. Absolute objective and stopping comparisons therefore do not isolate prior grouping. The matched TCGA analysis below is **not validated by simulation**.
 
 The descriptive TCGA comparison used 144 patients with matched expression, methylation and survival, including 75 deaths. It fit five programs using 2,218 genes and 10,000 CpGs, with the same folds and training-only scaling. In one run of five-fold CV, mean concordance was 0.591 for expression, 0.545 for methylation, 0.531 for the joint grouped-prior fit and 0.536 for the joint pooled-prior fit. The paired joint-minus-expression differences were −0.060 (SE 0.024) and −0.055 (SE 0.030), respectively. Of 24 fits, 21 converged and three expression folds reached the 300-sweep limit. These expression results use the capped fits and differ from the separately restarted, converged expression reference in @sec-week-methylation. No joint program met the descriptive rule for a loading pattern distinct from both single-modality fits. Methylation dominated score precision in some programs. No joint configuration was adopted.
 
 The joint model is still in development, and Chapter 4 presents it as a proposed contribution. Its purpose is interpretive: to show which genes and CpG sites load on the same programs and whether some programs load on one data type only. It is not expected to predict much better than expression alone.
 
-A third simulation planted an expression-only, a methylation-only and a joint program, with 50 genes, 50 CpG sites and 120 training patients. Separate loading priors found the right loading and data-type pattern more often than one pooled prior: in 5 against 1 of 10 datasets for the expression-only program, 2 against 0 for the methylation-only program and 7 against 5 for the joint program. No fit recovered all three programs in the same dataset. The methylation-only program had the smaller coefficient (β = 0.35) and was rarely found by either prior.
+A third simulation planted an expression-only, a methylation-only and a joint program, with 50 genes, 50 CpG sites and 120 training patients. Separate loading priors found the right loading and data-type pattern more often than one pooled prior: in 5 against 1 of 10 datasets for the expression-only program, 2 against 0 for the methylation-only program and 7 against 5 for the joint program. No fit recovered all three programs in the same dataset. The methylation-only program had the smaller coefficient ($\beta = 0.35$) and was rarely found by either prior.
 
 With five times as many CpG sites as genes, methylation dominated the shared scores. We tried to balance the two data types by raising each one's reconstruction likelihood to a power $w_m$, as $w_S$ does for the survival term. Down-weighting methylation by the feature-count ratio ($w = 0.2$) or by the ratio of leading eigenvalues emptied the methylation loadings in nearly every program. A path of fixed weights showed that the loss begins early. At $w = 0.7$ the methylation share of the prognostic program's score precision fell from 52% and 60% to 21% and 9% in the two simulation cells, 42 and 46 of 50 methylation loading blocks were empty, and no weight below 1 improved recovery. The weight lowers each site's evidence for its own loading by the same factor that it lowers methylation's influence on the scores, so empirical Bayes shrinks the methylation loadings to zero. On the matched TCGA patients at 10,000 sites, lowering the weight to 0.3 or below changed two programs from joint to expression-only, while the program with the largest methylation share stayed above 94% methylation at every weight. No program at any weight was distinct from both single-data-type fits.
 
-The fixed full-data fits were scored once in 50 ICGC donors with matched expression and methylation and 30 deaths. Concordance was 0.660 for expression alone, 0.636 and 0.594 for methylation alone at 10,000 and 100,000 sites, and 0.692 for the unweighted joint fit. The joint-minus-expression difference was 0.032, with a 95% donor-bootstrap interval from −0.093 to 0.147. These scores are descriptive and chose nothing.
+The fixed full-data fits were scored once in 50 ICGC donors with matched expression and methylation and 30 deaths. Concordance was 0.660 for expression alone, 0.636 and 0.594 for methylation alone at 10,000 and 100,000 sites, and 0.692 for the unweighted joint fit. The joint-minus-expression difference was 0.032, with a 95% donor-bootstrap interval from −0.093 to 0.147. These scores are descriptive and chose nothing. The matched ICGC set overlaps the PACA-AU donors of the expression validation series and has been examined in earlier analyses (@sec-external-uses).
 
 The multimodal work is paused. Two alternatives remain untested: weighting methylation only in the score update, and summarizing CpG sites, for example by genomic region, so that the feature counts are closer.
 
@@ -1047,7 +1085,7 @@ $w_S = 10$, the latter in the survival-block form of @sec-weight.
 
 ```{r}
 #| label: tbl-lb-sim
-#| tbl-cap: "Latent-score model (η = Lβ, new patients by fold-in) and projection model (η = (YF)β) at rank 5 in simulation at 2,000 genes, ten datasets per cell. Entries give the latent-score model first and the projection model second. Recovered counts datasets. False-active is the mean number of survival-active programs per fit that match no planted program. Validation C is the mean over datasets with a defined concordance. The latent-score model gave constant validation risk scores, so an undefined concordance, in 4 datasets at the 0.05% share with w_S = 1 and in 2 with w_S = 10. Every fit converged."
+#| tbl-cap: "Latent-score model ($\\eta = L\\beta$, new patients by fold-in) and projection model ($\\eta = (YF)\\beta$) at rank 5 in simulation at 2,000 genes, ten datasets per cell. Entries give the latent-score model first and the projection model second. Recovered counts datasets. False-active is the mean number of survival-active programs per fit that match no planted program. Validation C is the mean over datasets with a defined concordance. The latent-score model gave constant validation risk scores, so an undefined concordance, in 4 datasets at the 0.05% share with w_S = 1 and in 2 with w_S = 10. Every fit converged."
 k5s_tab <- unique(k5s[c("design", "share", "w_S")])
 k5s_tab <- k5s_tab[order(k5s_tab$design == "S14_strong", k5s_tab$share, k5s_tab$w_S), ]
 pr <- function(f, d = 1) mapply(function(de, s, w) {
@@ -1153,20 +1191,18 @@ by the within-cohort standard deviation, and a within-patient rank transform fol
 z-scores. The rank is selected over $K = 2, \dots, 12$ by the one-standard-error rule, with the
 number of programs with nonzero loadings and of survival-active programs reported at each $K$.
 
-**Result.** The current screen and the z-scores within cohort are kept, and the rank changes
-from 7 to `r tcv_K`. No alternative screen or scaling was better than the current input in
+**Result.** The current screen and the z-scores within cohort are kept, and training
+cross-validation selects rank `r tcv_K`. No alternative screen or scaling was better than the current input in
 within-cohort concordance. Concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)` and
 lower below $K = `r tcv_K`$, and the one-standard-error rule selected $K = `r tcv_K`$
-(@sec-results-rank). The working model now uses $K = `r tcv_K`$, which the rule also selected when the
+(@sec-results-rank). The working model uses $K = `r tcv_K`$, which the rule also selected when the
 cross-validation was repeated over five random partitions of the patients. At that rank the
 point-exponential prior on expression divided by its within-cohort standard deviation still
-loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). An independent review on
-November 12, 2026, confirmed these comparisons.
+loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)).
 
 ## External scoring of the fixed working model {#sec-week-external}
 
-The comparisons above changed the working model only in its rank. The supervised YFB fit
-($w_S = 1$, 2,218 genes, rank `r tcv_K`) was fixed on training data and then scored once on the
+The supervised YFB fit ($w_S = 1$, 2,218 genes, rank `r tcv_K`) was fixed on training data and then scored once on the
 five external series, as part of the comparison of the two survival links. Its concordance by
 series and its pooled means are in @sec-working-model. Its comparison with the two-step fit,
 calibration slopes, hazard ratios, risk groups and comparator differences are in
@@ -1286,19 +1322,24 @@ is `r ci(pool_donor$lo, pool_donor$hi)` for the full panel. Moffitt and Dijk wer
 series for both fits.
 
 The supervised slope was closer to one in `r sum(calibration_closer)` of `r nrow(e_w1)`
-series. In PACA-AU RNA-seq it was `r num(e_w1$cal_slope[e_w1$cohort == "PACA_AU_seq"], 2)`,
-compared with `r num(e_ts$cal_slope[e_ts$cohort == "PACA_AU_seq"], 2)` for two-step. In Puleo it
+series, but the two fits' slopes differed by at most `r num(max(cal_gap), 2)`, less than the
+slope standard error in every series (`r ci(cal_se_rng[1], cal_se_rng[2], 2)`,
+@tbl-comparator-series). The two-step slope was closer to one in
+`r andj(unname(cohort_label[e_w1$cohort[!calibration_closer]]))`. In PACA-AU RNA-seq the
+supervised slope was `r num(e_w1$cal_slope[e_w1$cohort == "PACA_AU_seq"], 2)`, compared with
+`r num(e_ts$cal_slope[e_ts$cohort == "PACA_AU_seq"], 2)` for two-step. In Puleo it
 was `r num(e_w1$cal_slope[e_w1$cohort == "Puleo_array"], 2)` against
 `r num(e_ts$cal_slope[e_ts$cohort == "Puleo_array"], 2)`.
 
 As a
 summary on the scale DeSurv reports [@Young2026], the hazard ratio per standard deviation of the
 risk score, from a Cox model stratified by series over all `r big(exth$n[1])` records, was
-`r num(exth$hr_per_sd[exth$model == "w1"], 2)` (95% CI
-`r ci(exth$lo[exth$model == "w1"], exth$hi[exth$model == "w1"], 2)`) for the supervised fit and
+`r num(exth$hr_per_sd[exth$model == "w1"], 2)` (95% donor-clustered CI
+`r ci(exth_donor$donor_lo[exth$model == "w1"], exth_donor$donor_hi[exth$model == "w1"], 2)`) for the supervised fit and
 `r num(exth$hr_per_sd[exth$model == "twostep"], 2)`
-(`r ci(exth$lo[exth$model == "twostep"], exth$hi[exth$model == "twostep"], 2)`) for the two-step
-fit.
+(`r ci(exth_donor$donor_lo[exth$model == "twostep"], exth_donor$donor_hi[exth$model == "twostep"], 2)`) for the two-step
+fit. The intervals are clustered on donor because the two PACA-AU series share donors, as in
+@tbl-comparators.
 
 ```{r}
 #| label: fig-external-fit
@@ -1315,7 +1356,7 @@ programs, across the gene-set sizes below). The simulation cell medians at the s
 (largest $|\bar\beta_k|$ `r num(full_w1$max_abs_beta, 2)` per standard deviation of the program
 score), and the share scales with $E[\beta_k^2]$. The real programs also explain much more
 expression variance than the planted programs in simulation, so their expression precision is
-large. The loading correlations between the fits round to `r num(min(matched_loadings$abs_r))` for every matched pair. The rounded loading correlations show close agreement. The paired concordance difference is reported in @sec-results-fair.
+large. The loading correlations between the fits round to `r num(min(matched_loadings$abs_r))` for every matched pair. The paired concordance difference is reported in @sec-results-fair.
 
 ```{r}
 #| label: tbl-size
@@ -1350,7 +1391,7 @@ test, gave the supervised fit gains of `r andj(sgn(scr_w1$diff_S_minus_U))` over
 screen of `r andj(big(scr_w1$N))` genes. Each was within
 `r num(max(scr_w1$diff_S_minus_U / scr_w1$diff_se), 1)` paired standard errors, and no screened set
 beat the supervised fit on all 2,218 genes (best `r num(max(scr_w1$C_S))`). With survival
-permuted in simulated data, the $w_S = 1$ fit had
+permuted in simulated data, the $w_S = 1$ fit at rank 7 had
 `r num(min(s11_null$n_active), 1)` to `r num(max(s11_null$n_active), 1)` false-active programs per
 dataset on average.
 
@@ -1363,7 +1404,8 @@ chapter_figure("sup_real_size_curve_k5")
 
 ## Simulation: supervision strength and the weight choice {#sec-results-weight}
 
-At $w_S = 1$ with `r big(s9_large_p)` genes the fit recovered the planted program in all `r unique(subset(s9_cv, p == s9_large_p)$n)` datasets per variance cell, with
+The simulations in this section and the next fit rank 7. In the fixed-weight simulation at
+$w_S = 1$ with `r big(s9_large_p)` genes the fit recovered the planted program in all `r unique(subset(s9_cv, p == s9_large_p)$n)` datasets per variance cell, with
 mean false-active counts `r paste(num(s9_w1_2k$mean_false_active, 1), collapse = ", ")`, and every
 fit converged. No fit at a weight of `r min(s9_nonconvergent$w_S)` or greater converged at the larger gene count. Training CV selected the unit weight in `r sum(s9_choices$arm == "w1")` of `r sum(s9_cv$n)` datasets. The
 coefficients at $w_S = 1$ were attenuated: median validation calibration slopes were
@@ -1371,7 +1413,7 @@ coefficients at $w_S = 1$ were attenuated: median validation calibration slopes 
 
 ```{r}
 #| label: tbl-s13
-#| tbl-cap: "Weight chosen by five-fold cross-validated partial log-likelihood (the cross-validated-weight simulation), against the two-step fit on the same datasets. The share cells are the 2,000-gene cells of the fixed-weight simulation, labelled by planted variance share. The weaker-survival cell uses a smaller coefficient. Ten datasets per cell. Paired entries show supervised / two-step. False-active is the mean false-active count. C is mean validation concordance. Slope is the median calibration slope with exact event times."
+#| tbl-cap: "Weight chosen by five-fold cross-validated partial log-likelihood (the cross-validated-weight simulation, rank 7), against the two-step fit on the same datasets. The share cells are the 2,000-gene cells of the fixed-weight simulation, labelled by planted variance share. The weaker-survival cell uses a smaller coefficient. Ten datasets per cell. Paired entries show supervised / two-step. False-active is the mean false-active count. C is mean validation concordance. Slope is the median calibration slope with exact event times."
 x <- s13
 arm_lab <- c(A1 = "Block-weighted", A2 = "Joint-posterior")
 kable(data.frame(Fit = arm_lab[x$arm], Cell = c(weak = "Weaker survival", v0.0025 = "0.25% share", v0.01 = "1% share", v0.05 = "5% share")[x$cell], `Weights (count)` = x$weights,
@@ -1394,14 +1436,14 @@ The mean concordance of the joint and mean-field coefficient variants differed b
 
 ```{r}
 #| label: fig-simulation-weight
-#| fig-cap: "The fixed-weight simulation at the larger gene count. The panels show recovery, false activity, exact-time calibration, convergence, loading precision share and validation concordance."
+#| fig-cap: "The fixed-weight simulation at the larger gene count, rank 7. The panels show recovery, false activity, exact-time calibration, convergence, loading precision share and validation concordance."
 #| out-width: "100%"
 chapter_figure("sup_sim_weight_s9")
 ```
 
 ```{r}
 #| label: fig-selected-weight
-#| fig-cap: "Cross-validated-weight simulation: validation concordance, calibration and convergence by weight, with the matched two-step reference and the CV selection frequencies. The concordance range varies by cell."
+#| fig-cap: "Cross-validated-weight simulation at rank 7: validation concordance, calibration and convergence by weight, with the matched two-step reference and the CV selection frequencies. The concordance range varies by cell."
 #| out-width: "100%"
 chapter_figure("sup_sim_weight_s13")
 ```
@@ -1410,7 +1452,7 @@ chapter_figure("sup_sim_weight_s13")
 
 ```{r}
 #| label: tbl-s14
-#| tbl-cap: "Programs near the detection threshold (the near-threshold simulation). All fits converged. Planted share is the planted program's share of expression variance. Entries show supervised / two-step for recovery, false-active count and C. Difference is the mean paired validation C of the supervised fit at w_S = 1 minus the two-step fit, with the number of datasets in which the supervised fit was higher. Oracle C is the validation concordance of the true predictor."
+#| tbl-cap: "Programs near the detection threshold (the near-threshold simulation, rank 7). All fits converged. Planted share is the planted program's share of expression variance. Entries show supervised / two-step for recovery, false-active count and C. Difference is the mean paired validation C of the supervised fit at w_S = 1 minus the two-step fit, with the number of datasets in which the supervised fit was higher. Oracle C is the validation concordance of the true predictor."
 a <- s14a[s14a$arm %in% c("twostep", "A1_w1"), ]
 w1 <- a[a$arm == "A1_w1", ]; ts <- a[a$arm == "twostep", ]
 k <- match(paste(w1$strength, w1$share), paste(ts$strength, ts$share))
@@ -1426,32 +1468,40 @@ kable(tt, row.names = FALSE)
 ```
 
 In the cells of the fixed-weight and cross-validated-weight simulations the two-step fit already finds the planted program, so those simulations
-cannot show what supervision adds. The near-threshold simulation planted weaker programs (@tbl-s14). With strong survival
+cannot show what supervision adds. The near-threshold simulation, fitted at rank 7, planted weaker programs (@tbl-s14). With strong survival
 the supervised fit had the higher validation concordance in
 `r sum(s14p$d[s14p$strength == "strong"] > 0)` of `r sum(s14p$strength == "strong")` datasets,
 and the gain grew as the program weakened. At the smallest planted share, `r pct(min(s14_shares), 2)`, the supervised fit
 recovered the program in `r round(s14_n * w1$recovered[w1$strength == "strong" & w1$share == 5e-4])`
 of `r s14_n` datasets, where the two-step fit recovered none, and validation concordance rose by
 `r sgn(s14d$d.mean[s14d$strength == "strong" & s14d$share == 5e-4])`. With realistic survival the
-two fits were close at the larger shares, and neither recovered the program at the smallest share. Both fits averaged more than one false-active program per dataset in every strong cell, the
+two fits were close at the larger shares, and neither recovered the program at the smallest share. Both fits averaged at least one false-active program per dataset in every strong cell, the
 two-step fit as many or more than the supervised fit. Their contribution to the risk score is
 measured next.
+
+The rank-5 fits of @tbl-lb-sim use the same strong-survival design at the smallest share and
+give different counts, because a different number of programs is fitted. At $w_S = 1$ the
+rank-5 projection model recovered the program in
+`r k5s_cell("S14_strong", 5e-4, 1, "YFB")$recovery_successes` of 10 datasets with
+`r num(k5s_cell("S14_strong", 5e-4, 1, "YFB")$false_active_mean, 1)` false-active programs per
+fit, against `r round(s14_n * w1$recovered[w1$strength == "strong" & w1$share == 5e-4])` and
+`r num(w1$false_active[w1$strength == "strong" & w1$share == 5e-4], 1)` at rank 7.
 
 The post hoc analysis measures the variance of the sum of the nonmatched score contributions
 relative to the variance of the full score. It includes nonmatched programs below the
 survival-activity threshold. It also measures full-minus-matched concordance on the same
 datasets. In the cross-validated-weight simulation the largest cell median variance ratio was
 `r pct(max(fa13_cells$other_share), 1)`, and the largest absolute cell mean change in
-concordance was `r num(max(abs(fa13_c$delta_c)))`. In the larger-share cells of the near-threshold simulation, the supervised ($w_S = 1$, block-weighted) and two-step fits the
+concordance was `r num(max(abs(fa13_c$delta_c)))`. In the larger-share cells of the near-threshold simulation, the
 corresponding ratios reached `r pct(max(fa14_larger$other_share[fa14_larger$arm == "A1_w1"]), 1)`
-for supervision and `r pct(max(fa14_larger$other_share[fa14_larger$arm == "twostep"]), 1)` for
-two-step. Across both fits the largest absolute mean change in C in those cells was
+for the supervised fit ($w_S = 1$, block-weighted) and
+`r pct(max(fa14_larger$other_share[fa14_larger$arm == "twostep"]), 1)` for the two-step fit. Across both fits the largest absolute mean change in C in those cells was
 `r num(max(abs(fa14_larger$delta_c)))`. At the smallest planted share the median ratios ranged
 from `r pct(min(fa14_small$other_share), 1)` to `r pct(max(fa14_small$other_share), 1)`.
 
 ```{r}
 #| label: fig-near-threshold
-#| fig-cap: "Near-threshold simulation: recovery by fit and paired validation concordance differences for the unit-weight fit versus two-step. Dots in the difference panels represent datasets. Diamonds give cell means."
+#| fig-cap: "Near-threshold simulation at rank 7: recovery by fit and paired validation concordance differences for the unit-weight fit versus two-step. Dots in the difference panels represent datasets. Diamonds give cell means."
 #| out-width: "100%"
 chapter_figure("sup_sim_near_threshold")
 ```
@@ -1476,13 +1526,17 @@ kable(data.frame(Weight = s15_curve$w, `CV partial log-likelihood` = num(s15_cur
 # Ranks the paired comparison cannot separate from K = 7, and the full-fit active count there.
 tcv_flat <- tcv_k$K[tcv_k$K >= tcv_K & tcv_k$K <= 8]
 tcv_flat_active <- unique(tcv_k$full_active[tcv_k$K %in% tcv_flat])
+# The working-model CV (lb_yfb_training) is a separate run of the same configuration and folds.
+tcv_k5f <- subset(tcv_cv, input == "D4_Z" & K == tcv_K)
+stopifnot(nrow(tcv_k5f) == 5, setequal(tcv_k5f$fold, k5_y$fold))
+tcv_run_gap <- max(abs(k5_y$C_within - tcv_k5f$C_within[match(k5_y$fold, tcv_k5f$fold)]))
 stopifnot(length(tcv_flat_active) == 1, tcv_r(tcv_K, "conv") == 5,
           all(abs(tcv_k$diff_vs_K7[tcv_k$K %in% tcv_flat]) <= tcv_k$se_diff_vs_K7[tcv_k$K %in% tcv_flat] |
               tcv_k$K[tcv_k$K %in% tcv_flat] == 7))
 ```
 
-Training cross-validation supported the gene screen and the input scaling of the reported fit
-(@tbl-inputs). In concordance within cohort, the alternative screen was lower by
+Training cross-validation, run on the rank-7 reference, supported the gene screen and the
+input scaling (@tbl-inputs). In concordance within cohort, the alternative screen was lower by
 `r num(-tcv_in["D2_Z", "diff"])` (paired SE `r num(tcv_in["D2_Z", "se_diff"])`), division by the within-cohort standard deviation by
 `r num(-tcv_in["D4_XSD", "diff"])` (SE `r num(tcv_in["D4_XSD", "se_diff"])`) and the rank
 transform by `r num(-tcv_in["D4_RANKZ", "diff"])` (SE `r num(tcv_in["D4_RANKZ", "se_diff"])`).
@@ -1507,19 +1561,20 @@ partitions of the patients. Averaged over the five partitions, the rule again se
 $K = 5$ (concordance 0.643, against a best of 0.651 at $K = 12$). Four of the five partitions
 selected $K = 5$ on their own and one selected $K = 10$. $K = 5$ converged in all 25 fold fits,
 against 18 at $K = 7$. The alternative screen was 0.002 lower on average (SE 0.008), so the
-screen also stays. The working model now uses $K = `r tcv_K`$ (@sec-working-model), and its
-programs match those of the $K = 7$ fit (@sec-model-states). Programs 3 and 4 lie near the
-1.96 threshold at both ranks. Program 3 falls below it at $K = `r tcv_K`$ ($z$ from
-`r num(k5_match$k7_z[3], 1)` to `r num(k5_full$z[3], 1)`) and Program 4 rises above it ($z$ from
-`r num(k5_match$k7_z[4], 1)` to `r num(k5_full$z[4], 1)`). An independent review on November 12, 2026, confirmed these
-comparisons.
+screen also stays. The working model uses $K = `r tcv_K`$ (@sec-working-model), and its
+programs match those of the rank-7 reference (@sec-model-states). The working-model
+concordance in @sec-working-model comes from a separate run of the same configuration on the
+same folds. Its fold values differ from those here by at most
+`r num(tcv_run_gap)`,
+so both runs give a mean of `r num(k5_cw$mean_YFB)`, with fold SE `r num(k5_se_y)` in that run
+and `r num(tcv_r(tcv_K, "se"))` here.
 
 ```{r}
 #| label: tbl-inputs
-#| tbl-cap: "Training cross-validation of the gene screen and input scaling at rank 7 (five folds). Concordance counts only pairs of patients from the same cohort, so the reported fit's value differs from the mean fold concordance in @tbl-cv. Differences are paired over folds. Convergence is within 300 sweeps. Independently reviewed on November 12, 2026."
+#| tbl-cap: "Training cross-validation of the gene screen and input scaling at rank 7 (five folds). Concordance counts only pairs of patients from the same cohort, so the rank-7 reference's value differs from the mean fold concordance in @tbl-cv. Differences are paired over folds. Convergence is within 300 sweeps."
 kable(data.frame(Input = unname(tcv_inputs), Genes = big(tcv_genes),
   `Mean C (SE)` = paste0(num(tcv_in[, "mean"]), " (", num(tcv_in[, "se"]), ")"),
-  `Difference from reported fit (SE)` = c("", paste0(sgn(tcv_in[tcv_alt, "diff"]), " (",
+  `Difference from rank-7 reference (SE)` = c("", paste0(sgn(tcv_in[tcv_alt, "diff"]), " (",
                                                      num(tcv_in[tcv_alt, "se_diff"]), ")")),
   `Folds converged` = paste0(tcv_in[, "conv"], "/5"), check.names = FALSE),
   row.names = FALSE, align = "lcccc")
@@ -1527,7 +1582,7 @@ kable(data.frame(Input = unname(tcv_inputs), Genes = big(tcv_genes),
 
 ```{r}
 #| label: tbl-rank
-#| tbl-cap: "Training cross-validation of the rank on the current screen with z-scores within cohort (five folds). Concordance counts only pairs within cohort. Differences from K = 7 are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. The one-standard-error rule selects the smallest K whose mean C reaches the best mean minus its SE. Independently reviewed on November 12, 2026."
+#| tbl-cap: "Training cross-validation of the rank on the current screen with z-scores within cohort (five folds). Concordance counts only pairs within cohort. Differences from K = 7 are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. The one-standard-error rule selects the smallest K whose mean C reaches the best mean minus its SE."
 kable(data.frame(K = tcv_k$K,
   `Mean C (SE)` = paste0(num(tcv_k$mean_C_within), " (", num(tcv_k$se_C_within), ")"),
   `Difference from K = 7 (SE)` = ifelse(tcv_k$K == 7, "",
@@ -1571,6 +1626,12 @@ p7s13 <- rd("prompt7_desurv_style", "s13_rule.csv"); p7s14 <- rd("prompt7_desurv
 cmp_lab <- c(w1 = "Supervised", twostep = "Two-step", PurIST = "PurIST",
              elastic_net = "Elastic-net Cox", DeSurv = "DeSurv")
 gp <- function(m) p7g[p7g$model == m & p7g$cohort == "pooled", ]
+# Pooled HR of the supervised score, unadjusted or adjusted for a subtype call.
+p7a_hr <- function(s, adj) {
+  r <- p7a[p7a$model == "w1" & p7a$cohort == "pooled" & p7a$subtype == s & p7a$adjusted == adj, ]
+  stopifnot(nrow(r) == 1); r
+}
+stopifnot(isTRUE(all.equal(p7a_hr("PurIST", FALSE)$hr, p7a_hr("DeCAF", FALSE)$hr)))
 s14ts <- p7s14[p7s14$arm == "twostep", ]
 ```
 
@@ -1580,7 +1641,7 @@ this section are those of the supervised YFB fit ($w_S = 1$, 2,218 genes, rank 5
 the training data. DeSurv used the authors' code, preprocessing and published settings (rank 3),
 which the authors selected on the same training cohorts [@Young2026]. The elastic-net Cox model
 on the 2,218-gene set chose $\alpha = `r p6t$alpha[p6t$selected]`$ by cross-validation on the training
-folds. The α = 0.75 and lasso paths reached glmnet's iteration limit at small penalties. PurIST entered as a Cox model on its basal-like probability [@Rashid2020]. No clinical
+folds. The $\alpha = 0.75$ and lasso paths reached glmnet's iteration limit at small penalties. PurIST entered as a Cox model on its basal-like probability [@Rashid2020]. No clinical
 model was fitted, because no stage, grade, age or margin field is recorded in both training
 cohorts and all five external series.
 
@@ -1613,11 +1674,14 @@ two-step score. The pooled high-versus-low HRs were `r num(gp("w1")$hr, 2)`
 (`r ci(gp("twostep")$donor_lo, gp("twostep")$donor_hi, 2)`). They are not comparable, because the
 supervised cutpoint places `r gp("w1")$high` of `r gp("w1")$n` external records in the high-risk
 group and the two-step cutpoint places `r gp("twostep")$high`. A smaller, more extreme group gives
-a larger HR at equal ranking ability. After adjusting for PurIST subtype the supervised score's
-pooled HR per training SD was
-`r num(p7a$hr[p7a$model == "w1" & p7a$cohort == "pooled" & p7a$subtype == "PurIST" & p7a$adjusted], 2)`,
-and after adjusting for DeCAF it was
-`r num(p7a$hr[p7a$model == "w1" & p7a$cohort == "pooled" & p7a$subtype == "DeCAF" & p7a$adjusted], 2)`.
+a larger HR at equal ranking ability. The supervised score's pooled HR per training SD was
+`r num(p7a_hr("PurIST", FALSE)$hr, 2)` (donor-clustered 95% CI
+`r ci(p7a_hr("PurIST", FALSE)$donor_lo, p7a_hr("PurIST", FALSE)$donor_hi, 2)`) without
+adjustment, `r num(p7a_hr("PurIST", TRUE)$hr, 2)`
+(`r ci(p7a_hr("PurIST", TRUE)$donor_lo, p7a_hr("PurIST", TRUE)$donor_hi, 2)`) after adjusting
+for PurIST subtype and `r num(p7a_hr("DeCAF", TRUE)$hr, 2)`
+(`r ci(p7a_hr("DeCAF", TRUE)$donor_lo, p7a_hr("DeCAF", TRUE)$donor_hi, 2)`) after adjusting for
+DeCAF.
 @fig-fixed-risk displays the groups formed by the training cutpoints. The program section also gives within-series tertiles as a separate description of ranking. The out-of-fold scores used the feature matrix of the training fit, whose per-cohort scaling included held-out training-fold expression. The cutpoint search used the pooled out-of-fold training scores and their outcomes.
 
 ```{r}
@@ -1644,13 +1708,14 @@ These fixed groups and the subtype-adjusted associations are exploratory. Differ
 
 ### Program stability in training folds {#sec-program-stability}
 
-For the rank-5 fit, a main prognostic program was defined before the analysis by a
-standardized coefficient at least 0.25 of the largest, at least 5% of the signed risk-score
-variance and survival activity in at least four of the five training folds.
+For the rank-5 fit, we call a program a main prognostic program when its standardized
+coefficient is at least 0.25 of the largest, it accounts for at least 5% of the signed
+risk-score variance and it is survival-active in at least four of the five training folds.
 
 ```{r}
 #| label: tbl-program-rule
-#| tbl-cap: "Program classification rule on the supervised training fit. The ratio is |β_k| SD(Y F_k) relative to the largest program. The signed share is Cov(η_k, η)/Var(η). Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. The precision share is an upper bound on survival's median share of the loading precision. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 5)."
+#| tbl-cap: "Main prognostic programs of the supervised training fit. The ratio is $|\\beta_k| \\mathrm{SD}(YF_k)$ relative to the largest program. The signed share is $\\mathrm{Cov}(\\eta_k, \\eta)/\\mathrm{Var}(\\eta)$. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. The precision share is an upper bound on survival's median share of the loading precision. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 5)."
+stopifnot(sum(p7r$main) == 1)
 y <- p7r[p7r$active | p7r$ratio > .1, ]
 kable(data.frame(Program = y$program, Active = ifelse(y$active, "Yes", "No"),
   Ratio = num(y$ratio, 2), `Signed share` = num(y$variance_share), `Active folds` = y$active_folds,
@@ -1658,21 +1723,21 @@ kable(data.frame(Program = y$program, Active = ifelse(y$active, "Yes", "No"),
   check.names = FALSE), row.names = FALSE)
 ```
 
-Program `r paste(p7r$program[p7r$main], collapse = " and ")` met the rule. Programs 4 and 5 were active in `r p7r$active_folds[p7r$program == 4]` and `r p7r$active_folds[p7r$program == 5]` folds, respectively. In the saved fits of the cross-validated-weight simulation the coefficient-and-share part kept the planted program in `r sum(p7s13$planted_pass_partial)` of `r nrow(p7s13)` fits and excluded `r sum(p7s13$false_active_dropped_partial)` of `r sum(p7s13$false_active_denominator)` false-active directions. In the two-step fits of the near-threshold simulation it excluded `r sum(s14ts$false_active_dropped_partial)` of `r sum(s14ts$false_active_denominator)`. The fold-stability part could not be checked in simulation.
+Program `r p7r$program[p7r$main]` is the one main prognostic program. Programs 4 and 5 were active in `r p7r$active_folds[p7r$program == 4]` and `r p7r$active_folds[p7r$program == 5]` folds. In the saved rank-7 fits of the cross-validated-weight simulation, the coefficient and variance-share criteria marked the planted program as main in `r sum(p7s13$planted_pass_partial)` of `r nrow(p7s13)` fits and marked `r sum(p7s13$false_active_dropped_partial)` of the `r sum(p7s13$false_active_denominator)` false-active programs as minor. In the two-step fits of the near-threshold simulation they marked `r sum(s14ts$false_active_dropped_partial)` of `r sum(s14ts$false_active_denominator)` as minor. Fold stability was not computed in simulation.
 
 ### Mixed-signal simulation {#sec-mixed-signal}
 
- A simulation planted one strong and one near-threshold
+A simulation fitted at rank 7 planted one strong and one near-threshold
 prognostic program with equal standardized effects at 2,000 genes.
 
 ```{r}
 #| label: tbl-mixed
-#| tbl-cap: "Mixed-signal simulation, ten datasets per arm. All fits converged and every arm recovered the strong program in every dataset. Precision is the fraction of the 50 genes with the largest absolute fitted loading on the matched program that lie in the planted support. The mean includes datasets whose best match has absolute correlation below 0.7."
+#| tbl-cap: "Mixed-signal simulation at rank 7, ten datasets per arm. All fits converged and every arm recovered the strong program in every dataset. Precision is the fraction of the 50 genes with the largest absolute fitted loading on the matched program that lie in the planted support. The mean includes datasets whose best match has absolute correlation below 0.7."
 m <- p7m[p7m$direction == "near_threshold", ]
 z <- do.call(rbind, lapply(split(m, m$arm), function(a) data.frame(arm = a$arm[1],
   rec = sum(a$recovered), n = nrow(a), prec = mean(a$top50_precision), C = mean(a$C))))
 z <- z[match(c("twostep", "A1_w1", "A2_w1", "A1_w5"), z$arm), ]
-kable(data.frame(Arm = c("Two-step", "Supervised, w_S = 1", "Supervised, joint β, w_S = 1",
+kable(data.frame(Arm = c("Two-step", "Supervised, w_S = 1", "Supervised, joint $\\beta$, w_S = 1",
   "Supervised, w_S = 5"), `Near-threshold recovered` = paste0(z$rec, "/", z$n),
   `Top-50 precision` = num(z$prec), `Validation C` = num(z$C), check.names = FALSE),
   row.names = FALSE)
@@ -1683,11 +1748,11 @@ often. A fixed $w_S = 5$ lost it in most datasets and had lower validation C.
 
 ### Recovery across simulation designs {#sec-recovery-synthesis}
 
-The matched two-step fit recovered the planted program in the representative cell of the cross-validated-weight simulation. The largest unit-weight recovery difference in the near-threshold simulation favoured the supervised fit and occurred at the smallest planted share with strong survival (@tbl-s14). In the mixed-signal simulation, the two unit-weight fits had the same near-threshold recovery as the two-step fit. @fig-recovery-synthesis shows the accompanying differences in false activity, convergence and calibration. On PDAC data the loading agreement and the small Cox contribution to loading precision are consistent with an effect through the coefficient fit (@sec-results-loadings).
+All three designs compared here fit rank 7. The matched two-step fit recovered the planted program in the representative cell of the cross-validated-weight simulation. The largest unit-weight recovery difference in the near-threshold simulation favoured the supervised fit and occurred at the smallest planted share with strong survival (@tbl-s14). In the mixed-signal simulation, the two unit-weight fits had the same near-threshold recovery as the two-step fit. @fig-recovery-synthesis shows the accompanying differences in false activity, convergence and calibration. On PDAC data the loading agreement and the small Cox contribution to loading precision are consistent with an effect through the coefficient fit (@sec-results-loadings).
 
 ```{r}
 #| label: fig-recovery-synthesis
-#| fig-cap: "Matched simulation results. The cross-validated-weight simulation panel shows the 1% planted-variance cell with the cross-validation-selected weight in the block-weighted fit. The near-threshold simulation panel shows the smallest planted share at both survival strengths. The mixed-signal cell reports recovery of the weaker loading and uses one row per fit for false activity and convergence. Calibration slopes were not saved for the mixed-signal experiment."
+#| fig-cap: "Matched simulation results, all fitted at rank 7. The cross-validated-weight simulation panel shows the 1% planted-variance cell with the cross-validation-selected weight in the block-weighted fit. The near-threshold simulation panel shows the smallest planted share at both survival strengths. The mixed-signal cell reports recovery of the weaker loading and uses one row per fit for false activity and convergence. Calibration slopes were not saved for the mixed-signal experiment."
 #| fig-width: 6.5
 #| fig-height: 5.3
 s13_cell <- subset(s13, cell == "v0.01" & arm == "A1")
@@ -1783,7 +1848,6 @@ kable(data.frame(Program = enrich_top$program, Collection = enrich_top$collectio
   check.names = FALSE), row.names = FALSE)
 ```
 
-`r sum(program_enrich$collection == "Reactome" & is.na(program_enrich$pval))` Reactome p-values were unestimable and are retained as missing in the source CSV.
 Spearman correlations with published signatures were computed within series using the
 available standardized expression genes. In the pooled training data, Program 2 was inversely associated with the Moffitt basal-like signature, and Program 4 was positively associated with the Bailey ADEX signature. The corresponding external ranges are in @tbl-signatures.
 Correlations between Program 5 and the stromal-immune signature were weaker. These
@@ -1833,8 +1897,9 @@ training folds. Its pooled external HR per training SD was
 (donor-clustered 95% CI `r ci(p5$donor_lo[p5$cohort == "pooled"], p5$donor_hi[p5$cohort == "pooled"], 2)`),
 opposite in direction to its training coefficient, and `r sum(p5$hr[p5$cohort != "pooled"] < 1)` of the
 `r sum(p5$cohort != "pooled")` series had HRs below one. Its biological
-interpretation is exploratory. The retention rule in @sec-program-stability reflects
-that instability.
+interpretation is exploratory. Its activity in only
+`r p7r$active_folds[p7r$program == 5]` training folds (@sec-program-stability) shows the same
+instability.
 
 ## External program associations and risk groups {#sec-program-external}
 
@@ -1901,21 +1966,23 @@ projection changed neither number by more than 0.01. For the supervised YFB fit 
 its interval included zero. Its estimated loadings correlated 1.000 with the unsupervised
 loadings at the unit survival weight. DeSurv and elastic-net Cox trained on the same patients
 had the concordance differences and intervals shown in @tbl-comparators. The joint coefficient fit accounts for posterior loading uncertainty and
-uses a shrinkage prior. Calibration slopes of the rank-5 fit were closer to one than those of
-the two-step fit in most series. The calibration slope is the coefficient of a Cox regression
+uses a shrinkage prior. Calibration slopes of the rank-5 fit and the two-step fit differed by
+less than their standard errors in every series. The calibration slope is the coefficient of a Cox regression
 of held-out survival on the fitted risk score, and a slope of one means the fitted risk
 differences have the observed size.
 
-In the simulation cells with consistent recovery, the two-step fit already recovered the
+In the rank-7 simulation cells with consistent recovery, the two-step fit already recovered the
 prognostic program. The near-threshold simulations isolated a setting where supervision
 could change discovery. Recovery and concordance improved when survival was strong, while
 the differences were smaller at realistic survival strength. Methylation alone, on the matched
-TCGA patients, predicted survival less well than expression and added no survival-active
-program, although a few of its programs are not explained by the expression programs.
+TCGA patients, had concordance close to 0.5, below expression in every comparison but mostly
+within two standard errors. It added no survival-active program, although a few of its
+programs are not explained by the expression programs.
 
 ## Limitations {#sec-limitations}
 
-The gene screen and the input scaling were chosen with external concordance before the
+The gene screen, the input scaling, pooling without a cohort indicator and the starting-value
+constraints were chosen with external concordance among the evidence before the
 training-only rule, and every external series informed at least one of the choices recorded in
 the audit (@sec-external-uses). Training cross-validation now supports the screen and the
 scaling and selected rank `r tcv_K` (@sec-results-rank). Because the external series informed
@@ -1927,7 +1994,7 @@ donor-clustered HR intervals account for their shared donors while retaining bot
 estimand. DeSurv used its published settings rather than a new search on our training folds.
 All five supervised training folds converged at rank `r tcv_K`.
 
-In simulation the coefficients at $w_S = 1$ are
+In the rank-7 simulations the coefficients at $w_S = 1$ are
 attenuated at the larger gene count. These studies use a common simulation generator. The
 simulation comparing the two survival links issued R warnings whose messages were not saved.
 The methylation comparison has `r meth_aud$n` patients and screened and imputed its CpGs before
@@ -1974,7 +2041,7 @@ the expected objective.
 
 # Appendix B. Changes since the November 6 version {#sec-appendix-b .unnumbered}
 
-This version reports the rank-5 working model and its rebuilt external comparisons, risk groups and program exhibits. It adds the prior comparisons, methylation analysis, survival-link comparison, training-only screen and rank analysis, weight refit and descriptive multimodal comparison. The earlier rank-7 fit remains the reference for the prior and input-scaling comparisons. Simulation exhibits retain their original designs.
+This version reports the rank-5 working model and its rebuilt external comparisons, risk groups and program exhibits. It adds the prior comparisons, methylation analysis, survival-link comparison, training-only screen and rank analysis, weight refit and descriptive multimodal comparison. The prior and input-scaling comparisons use the rank-7 reference. The simulation exhibits keep their designs, which fit rank 7.
 
 {{< pagebreak >}}
 
@@ -2015,9 +2082,8 @@ kable(wide_risk, row.names = FALSE)
 
 # Appendix D. Sensitivity to the priors {#sec-appendix-d .unnumbered}
 
-These two comparisons were completed and independently reviewed on November 12, 2026. Both
-use rank 7, the rank of the working fit before the rank was reselected, and are comparisons between priors, not tests of
-each prior against an absolute standard. Their full results are in
+Both comparisons use the rank-7 reference (@sec-model-states) and compare priors with each
+other, not each prior against an absolute standard. Their full results are in
 `docs/findings/2026-11-12-lf-prior-comparison-findings.md`,
 `docs/findings/2026-11-12-lf-prior-followup-findings.md` and
 `docs/findings/2026-11-12-beta-prior-comparison-findings.md`.
@@ -2028,7 +2094,7 @@ The current model uses point-Laplace priors on $L$ and $F$ with expression z-sco
 cohort. The alternative is a point-exponential prior, which keeps every score and loading
 nonnegative, as in a nonnegative matrix factorization. It needs nonnegative input, so expression
 is divided by each gene's within-cohort standard deviation without centering, and the Cox
-projection is centered on the training data. Everything else is the earlier rank-7 fit's: $w_S = 1$,
+projection is centered on the training data. Everything else is the rank-7 reference's: $w_S = 1$,
 a Normal coefficient prior, $K = 7$ without pruning, at most 300 sweeps and tolerance $10^{-5}$.
 The simulation uses the three variance cells of the fixed-weight simulation at 2,000 genes and
 the strong-survival cell of the near-threshold simulation at a planted share of 0.05%, with
@@ -2048,7 +2114,7 @@ a quarter of the planted program's.
 
 ```{r}
 #| label: tbl-lf-prior-sim
-#| tbl-cap: "Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Independently reviewed on November 12, 2026."
+#| tbl-cap: "Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation."
 pair_cell <- function(a, b, d) paste(num(a, d), num(b, d), sep = " / ")
 kable(data.frame(`Planted share` = unname(cell_share),
   Recovered = paste(lf_pl$recovered, lf_pe$recovered, sep = " / "),
@@ -2088,7 +2154,7 @@ within-cohort concordance `r num(tcv_a$mean_C_within_PE)` against
 
 ```{r}
 #| label: tbl-lf-prior-real
-#| tbl-cap: "Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Independently reviewed on November 12, 2026."
+#| tbl-cap: "Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard."
 lf_lab <- c(PL = "Point-Laplace, z-scores within cohort, rank 7",
             PE = "Point-exponential, divided by within-cohort SD",
             PES = "Point-exponential, divided by within-cohort SD, cohort strata",
@@ -2135,7 +2201,7 @@ program alone when that program was clear. Near the threshold it was
 
 ```{r}
 #| label: tbl-beta-prior
-#| tbl-cap: "Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Independently reviewed on November 12, 2026."
+#| tbl-cap: "Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds."
 stopifnot(isTRUE(all.equal(b_cells$B_PN$mean_false_active[2], b_cells$B_PLAP$mean_false_active[2])),
           isTRUE(all.equal(b_pn_incl[["s9_1pct"]], b_pn_incl[["s9_5pct"]])))
 sim_rows <- t(sapply(names(b_arms), function(a)
