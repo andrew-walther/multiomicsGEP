@@ -3,6 +3,39 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task D: balance modalities with likelihood weights; the multimodal model stays future work in Chapter 4 (Andrew)
+
+**Decided.** Expression and methylation are balanced by a power weight w_m on each
+modality's reconstruction likelihood, derived before it is coded. The CpG set is not cut
+to the size of the gene list. Two weight rules are compared in simulation: feature
+count (p_expression / p_m) and leading eigenvalue (the multiple factor analysis
+weighting). The selected rule is then fitted on TCGA at 10k and 100k CpGs. Chapter 4
+presents the multimodal model as a proposed future contribution: its model form in the
+methods and the current results as preliminary, not as a finished method.
+
+**Why.** The joint model's purpose is interpretive. It is meant to show which genes and
+CpGs load together and to find programs that load on one modality only, not to raise
+prediction. With balanced feature counts in simulation the joint fit recovered the
+prognostic program as well as or better than expression alone. With five times as many
+methylation features it did worse. On TCGA at 10k CpGs, methylation supplied 83–97% of
+the L precision in three of five programs, and joint CV C was 0.06 below expression
+alone (SE 0.024). Task C found that the methylation-specific immune factor forms only
+from about 50k CpGs, so cutting CpGs to 2,218 would lose it. The F prior cannot restore
+balance. It is estimated by empirical Bayes and came out dense on both modalities, and
+rescaling a modality's data is absorbed by the feature-specific τ.
+
+**Traded away.** A weighted fit is a tempered (power) posterior for the reconstruction
+terms, not the original model's posterior, as with w_S for survival. Down-weighting
+methylation strengthens its prior relative to its data, which can empty methylation
+blocks. The same effect collapsed L and F when the genomics term was divided by p in LB
+(2026-07-12). Empty-block counts are reported in every run. Chapter 4 does not claim a
+working multimodal method.
+
+**Files.** [Modality-weights prompt](docs/prompts/2026-11-12-codex-d-modality-weights-prompt.md),
+[TCGA findings](docs/findings/2026-11-12-multimodal-tcga-comparison-findings.md),
+[feature-group findings](docs/findings/2026-11-12-feature-group-fitter-findings.md),
+[methylation findings](docs/findings/2026-11-12-methylation-single-modality-findings.md).
+
 ## 2026-11-12 — Task D: run the matched-TCGA comparison without a passing simulation gate (Andrew)
 
 **Decided.** The descriptive matched-TCGA comparison of task D runs now: expression alone,
