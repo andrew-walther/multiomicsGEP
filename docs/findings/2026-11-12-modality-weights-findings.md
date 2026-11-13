@@ -2,11 +2,11 @@
 
 Date: 2026-11-12. Author: Andrew Walther.
 
-## Scope and progress
+## Scope
 
 The registered study is [the modality-weights prompt](../prompts/2026-11-12-codex-d-modality-weights-prompt.md), revised in `9c4cac23`.
 The aim is recovery of joint and modality-exclusive programs with a large CpG set.
-Prediction is secondary. Work proceeds on main, with at most two CPU workers.
+Prediction is secondary. The study used main, with at most two CPU workers.
 Task C inputs are read-only. Patient fits and scores remain under ignored `data/`.
 
 ## Derivation and independent review
@@ -158,6 +158,168 @@ criterion. No new TCGA 10k or 100k fits, promoter-pair analyses, CV estimates or
 100k methylation-specific-factor recovery claims were made. The existing unweighted
 10k joint fit remains descriptive and not validated by simulation.
 
+## Fixed-fit ICGC scoring
+
+The loader starts with 79 matched donors. Twelve have unusable survival, leaving
+67. The existing primary-PDAC and primary-tumour filter retains **50 distinct
+donors with 30 events**. Each donor contributes one row. No model was refitted,
+tuned, reoriented or selected on these outcomes.
+
+The four available full-data K = 5 fits were projected once. Expression uses the
+fixed Task C PL full fit, and methylation uses its fixed 10k and 100k PL fits.
+The joint model is the existing unweighted grouped 10k fit from the preceding
+Task D comparison. No weighted joint fits exist because the gate did not allow
+Part 4. The full-data checkpoints are all converged.
+
+Each modality is z-scored within these 50 external donors before aligning to the
+training feature order. Missing features receive zero after scaling. Both fits
+using expression lack 27 D4 genes in ICGC. No CpGs are missing, and none of the
+required available features are constant in this subset. ICGC imputation uses the
+existing reader over all available CpGs in the frozen design, before the primary
+restriction, matching the loader's imputation convention. This imputation does
+not use outcomes. This scaling deliberately follows S-12 rather than Task C's
+previous external transform based on training means and SDs.
+
+The intervals are donor percentile-bootstrap 95% intervals with 2,000 draws and
+seed 1. All concordances use the fixed Cox direction through
+`frozen_reverse_cindex()`. Bootstrap helpers receive explicit FALSE flip flags.
+
+| Fixed fit | ICGC C | 95% interval | Missing genes | Missing CpGs |
+|---|---:|---|---:|---:|
+| expression_only | 0.660 | 0.552 to 0.764 | 27 | 0 |
+| methylation_10k | 0.636 | 0.518 to 0.742 | 0 | 0 |
+| methylation_100k | 0.594 | 0.470 to 0.709 | 0 | 0 |
+| joint_unweighted_10k | 0.692 | 0.575 to 0.795 | 27 | 0 |
+
+The paired joint-minus-expression difference is **+0.032**
+with interval **-0.093 to +0.147**.
+The bootstrap resamples the same donor indices for both scores. This is
+descriptive and does not establish a predictive gain. The joint fit remains
+**not validated by simulation**, and these results change no simulation or
+weight-selection decision.
+
+For direction checks, each joint program was matched to the expression-only
+program with largest absolute TCGA patient-score correlation. All five matches
+exceeded 0.5 in absolute value. The same sign was retained for all five ICGC
+score correlations. This describes agreement between molecular projections,
+not the sign or significance of an external survival effect.
+
+| Joint program | Expression match | TCGA score correlation | ICGC score correlation | Direction retained |
+|---:|---:|---:|---:|---|
+| 1 | 1 | 0.665 | 0.382 | TRUE |
+| 2 | 1 | 0.715 | 0.713 | TRUE |
+| 3 | 4 | 0.716 | 0.507 | TRUE |
+| 4 | 3 | -0.599 | -0.831 | TRUE |
+| 5 | 1 | 0.722 | 0.761 | TRUE |
+
+Aggregates are in `results/multimodal_real/outputs/modality_weights_icgc_2026-11-12/`.
+Input hashes were checked before and after scoring. Fixed fits and prepared Task C
+inputs were unchanged. Donor-level projections and risks are saved only in
+`data/modality_weights_icgc_2026-11-12/fixed_scores.rds`.
+
+Reproduce the analysis with
+`Rscript results/multimodal_real/score_modality_weight_external.R`. It refuses to
+rescore an existing output directory. The two focused tests cover ordered alignment,
+post-scaling zero fill, constant-feature counts and training-frozen direction
+matching. Both passed after failing on the missing implementation.
+
+## Implementation walkthrough
+
+The weight helper takes a numeric training matrix and one modality label per
+feature. It returns two named positive numeric weight vectors. The count rule uses
+block dimensions. The eigenvalue rule z-scores training rows and uses the largest
+eigenvalue of the patient Gram matrix. Its memory requirement is n by n rather
+than p by p. It never sees held-out outcomes or observations.
+
+The fitter expands those weights to feature order and multiplies the current τ
+only when computing reconstruction coordinates. The returned τ remains a noise
+precision. Noise updates retain n / Σ E[R²], while objective evaluation weights
+both log τ and residual terms. Priors remain at weight one, which allows an entire
+modality-program block to collapse. The grouped and pooled paths differ only in
+the scope over which the F prior is fitted. Unsupported restart/pruning controls
+fail explicitly instead of receiving partially weighted computations.
+
+The simulation runner uses the same observed matrices, outcomes and signed-SVD
+starts within each seed/cell. It fits the four registered arms and writes a row
+for every fit, including errors if any occur. It computes recovery from standardized
+loading truth, not from validation outcome correlations. Weighted precision uses
+posterior second moments. A zero total precision has no defined share and remains
+NA. The supplemental summarizer verifies exact seed/arm/program keys before
+forming counts, so omitted rows cannot silently improve success rates.
+
+The external alignment helper accepts a donor-by-feature numeric matrix and a
+fixed training feature vector. It z-scores the external series, then returns a
+matrix in training order with explicit zero columns for absent features. The
+scoring runner applies the frozen F, normalization and β once. It passes the
+resulting donor risk vectors to the established survival bootstrap helpers.
+Matching directions uses TCGA scores only to choose program labels, then reads
+the correlation sign on ICGC without changing any scores.
+
+Base R supplies scaling, named alignment, Gram eigenvalues and aggregate checks.
+`ebnm` fits the existing empirical-Bayes priors, and `survival` supplies the
+established fixed-orientation concordance. No dependencies were added.
+
+## Independent final review
+
+A fresh independent reviewer found no blocking statistical or implementation
+errors. The review reproduced all simulation tables, recomputed all weighted
+precision and final emptiness rows from the 200 private posterior checkpoints,
+verified the planted zero blocks and every Block B matched loading correlation,
+and confirmed grouped-prior structure and the explicit pooled path.
+
+For ICGC, an independent comparable-pair calculation reproduced all four C estimates
+using 845 comparable pairs. The reviewer reproduced every 2,000-draw interval and
+SE, the paired-difference interval and all five direction statements from the
+private frozen scores. The final findings and the no-Part-4 decision were checked
+against those calculations.
+
+The review identified a weak reconstruction-scale fixture whose posterior means
+were nearly zero. Nonzero L and both-modality F norm assertions failed on the old
+fixture. An aligned rank-one signal replaced it, after which the focused suite
+passed 25/25 and the independent reviewer reproduced that pass. This test covers
+a corresponding-coordinate reconstruction sweep, not arbitrary-start or
+canonicalized full-fitter equivariance. No scientific fits or scores were changed.
+
+Final verification after the review correction: `Rscript tests/run_tests.R`
+passed **872 tests with zero failures**. The existing bounded-β profile-likelihood
+fallback diagnostic warning remains expected. The independent reviewer reran the
+strengthened focused suite and found no remaining blocking findings.
+
+Pooled fits follow the historical return convention and do not save the numerical
+pooled F prior values in their checkpoints. Source review and the all-one bitwise
+comparison establish that their computation uses a pooled prior. A future audit
+could retain those prior values privately without changing fitting.
+
+The historical summary helper's true-risk-C fields were not computed in this
+study and remain NA. Defined held-out concordances are reported with their
+denominators, but validation C is not a gate or selection criterion.
+
 ## Text for the shared status files
 
-Pending the registered simulation, TCGA decision and external scoring.
+Reconstruction-only modality powers were derived and implemented in the grouped
+YFB fitter. Both registered rules failed to recover the primary program in either
+50:250 simulation cell, despite convergence of all 200 fits. The weighted fits
+emptied most modality-program blocks. Neither rule was selected, so no new TCGA
+10k or 100k joint fits ran. All Block B arms had zero full pattern successes,
+including grouped and pooled feature-count priors. Separate-prior support was
+not established. The multimodal method remains future work.
+
+On 50 primary matched ICGC donors with 30 events, the existing expression, 10k
+methylation, 100k methylation and unweighted 10k joint fits gave C = 0.660, 0.636,
+0.594 and 0.692, respectively. The paired joint-minus-expression difference was
+0.032 with donor-bootstrap interval −0.093 to 0.147. All five TCGA-matched joint
+program score directions were retained. These results are descriptive and the
+joint fit is not validated by simulation. They choose no weights or models.
+
+
+## Checkpoint commits
+
+- `e51e03c3`: reviewed weighted derivation and 109 numerical checks.
+- `4d2ed95f`: failing fitter acceptance tests.
+- `d3a95252`: weighted fitter and approved explicit F-prior pooling option.
+- `ebc081ff`: registered simulations, aggregates and no-weight-selected decision.
+- `03d79d03`: fixed ICGC scoring, aggregate intervals and reviewed test strengthening.
+
+The findings and review disposition are recorded in the final documentation commit.
+All checkpoints were pushed. No protected shared status, week-plan or prelim files
+were edited. Proposed status text appears above.
