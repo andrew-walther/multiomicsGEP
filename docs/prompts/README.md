@@ -4,7 +4,8 @@ Paste-in prompts, briefs and session handoffs.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
-| 2026-11-13 | [codex-share-targeted-weight-prompt](2026-11-13-codex-share-targeted-weight-prompt.md) | Hands the S-16 share-targeted survival-weight plan to Codex: step order, stop conditions, Sol/Terra model routing, findings and review-handoff deliverables | active |
+| 2026-11-14 | [codex-bounded-risk-prompt](2026-11-14-codex-bounded-risk-prompt.md) | Hands S-17 to Codex: runner gaps to close, step order (real data before simulation), Sol/Terra routing, branch and push authorization, findings and review handoff | active |
+| 2026-11-13 | [codex-share-targeted-weight-prompt](2026-11-13-codex-share-targeted-weight-prompt.md) | Hands the S-16 share-targeted survival-weight plan to Codex: step order, stop conditions, Sol/Terra model routing, findings and review-handoff deliverables | complete (S-16 merged `df32eb1d`) |
 | 2026-11-12 | [codex-d-e-followup-prompt](2026-11-12-codex-d-e-followup-prompt.md) | Codex follow-up: E fixes and fits (priors settled, conditional on F keeping D4 and K = 7); D fitter work keyed by Andrew's option (generalize `fit_ssbmf_yfb()`, extend or rewrite the multimodal fitter) | active; D option pending |
 | 2026-11-12 | [codex-d-finish-prompt](2026-11-12-codex-d-finish-prompt.md) | Finishes task D: survival regenerated from the standardized data so recovery has one target, grouped vs pooled F priors with equal and unequal modality sparsity (80 fits), then the descriptive matched-TCGA comparison | complete (all gates failed; continued by the rerun prompt) |
 | 2026-11-12 | [codex-d-rerun-prompt](2026-11-12-codex-d-rerun-prompt.md) | Task D rerun: zero a modality block whose refitted F prior is a point mass, add true-risk C and an expression-only arm, repeat the 4 cells (120 fits) | complete (fix works; no arm passed; continued by the next-steps prompt) |
