@@ -8,6 +8,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-13 | [share-targeted-survival-weight-plan](2026-11-13-share-targeted-survival-weight-plan.md) | S-16: set w_S from a target directional survival share of loading precision; stabilize large weights; simulation null check, real-data training CV, program structure against EBMF; one external scoring after review | registered; execution handed to Codex |
 | 2026-11-11 | [local-results-pilot-plan](2026-11-11-local-results-pilot-plan.md) | Authorized local synthetic targets pilot, extensibility and freshness/reproduction acceptance checks | complete software pilot; see local-results-pilot-findings |
 | 2026-11-11 | [results-rebuild-design](2026-11-11-results-rebuild-design.md) | Local-first extensible result collection, dependency tracking, clean-checkout reproduction, provenance, proposed layout and checkpoint retention, built on 0b | full workflow design; bounded local pilot complete; no results migration |
 | 2026-11-11 | [results-rebuild-script-dispositions](2026-11-11-results-rebuild-script-dispositions.csv) | Proposed current, historical or retired role for all 204 inventoried scripts | proposed mapping accompanying G; not migration authorization |
