@@ -248,3 +248,29 @@ grids, tables. The handoff prompt is
 - `docs/findings/2026-11-13-share-targeted-weight-findings.md`.
 - `docs/reviews/2026-11-13-share-targeted-weight-handoff.md` for review before Step 6 and
   before any status file, progress-book chapter or Chapter 4 text is changed.
+
+## Amendment 1 (2026-11-13, before any study fit)
+
+Execution stopped in Step 1 because the S-13 and S-15 checkpoints do not save τ. The
+available audit (S-9 p = 2,000 at w_S = 1, seed 1, all three variance cells, and the K = 5
+real-data fit as a bound) already answers the Step 1 question. The closed-form directional
+ratio is within a factor of 1.04 to 1.14 of the exact value in all six programs. The
+directional share at w_S = 1 is 0.39 to 0.71 in S-9 and 1.0 to 1.7 × 10⁻⁴ on the real
+data. No study fit had run when these changes were made.
+
+1. **Step 1 historical check: the S-13 and S-15 comparisons are waived.** They are not
+   needed to set any weight. Steps 2 to 5 proceed. Every new S-16 fit saves τ, E[L²],
+   E[F²], E[β²] and the final Cox working weights, so all shares from here on are exact.
+2. **Directional expression curvature uses the gene precisions.** The expression
+   curvature along f̂_k is Σ_i E[l_ik²] · Σ_j τ_j f̂_jk², not τ̄ · Σ_i E[l_ik²]. The exact
+   directional ratio and the weight function use this form. The mean-τ form is kept only
+   inside the closed-form approximation.
+3. **Share checks use the final state.** The trace share is recorded inside a sweep. It is
+   not compared with shares computed from saved final moments. Final-state shares are
+   computed from the saved ingredients in item 1.
+4. **Target program during recalibration.** The target program is fixed at the w_S = 1
+   pilot (largest standardized |b_k| among survival-active programs). In later passes it
+   is tracked by its largest absolute loading correlation with the pilot program, and the
+   weight is recalibrated on it whether or not it is still active. The no-signal guard
+   applies only at the pilot. If the target program loses activity, record that and keep
+   the arm eligible.
