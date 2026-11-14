@@ -1,182 +1,207 @@
-# S-16 review handoff: missing historical precision states
-
-**Superseded execution status:** Amendment 1 waived the historical blocker.
-The amended helper and convergence diagnostics have been pushed. Andrew
-requested a usage-limit pause during the screen. Continue from the
-[resume handoff](2026-11-13-share-targeted-weight-resume-handoff.md).
-The original audit handoff below remains historical evidence and will be
-rewritten after the remaining registered evaluation.
+# S-16 review handoff: completed fallback evaluation
 
 Date: 2026-11-13. Author: Andrew Walther.
 To: the reviewing Claude Code session.
 
-Read the [registration](../plans/2026-11-13-share-targeted-survival-weight-plan.md),
-the [execution prompt](../prompts/2026-11-13-codex-share-targeted-weight-prompt.md)
-and the [findings](../findings/2026-11-13-share-targeted-weight-findings.md).
+Read the [amended registration](../plans/2026-11-13-share-targeted-survival-weight-plan.md),
+[execution prompt](../prompts/2026-11-13-codex-share-targeted-weight-prompt.md) and
+[findings](../findings/2026-11-13-share-targeted-weight-findings.md). This replaces
+the pre-amendment checkpoint stop handoff.
 
 ## Check first
 
-Execution stopped during Step 1, before any S-16 study fit. S-13 and S-15
-reduced checkpoints do not save τ. The registered E[L]² substitution for
-missing E[L²] does not supply τ. Verify the actual field lists and source
-save calls before considering any new study. A fresh independent review
-confirmed these omissions and agreed that the no-new-fits historical check
-is blocked.
+The 50-sweep ramp fails the registered convergence gate. Only raw target 0.01
+proceeds under the fallback, and it fails the primary null gate: mean false-active
+count 0.2 satisfies ≤1, but mean false-active risk variance fraction 0.193428
+exceeds 0.01. No target enters real-data CV. Unit weight is the sole remaining
+registered candidate, not a winner among evaluated target shares.
 
-Also check the definition of directional share. The registered mean-τ
-denominator is implemented literally. With heterogeneous gene precisions,
-actual expression curvature in direction f̂ instead uses Σ_j τ_j f̂_j².
-No formula has been changed on this branch. This distinction needs a
-decision before calling the registered share exact curvature.
+Check null seeds 2 and 10, including the capped nonconverged seed 10 and the
+complete denominator of ten. Descriptively removing seed 10 still gives fraction
+0.103809 across nine. Keep the registered ten-case failure.
 
-The intra-sweep trace and final saved moments describe different states.
-Do not interpret their disagreement as an algebra failure without the
-unsaved working weights and intermediate moments.
+Every real reference fit converges. All five loading correlations exceed
+0.99999359. Unit weight has active P2, P4 and P5, with only P2 passing the main
+program rule. Two-step also has main P5 because of coefficient activity across
+folds. That difference does not establish a new molecular direction.
+
+No model is adopted, no shared status or chapter source is changed, no external
+cohort is scored, and no merge into main is authorized.
 
 ## Branch and commits
 
-The branch is `s16-share-targeted-weight`, based on `main` at `7b5ea2c8`.
-It must remain unmerged pending review. The final handoff commit is the
-branch tip and contains this file and its findings note.
+Branch: `s16-share-targeted-weight`, based on main at `7b5ea2c8`. Implementation
+and result commits below are pushed to the user-authorized origin
+`https://github.com/andrew-walther/multiomicsGEP.git`. Final documents are at the
+tip of this branch. Do not merge.
 
-| Step | Commit | Coverage |
+| Work | Commit | Contents |
 |---|---|---|
-| Step 1 | `6531b160` | Weight helper, tests, no-fit inventory and available numeric audit, README usage |
-| Steps 2 to 5 | None | Stopped before study fits |
-| Step 6 | None | Explicitly excluded pending review and approval |
-| Step 7 | None | Not started |
+| Original Step 1 | `6531b160`, `22ea81ae` | Original helper and stop audit, superseded |
+| Amendment 1 | `5e51438b` | Waiver, gene precision, final states and pilot tracking |
+| Amended Step 1 | `564dfe66` | Exact helper, tracking tests, revised audit |
+| Step 2 and study implementation | `c294866b` | Sixteen diagnostics, ramp, fallback, tested runners |
+| Requested pause | `20a0eef4` | Validated resume checkpoint |
+| Step 3 | `3c18d39f` | Complete screen and failed primary null gate |
+| Steps 4 to 5 | `883505dd` | Reference CV and structure, empty-target reporting fix |
+| Final evidence and review | This handoff's commit at branch tip | Final reports, all-arm loading audit, indexes and review record |
 
-**Delivery blocker:** automatic approval review rejected `git push -u origin
-s16-share-targeted-weight` twice. The second attempt followed a read-only
-GitHub ownership check. The authenticated user and repository owner both
-have login `andrew-walther` and ID 69438120, and repository metadata report
-push and admin permissions. Automatic review still requires trusted user
-authorization establishing the destination for this payload. No alternate
-upload was attempted. The commits are local until Andrew explicitly approves
-pushing this code, tests, documentation and aggregate diagnostics to
-`https://github.com/andrew-walther/multiomicsGEP.git` on
-`s16-share-targeted-weight`.
+## Verdicts against the registration
 
-## Registered checks and verdicts
-
-| Check | Verdict | Number or evidence |
+| Criterion | Verdict | Number and evidence |
 |---|---|---|
-| Step 1 historical state available | Blocked | S-13: 839/840 reduced states, 0 with τ. Each S-15 rank: 36/216 states, 0 with τ |
-| Step 1 per-gene trace agreement to rounding | Not fully established | Three seed-1 S-9 examples agree at 3 decimals. Maximum absolute difference 1.5761 × 10⁻⁵. One fails at 4 decimals |
-| Step 1 both closed forms within factor 2 in every required cell | Incomplete | Three checked S-9 cells have maximum directional fold error 1.135 and per-gene error 1.649. K = 5 bounds also within factor 2. Missing S-13/S-15 values prevent every-cell claim |
-| Step 1 weight inversion | Software checks implemented | Hand-calculated directional ratio and per-gene share, target inversion, guard, cap, active-program selection, rescaling and malformed inputs |
-| Step 1 recalibration | Not run | Zero S-16 recalibration passes |
-| Step 2 convergence and post-ramp monotonicity | Not assessed | Zero S-16 diagnostic or stabilization fits |
-| Step 3 null mean FA ≤ 1 and FA risk variance < 1% | Not assessed | Zero S-16 screen datasets fitted |
-| Step 4 ≥ 4/5 converged folds and converged full fit | Not assessed | Zero S-16 training-CV fits |
-| Step 4 selection by CV partial likelihood, weaker supervision within 0.5 units | Not applied | No S-16 candidate selected |
-| Step 5 structure and annotation | Not run | No eligible S-16 full fits |
+| Historical S-13/S-15 comparison | Waived | Amendment 1 item 1 |
+| Exact gene-weighted directional ratio | Implemented | Tested heterogeneous τ and Σ E[L²] Σ τ f̂² |
+| Final-state ingredients retained | Pass | All new arm records retain τ, E[L²], E[F²], E[β²] and Cox W |
+| Fixed pilot tracking | Implemented | Absolute loading correlation, loss of activity retained |
+| Closed-form factor-two check | Fails one checked cell | S-9 5% error 2.21308, below factor 4. Exact expression sets weight |
+| Step 2 full convergence/decrease gate | Fail | Raw and ramp simulation 1/4 converge. Ramp real 0/2 converge |
+| Divergent-case recovery regression | Not satisfied | Ramp schedule tests pass, but no successful convergence fix |
+| Raw-fit fallback | Only 0.01 passes | 14 sweeps, no decrease, achieved 0.00873483, weight 82.75367 |
+| Primary null mean false-active ≤1 | Pass | 0.2 over ten own-pilot nulls |
+| Primary null risk fraction <0.01 | Fail | 0.193428 over ten, nine converge, one capped and nonconverged |
+| Secondary paired-weight null | Descriptive failure | Mean FA 0.4, risk fraction 0.285512, ten converge |
+| Simulation recovery | Descriptive | Weak 10/10 all arms. Low variance unit 5/10, target and two-step 0/10 |
+| Real convergence eligibility | Pass for references | Both 5/5 folds plus full, twelve records, no scoring errors |
+| Real selection | Unit weight retained | Sole remaining candidate. Mean CVPL −154.697688 |
+| Structure and annotation | Complete for references | Ten program rows, full matrices and matches, forty annotation rows |
+| Software checks | Pass | 879 counted checks, zero failures, additional standalone assertions pass |
+| Derivation verifier | Pass | 109/109 |
+| Step 6 | Not run | Explicitly excluded |
+| Step 7 | Not run | Optional wider surface omitted after no target passed null |
 
-The recovery, false-active and convergence gates remain required. The
-software tests and historical arithmetic checks do not satisfy them.
+Convergence is the existing relative-ELBO flag, not proof of predictor stability
+or finite-parameter convergence under separation. The raw S-9 w = 10 and real
+target 0.01 stop with η relative changes about 0.00194 and 0.00234. Do not claim
+unbounded separation from a finite trace or a stabilized risk score from this flag.
 
-Final software verification: 879 counted checks passed, zero failed. The
-new `stopifnot()` behavioral assertions also passed within the suite but
-are not included in that count. Standalone and actual-Cox integration
-checks passed. The existing bounded-β optimizer profile-likelihood fallback
-warning was surfaced. `git diff --check` passed.
+## Evidence and reproduction
 
-## Reproduce and inspect
+Aggregate directory: `results/benchmark_sim/outputs/share_targeted_ws_2026-11-13/`.
 
-From the repository root:
+| Files | Check |
+|---|---|
+| `checkpoint_inventory.csv`, `saved_share_diagnostics.csv` | Historical waiver, exact amended audit, labelled K = 5 bounds |
+| `diagnostic_summary.csv`, `diagnostics_tracked_programs.csv`, `*_trace.csv` | Sixteen fits, objective changes, drift and tracked programs |
+| `screen_metrics.csv`, `screen_null_gate.csv`, `screen_task_status.csv` | All 100 arm records, ten-case gate, nonconverged capped seed |
+| `screen_loading_agreement.csv` | One hundred comparisons. Thirty prior target values agree within 4.45 × 10⁻¹⁶ |
+| `real_fold_metrics.csv`, `real_summary.csv`, `real_selection.csv`, `real_paired_c.csv` | Twelve fit records, mean CVPL and paired C |
+| `structure_programs.csv`, `structure_cor_*.csv`, `structure_match_*.csv`, `structure_folds_*.csv` | Nested-Cox Δℓ, semi-partial R², complete matches and program rule |
+| `structure_annotation.csv`, `structure_signature_overlap.csv`, `structure_status.csv` | All four signatures per program and no hidden annotation errors |
 
-```sh
-Rscript tests/test_share_targeted_ws.R
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
-  Rscript tests/run_tests.R
-OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
-  Rscript results/benchmark_sim/audit_share_targeted_ws.R
-```
+The findings give exact commands for all stages and embed the supplementary
+no-fit loading-audit script. Private fits, posterior moments, centers, predictions,
+frozen drivers and logs stay under ignored `data/share_targeted_ws_2026-11-13/`.
+Execution reports and the full independent code review are in its `execution_notes/`.
+Final regression output is `tests_resumed_final.log` there.
 
-The last command needs the existing local RDS caches and
-`data/yfb_supervised_real_2026-11-04.rds`. It uses training data only and
-writes aggregate outputs to
-`results/benchmark_sim/outputs/share_targeted_ws_2026-11-13/`:
+The screen source is `c294866b`, unchanged through `3c18d39f`. Frozen driver SHA-256:
+`c24c0b7b8e0348074dbc0d4bc5d6a8af275556d014cbc2cd9d17f4df6b98fa09`.
+Every source fingerprint matched when it finished. The later empty-target real
+label fix changes the source hash, so original screen caches intentionally require
+the recorded source state for exact cached replay. Fresh current-code tasks remain
+possible. No screen fitting method changed.
 
-- `checkpoint_inventory.csv`: field counts from all 1,866 checkpoints in five directories.
-- `saved_share_diagnostics.csv`: three matched S-9 programs and three active K = 5 S-11 programs.
-- `audit_run.csv`: elapsed seconds and zero new fits for the audit itself.
+Real frozen driver SHA-256:
+`1e404057abedc70dc07383ad40c6b2b85a259292105c4535aa6864828ad2c2a0`.
+Its source matches `883505dd`, and all six real checkpoint fingerprints match.
+At most two CPU workers ran, each with one BLAS thread. Real used one worker
+while the full suite occupied the other CPU slot.
 
-The full test suite runs its existing small model checks. These are software
-regressions, not new S-16 study observations. Three zero-SD warnings in the
-historical audit come from empty loading columns when matching the planted
-program. They are surfaced and nonfinite correlations receive zero as in
-the existing scorer.
+## Every implementation interpretation to preserve
 
-No fitter file was edited, so no update algebra changed and the derivation
-verification requirement was not triggered. No opt-in stabilization control
-was added and no default changed. Exact-times Cox calls for new study fits
-were not needed because none were run.
+1. Three passes means three target fits after the unit pilot. Later activity loss
+   never resets the selected pilot or invokes the no-signal guard again.
+2. The primary false-active fraction is Var(sum of FA components)/Var(total risk),
+   averaged over replicates. Signed covariance allocation is also reported. This
+   operational definition was fixed before null results. Six guarded nulls have
+   no defined target direction, not zero achieved share.
+3. S-9 requires |r| ≥0.7 before excluding the matched program from false activity.
+   Under null survival all active programs are false. Earlier S-14 counts that
+   always excluded the best match were not used.
+4. Fixed choices specify w = 0 loadings plus Cox, while Step 5 calls the reference
+   EBMF. The implementation uses same-prior canonical CAVI plus Cox. No separate
+   EBMF backend was fitted or established numerically equivalent.
+5. CVPL is the mean fold contribution, so the 0.5 tie window uses that scale.
+   Weaker fold-varying supervision means smaller median fold weight, then target.
+   No target survives here, so this ordering does not affect selection.
+6. Five finite CVPL and C values are required in addition to the convergence
+   criterion. This is stricter than literal eligibility but excludes neither arm.
+7. Real CV uses the fixed prepared D4 matrix with fold training centers. It does
+   not redo all feature selection and per-cohort standardization inside folds.
+8. Simulation train and validation are separately z-scored as in S-13. Nulls
+   permute training outcomes only. Validation retains planted survival and is not
+   an independent null distribution or a primary-gate input.
+9. Multi-target capped aliases are explicit unfit provenance rows, with limited
+   numerical reuse semantics. No duplicates occur here. The one capped null fit
+   remains in the registered result and gate denominator.
+10. The exact compatibility fixture has zero final factors and narrow coverage.
+    No successful divergent-case ramp fixture exists. Schedule tests and 879
+    counted checks do not establish an effective convergence fix.
+11. Only fallback target 0.01 was screened. Targets 0.05 to 0.5 have no simulation
+    or CV verdict. Failed large-weight fits do not show insensitivity of stable
+    high-share real programs.
+12. Optional Step 7 was omitted after the sole target failed null. No rank,
+    threshold, target or program rule was changed after seeing results.
 
-## Judgment calls and unresolved decisions
+## Failures and pause history
 
-1. Stopped at missing S-13/S-15 τ rather than estimating τ, substituting S-11,
-   or refitting historical models. The prompt requires reporting impossible
-   requirements and stopping, and Step 1 forbids new fits.
-2. Calculated a bounded subset of available checks for the handoff: S-9
-   seed 1, p = 2,000, unit weight at each variance, and the K = 5 S-11
-   full-data unit-weight bound. The subset is explicitly incomplete.
-3. Reported three-decimal trace agreement without redefining the registered
-   rounding criterion. The registration does not specify decimal precision.
-4. Kept the registered mean-τ formula despite its difference from the
-   direction-weighted precision. Adoption and formula revision remain for
-   Andrew and the reviewing session.
-5. No recalibration behavior was chosen for disappearance of pilot activity
-   after a later pass. The helper guards on any no-active input. A future
-   runner needs a decision before using it beyond the pilot.
-6. The helper restricts its supported input to the pooled unweighted canonical
-   path. Training centers must be applied consistently before fitting and
-   calculating weights. It rejects identifiable controls outside this scope
-   instead of silently using the wrong survival design.
-7. Used the requested dated document names and November 13 registration date.
-   Shared status and manuscript edits are deferred exactly as requested.
+Two synthetic diagnostic drivers exited nonzero after saving all four requested
+fits because the live top-level script was edited while R read it. One parse
+failed, and the other tried to rerun an existing real pilot. All eight states and
+trace row counts were checked, with no overwrite. The transient raw traced fitter
+was not separately snapshotted, limiting exact forensic source replay. Later
+ramp/fallback hashes and frozen drivers were saved. Do not call these clean batches.
 
-No cap, target, selection rule, null gate, program rule or sweep limit was
-changed. No study was rerun and no follow-up was started.
+The initial screen sandbox could not create its local PSOCK socket and ran no
+fit. Local socket permission resolved it. Andrew's usage pause stopped all workers.
+The completed weak-seed-1 task was validated and reused, while interrupted unsaved
+work was not counted as a scientific failure. The resumed screen exited successfully.
 
-Questions for Andrew after review:
-
-- Is a registration amendment authorizing historical reconstruction fits
-  acceptable, or should the unavailable S-13/S-15 comparison be waived?
-- Should the directional expression precision use Σ_j τ_j f̂_j², or should
-  the mean-τ definition remain an explicitly approximate targeting metric?
-- Should future trace verification save the exact update-state ingredients
-  or compare consistently timed final-state diagnostics?
-- What should happen if an active pilot loses all activity during recalibration?
-
-Uncertain quantities are the missing exact S-13/S-15 shares and trace inputs,
-not values silently estimated in the output. The K = 5 values are bounds.
-The inventory search cannot exclude unlinked checkpoint copies outside the
-documented paths. The full every-cell approximation verdict is unknown.
+Before real execution, a test reproduced `paste0("s", numeric(0))` inventing an `s`
+arm. The corrected helper returns only reference labels for an empty target list.
+The test failed before and passed after. This is reporting, not a model change.
 
 ## What is ready for Chapter 4
 
-The missing-state finding and the statement that the procedure has not yet
-been evaluated are ready for review. The findings include a labelled draft
-paragraph. Available historical shares may be cited only with their subset,
-state-timing and bound qualifications.
+The reviewed convergence limitation, failed null gate, low-variance recovery loss
+and reference comparison are candidates for reporting with their qualifications.
+The findings provide a labelled draft paragraph and proposed status text.
 
-No claim about a selected target, improved convergence, null calibration,
-new real-data programs, training-CV improvement or external performance is
-ready. Do not update the chapter or shared status files until this review.
+No new share-targeted model, stronger-supervision program, external result or rank
+choice is ready for adoption. Enrichment is descriptive for absolute loading
+magnitudes, not signed activation, subtype assignment or survival causation.
 
-## Independent review of this partial deliverable
+## Open questions and uncertain quantities
 
-A fresh Sol agent reviewed the code and both documents against the plan,
-checked representative actual checkpoint field lists, compared the tables
-with their CSV sources, and ran the focused behavioral script. It found no
-blocking code or reporting defect. Approval was conditional on the final
-full-suite result, exact cap/guard assertions and completed commit records.
-It agreed that continued execution is blocked. Its mathematical concern
-about heterogeneous τ is included above.
-The final tests and exact cap/guard assertions subsequently passed, and
-the Step 1 commit record is complete.
+- Does a future study need a different numerical method before higher target
+  shares? The current finite traces do not separate unbounded separation from a
+  slow optimization limitation.
+- Should future convergence also require risk-score stability? The rule was not
+  changed after results here.
+- Does Andrew want a separate EBMF backend in a new comparator registration?
+  Numerical equivalence was not tested in this study.
+- Should future null calibration complement relative risk variance with an
+  absolute spurious-effect measure? A modest coefficient can dominate a small
+  null risk variance. The current threshold remains unchanged and failed.
 
-The independent review did not rerun the entire inventory, numeric audit
-or full suite. This handoff preserves the separate review of scientific
-adoption and any authorization to amend the registration.
+Missing S-13/S-15 historical shares are waived. All new-state gate numbers are
+available and checked. Exact posterior recovery and unboundedness remain unproven.
+The raw transient source has the provenance limitation above. No missing numerical
+result was silently imputed.
+
+## Independent review
+
+A fresh code review cleared the raw 0.01 workflow after concrete fixes. A separate
+fresh Sol scientific review passed the final fallback reporting with no blocking
+statistical or reporting issue. It read the amended registration, code, provenance
+and both documents, and independently recomputed the null gate, real means, SEs,
+paired differences and loading summaries from CSVs. The fixed-D4 CV limitation
+it requested is now stated in both reports.
+
+The reviewer did not refit models, rerun the full suite, rerun the derivation
+verifier or execute every R audit. The private report is
+`data/share_targeted_ws_2026-11-13/execution_notes/s16-findings-independent-review.md`.
+Its verdict approves reporting, not scientific adoption, merge or external scoring.
+Andrew's adoption decision remains separate and precedes manuscript, status or
+external-scoring changes.

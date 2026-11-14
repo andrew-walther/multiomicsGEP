@@ -84,6 +84,8 @@ rebuild their aggregate summaries. `run_share_targeted_weight.R` provides
 `smoke`, `screen`, `real` and `structure` modes with at most two workers.
 Fit checkpoints and settings belong under ignored `data/`. Only targets
 allowed by the diagnostic and null gates proceed to real-data evaluation.
+The completed S-16 fallback did not pass its primary null gate. Unit weight
+remains the working model, with no new external scoring or model adoption.
 
 ## Selected findings
 

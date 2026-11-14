@@ -1,5 +1,10 @@
 # S-16 continuation checkpoint, paused at Andrew's request
 
+**Historical pause record:** execution subsequently resumed and completed Steps
+2 to 5 under the registered fallback. Use the [final handoff](2026-11-13-share-targeted-weight-handoff.md)
+and [findings](../findings/2026-11-13-share-targeted-weight-findings.md) for the
+completed evaluation. The pause and resume instructions below remain provenance.
+
 Date: 2026-11-13. Author: Andrew Walther.
 
 ## Resume here
