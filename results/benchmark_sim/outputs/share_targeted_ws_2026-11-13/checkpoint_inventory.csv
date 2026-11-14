@@ -1,0 +1,6 @@
+"source","files","state","EL","EL2","EF","EBeta","EBeta2","Tau","full_trace","final_shareA","limitation"
+"S9_grid",450,450,450,450,450,450,450,450,450,0,"Final trace uses intra-sweep state"
+"S13",840,839,0,0,839,839,839,0,0,0,"Tau and trace absent; L_norm holds sum EL squared"
+"S15_K7",216,36,36,0,36,36,36,0,0,36,"Tau absent; inner states absent"
+"S15_K5",216,36,36,0,36,36,36,0,0,36,"Tau absent; inner states absent"
+"S11_K5",144,144,24,0,144,144,144,144,0,0,"EL only for full-data fits; EL squared bound; separate fit"

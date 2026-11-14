@@ -70,6 +70,14 @@ Run the regression suite with:
 Rscript tests/run_tests.R
 ```
 
+The experimental [share-target weight calculator](code/share_targeted_ws.R)
+inverts a registered directional precision ratio at a converged training
+state. Run `Rscript tests/test_share_targeted_ws.R` for its behavioral checks
+and `Rscript results/benchmark_sim/audit_share_targeted_ws.R` for the saved-state
+audit. The audit needs the existing local checkpoints and prepared training
+matrix. See the [S-16 findings](docs/findings/2026-11-13-share-targeted-weight-findings.md)
+for the missing-state blocker and interpretation limits.
+
 ## Selected findings
 
 The working rank-5 expression fit uses 2,218 genes from 273 TCGA and CPTAC

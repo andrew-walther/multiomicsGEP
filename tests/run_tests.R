@@ -58,6 +58,7 @@ source("code/load_multiomics_data.R")
 test_files <- c(
   "tests/test_update_beta.R",
   "tests/test_empty_program_kl.R",
+  "tests/test_share_targeted_ws.R",
   "tests/test_risk_variance_audit.R",
   "tests/test_fit_yfb_supervised.R",
   "tests/test_yfb_decision_calibration.R",
