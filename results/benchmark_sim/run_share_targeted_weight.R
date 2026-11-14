@@ -49,7 +49,7 @@ s16_false_active <- function(active, correlations, null = FALSE) {
 #' @param weight Cox likelihood weight.
 #' @param cfg Parsed project configuration with maximum sweeps set to 500.
 #' @param initial Optional posterior state from a preceding fit.
-#' @param fit_control Named extra fitter arguments for an approved opt-in control.
+#' @param fit_control Named extra fitter arguments; prior_beta and trace_supervision may override defaults.
 #' @return Fit, warnings and elapsed seconds.
 #' @examples
 #' # s16_fit(Y, time, status, 1, cfg)
@@ -60,6 +60,10 @@ s16_fit <- function(Y, time, status, weight, cfg, initial = NULL, fit_control = 
     w_S = weight, survival_block_weight = TRUE, beta_posterior = "meanfield",
     alpha = cfg$benchmark$alpha, verbose = FALSE, trace_supervision = TRUE,
     prune_preserve_posterior = TRUE, posterior_init = initial)
+  for (name in intersect(c("prior_beta", "trace_supervision"), names(fit_control))) {
+    args[[name]] <- fit_control[[name]]
+    fit_control[[name]] <- NULL
+  }
   ramp_omitted <- weight == 0 && !is.null(fit_control$survival_weight_ramp)
   if (ramp_omitted) fit_control$survival_weight_ramp <- NULL
   if (length(intersect(names(args), names(fit_control)))) stop("fit_control overrides fixed S-16 arguments")
@@ -78,32 +82,36 @@ s16_fit <- function(Y, time, status, weight, cfg, initial = NULL, fit_control = 
 #' @param target Target directional share.
 #' @param cfg Project configuration.
 #' @param fit_control Extra approved fitter controls.
+#' @param retain_pass_fits Keep each fitted pass, including its trace, when TRUE.
 #' @return Final fit and a record of all proposed and achieved shares.
 #' @examples
 #' # s16_calibrate(pilot, Y, time, status, .1, cfg)
 s16_calibrate <- function(pilot, Y, time, status, target, cfg, fit_control = list(),
-                          previous_cap = NULL) {
+                          previous_cap = NULL, retain_pass_fits = FALSE) {
   proposed <- share_targeted_ws(pilot, Y, time, status, target, w_current = 1)
   if (proposed$no_signal_guard)
-    return(list(fit = pilot, no_signal_guard = TRUE, capped = FALSE, passes = 0L,
-                history = list(), achieved = NA_real_))
+    return(c(list(fit = pilot, no_signal_guard = TRUE, capped = FALSE, passes = 0L,
+                  history = list(), achieved = NA_real_),
+             if (retain_pass_fits) list(pass_fits = list())))
   fixed_loading <- proposed$pilot_loading
-  records <- list(); current <- pilot
+  records <- list(); current <- pilot; pass_fits <- list()
   for (pass in seq_len(3L)) {
     weight <- proposed$w_S
     if (proposed$capped && !is.null(previous_cap))
-      return(list(capped_duplicate = TRUE, alias = previous_cap, history = records,
-                  error = NULL))
+      return(c(list(capped_duplicate = TRUE, alias = previous_cap, history = records,
+                    error = NULL), if (retain_pass_fits) list(pass_fits = pass_fits)))
     run <- s16_fit(Y, time, status, weight, cfg, current$posterior_state, fit_control)
     current <- run$fit
+    if (retain_pass_fits) pass_fits[[pass]] <- current
     row <- list(pass = pass, weight = weight, capped = proposed$capped,
                 warnings = run$warnings, elapsed = run$elapsed,
                 converged = isTRUE(current$history$converged))
     if (proposed$capped) row$cap_state <- current
     if (!row$converged) {
       records[[pass]] <- row
-      return(list(fit = current, no_signal_guard = FALSE, capped = any(vapply(records, `[[`, logical(1), "capped")),
-                  passes = pass, history = records, achieved = NA_real_, pilot_loading = fixed_loading))
+      return(c(list(fit = current, no_signal_guard = FALSE, capped = any(vapply(records, `[[`, logical(1), "capped")),
+                    passes = pass, history = records, achieved = NA_real_, pilot_loading = fixed_loading),
+               if (retain_pass_fits) list(pass_fits = pass_fits)))
     }
     next_proposal <- share_targeted_ws(current, Y, time, status, target,
       w_current = weight, pilot_loading = fixed_loading)
@@ -117,9 +125,10 @@ s16_calibrate <- function(pilot, Y, time, status, target, cfg, fit_control = lis
     if (row$ratio / ratio_target >= .5 && row$ratio / ratio_target <= 2) break
     proposed <- next_proposal
   }
-  list(fit = current, pilot_loading = fixed_loading, no_signal_guard = FALSE,
-       capped = any(vapply(records, `[[`, logical(1), "capped")), passes = length(records),
-       history = records, achieved = tail(records, 1)[[1]]$achieved)
+  c(list(fit = current, pilot_loading = fixed_loading, no_signal_guard = FALSE,
+         capped = any(vapply(records, `[[`, logical(1), "capped")), passes = length(records),
+         history = records, achieved = tail(records, 1)[[1]]$achieved),
+    if (retain_pass_fits) list(pass_fits = pass_fits))
 }
 
 #' Score a simulated fit using registered recovery and false-active definitions
@@ -223,11 +232,14 @@ s16_checkpoint <- function(fit, Y, time, status) {
 #' @param targets Registered target shares, in ascending order.
 #' @param null Permuted-survival null indicator.
 #' @param fit_control Approved optional fitter controls.
+#' @param reference_control Optional controls for two-step; NULL uses fit_control.
+#' @param retain_pass_fits Keep each calibration pass fit and trace.
 #' @return Pilot, reference and target fits with metrics and warnings.
 #' @examples
 #' # s16_dataset(d, cfg, c(.01, .05, .1, .25, .5))
 s16_dataset <- function(d, cfg, targets = c(.01, .05, .1, .25, .5),
-                        null = FALSE, fit_control = list()) {
+                        null = FALSE, fit_control = list(), reference_control = NULL,
+                        retain_pass_fits = FALSE) {
   stopifnot(identical(targets, sort(unique(targets))))
   safe <- function(expr) tryCatch(expr, error = function(e) list(error = conditionMessage(e)))
   pilot_run <- safe(s16_fit(d$Ytr, d$time, d$event, 1, cfg, fit_control = fit_control))
@@ -235,7 +247,8 @@ s16_dataset <- function(d, cfg, targets = c(.01, .05, .1, .25, .5),
   pilot_entry <- if (is.null(pilot)) pilot_run else safe(list(
     checkpoint = s16_checkpoint(pilot, d$Ytr, d$time, d$event),
     metrics = s16_sim_score(pilot, d, null), run = pilot_run))
-  reference <- safe(s16_twostep(d$Ytr, d$time, d$event, cfg, fit_control))
+  if (is.null(reference_control)) reference_control <- fit_control
+  reference <- safe(s16_twostep(d$Ytr, d$time, d$event, cfg, reference_control))
   reference_entry <- if (!is.null(reference$error)) reference else safe(list(
     run = reference, checkpoint = s16_checkpoint(reference$fit, d$Ytr, d$time, d$event),
     metrics = s16_sim_score(reference$fit, d, null)))
@@ -251,7 +264,7 @@ s16_dataset <- function(d, cfg, targets = c(.01, .05, .1, .25, .5),
       if (initial$capped && !is.null(first_capped)) {
         list(capped_duplicate = TRUE, alias = first_capped)
       } else {
-        calibrated <- s16_calibrate(pilot, d$Ytr, d$time, d$event, target, cfg, fit_control, first_capped)
+        calibrated <- s16_calibrate(pilot, d$Ytr, d$time, d$event, target, cfg, fit_control, first_capped, retain_pass_fits)
         if (isTRUE(calibrated$capped_duplicate)) {
           calibrated
         } else {
@@ -541,10 +554,13 @@ s16_screen <- function(config_path = NULL, workers = 1L) {
 #' @param cfg Configuration with working rank.
 #' @param targets Eligible target shares.
 #' @param fit_control Approved fitter controls.
+#' @param reference_control Optional two-step controls; NULL uses fit_control.
+#' @param retain_pass_fits Keep each calibration pass fit and trace.
 #' @return Fits, full and held-out risks, and fold metrics.
 #' @examples
 #' # s16_real_task(1, d, cfg, .1, list())
-s16_real_task <- function(fold, d, cfg, targets, fit_control) {
+s16_real_task <- function(fold, d, cfg, targets, fit_control, reference_control = NULL,
+                          retain_pass_fits = FALSE) {
   tr <- if (fold == 0L) rep(TRUE, nrow(d$Y)) else d$outer != fold
   te <- !tr
   center <- colMeans(d$Y[tr, , drop = FALSE])
@@ -559,7 +575,8 @@ s16_real_task <- function(fold, d, cfg, targets, fit_control) {
     result
   }
   pilot <- safe(s16_fit(ytr, d$time[tr], d$status[tr], 1, cfg, fit_control = fit_control))
-  two <- safe(s16_twostep(ytr, d$time[tr], d$status[tr], cfg, fit_control))
+  if (is.null(reference_control)) reference_control <- fit_control
+  two <- safe(s16_twostep(ytr, d$time[tr], d$status[tr], cfg, reference_control))
   arms <- list(w1 = if (!is.null(pilot$error)) pilot else list(fit = pilot$fit, run = pilot, weight = 1),
                twostep = if (!is.null(two$error)) two else list(fit = two$fit, run = two, weight = 0))
   first_capped <- NULL
@@ -569,7 +586,7 @@ s16_real_task <- function(fold, d, cfg, targets, fit_control) {
       arms[[key]] <- list(error = "pilot unavailable or nonconverged"); next
     }
     arms[[key]] <- safe({
-      arm <- s16_calibrate(pilot$fit, ytr, d$time[tr], d$status[tr], target, cfg, fit_control, first_capped)
+      arm <- s16_calibrate(pilot$fit, ytr, d$time[tr], d$status[tr], target, cfg, fit_control, first_capped, retain_pass_fits)
       if (isTRUE(arm$capped_duplicate)) {
         list(error = paste("capped duplicate of", arm$alias))
       } else {

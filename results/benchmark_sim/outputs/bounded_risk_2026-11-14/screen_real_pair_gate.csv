@@ -1,0 +1,9 @@
+"family","sigma","pass"
+"laplace",0.1,FALSE
+"normal",0.1,FALSE
+"laplace",0.25,FALSE
+"normal",0.25,FALSE
+"laplace",0.5,FALSE
+"normal",0.5,FALSE
+"laplace",1,FALSE
+"normal",1,FALSE
