@@ -1,0 +1,5 @@
+"arm","reference","n","mean_difference","se_difference"
+"w1","w1",5,0,0
+"w1","twostep",5,0.00414885956235989,0.00415221268673143
+"twostep","w1",5,-0.00414885956235989,0.00415221268673143
+"twostep","twostep",5,0,0

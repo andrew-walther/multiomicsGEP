@@ -1,0 +1,3 @@
+"arm","folds_converged","full_converged","eligible","mean_cvpl","mean_C","se_C","median_weight"
+"w1",5,TRUE,TRUE,-154.697688339028,0.660412841961724,0.0271840633152015,1
+"twostep",5,TRUE,TRUE,-154.713830187864,0.656263982399364,0.0287646674972065,0

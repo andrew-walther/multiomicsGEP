@@ -6,6 +6,8 @@
 # Dependencies: results/benchmark_sim/run_share_targeted_weight.R
 # ============================================================
 source("results/benchmark_sim/run_share_targeted_weight.R")
+stopifnot(identical(s16_real_arm_names(numeric(0)), c("w1", "twostep")),
+          identical(s16_real_arm_names(.01), c("w1", "twostep", "s0.01")))
 x <- cbind(c(-1, 0, 1), c(1, 0, -1) / 2)
 a <- s16_false_variance(x, c(TRUE, FALSE))
 stopifnot(isTRUE(all.equal(unname(a["ratio"]), 4)),

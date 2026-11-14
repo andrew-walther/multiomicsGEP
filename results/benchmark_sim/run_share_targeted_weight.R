@@ -710,6 +710,16 @@ s16_paired_C <- function(rows) {
 
 source("results/benchmark_sim/share_targeted_structure.R", local = TRUE)
 
+#' Name the real-data references and any eligible target arms
+#' @param targets Numeric vector of eligible directional shares, possibly empty.
+#' @return Character vector of arm labels, containing only references if empty.
+#' @examples
+#' s16_real_arm_names(numeric(0))
+s16_real_arm_names <- function(targets) {
+  # paste0("s", numeric(0)) returns "s", which would invent a missing arm.
+  c("w1", "twostep", if (length(targets)) paste0("s", targets) else character())
+}
+
 #' Run real-data five-fold and full training fits, or describe eligible programs
 #' @param mode Either real or structure.
 #' @param config_path Settings RDS with fit_control and allowed_targets.
@@ -787,7 +797,7 @@ s16_real <- function(mode, config_path, workers = 1L) {
       s16_atomic_save(list(schema = 1L, signature = signature, complete = TRUE, result = result), path)
       result
     }, chunk.size = 1L)
-    rows <- do.call(rbind, lapply(0:5, function(i) s16_real_rows(objects[[i + 1L]], i, c("w1", "twostep", paste0("s", targets)))))
+    rows <- do.call(rbind, lapply(0:5, function(i) s16_real_rows(objects[[i + 1L]], i, s16_real_arm_names(targets))))
     result <- s16_real_summary(rows)
     utils::write.csv(rows, file.path(out_dir, "real_fold_metrics.csv"), row.names = FALSE)
     utils::write.csv(result$summary, file.path(out_dir, "real_summary.csv"), row.names = FALSE)
@@ -800,7 +810,7 @@ s16_real <- function(mode, config_path, workers = 1L) {
   if (any(!vapply(ck, function(x) identical(x$signature, signature) && isTRUE(x$complete), logical(1))))
     stop("real checkpoint signature mismatch")
   objects <- lapply(ck, `[[`, "result")
-  rows <- do.call(rbind, lapply(0:5, function(i) s16_real_rows(objects[[i + 1L]], i, c("w1", "twostep", paste0("s", targets)))))
+  rows <- do.call(rbind, lapply(0:5, function(i) s16_real_rows(objects[[i + 1L]], i, s16_real_arm_names(targets))))
   summary <- s16_real_summary(rows)$summary
   eligible <- summary$arm[summary$eligible]
   if (!"twostep" %in% eligible) stop("two-step reference is not eligible for structure")
