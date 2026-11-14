@@ -205,3 +205,38 @@ verifier or execute every R audit. The private report is
 Its verdict approves reporting, not scientific adoption, merge or external scoring.
 Andrew's adoption decision remains separate and precedes manuscript, status or
 external-scoring changes.
+
+## Reviewing session notes (2026-11-14)
+
+The reviewing Claude Code session checked the tables against the aggregate CSVs and
+reran the four S-16 test scripts, which pass. The fitter changes (`survival_weight_ramp`,
+`trace_s16`) are opt-in, and the w_S = 1 baseline test confirms the default fit is
+unchanged. Andrew approved merging the branch into `main` as a recorded result. Nothing
+is adopted. Three points change how the results should be read.
+
+1. **The registered null gate was misspecified (registration error, not an execution
+   error).** Under permuted survival every active program is false, so any active program
+   carries all of the risk variance, and a 1% threshold amounts to requiring no false
+   actives in any dataset. The references fail the same gate by more. Over the same ten
+   null datasets: target 0.01 had mean false-active 0.2 and risk fraction 0.19, w_S = 1 had
+   0.5 and 0.39, and the two-step fit had 0.4 and 0.23. The failure is not evidence against
+   the 0.01 target. The real warning is null seed 10. Its w_S = 1 pilot had two false
+   actives, so the no-signal guard did not fire, the weight reached the 10⁵ cap and the fit
+   diverged (standardized |β| 28.5). A guard based on pilot activity is not enough.
+2. **In simulation the 0.01 target was weaker supervision.** The simulation cells sit near
+   directional share 0.5 at w_S = 1, so target 0.01 gave w_S ≈ 0.16 in the low-variance
+   cell. Its loss of recovery (0/10 against 5/10) repeats that supervision matters there.
+   It is not a cost of share targeting.
+3. **Large-weight non-convergence looks like an unbounded objective, not a stalled
+   optimizer.** In the real target-0.5 fit the ELBO rose every sweep while max |η| grew
+   13, 28, 41, 59 and 85 at sweeps 10, 50, 100, 200 and 400, and max |β| reached 26.
+   Canonicalization fixes each program score at unit SD, so β is a standardized log
+   hazard ratio, and its prior variance is re-estimated each sweep, so nothing bounds it.
+   With 2,218 genes and about 220 training patients, a gene combination can nearly order
+   the survival times. This is consistent with overfitting when genes outnumber patients
+   (a finite trace cannot prove unboundedness). It explains why the ramp did not help.
+   The follow-up is S-17: a fixed prior on the standardized coefficients, the Bayesian
+   counterpart of DeSurv's fixed penalty on β.
+
+A replacement for the draft chapter paragraph in the findings note was given to Andrew
+in the review session. Codex's draft should not be used as written.
