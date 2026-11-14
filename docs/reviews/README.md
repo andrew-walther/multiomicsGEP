@@ -4,6 +4,7 @@ Reports from independent reviewers, and external advice recorded as received.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-13 | [share-targeted-weight-resume-handoff](2026-11-13-share-targeted-weight-resume-handoff.md) | Amendment 1 execution state, completed convergence diagnostics and exact screen resume command | paused at Andrew's request; Step 2 pushed, 1/20 screen tasks saved |
 | 2026-11-13 | [share-targeted-weight-handoff](2026-11-13-share-targeted-weight-handoff.md) | S-16 checkpoint blocker, registered checks, code and mathematical review questions | stopped in Step 1; review required before resuming or adopting |
 | 2026-11-12 | [task-a-independent-review](2026-11-12-task-a-independent-review.md) | Independent audit of L/F prior comparisons A and A2, criteria, saved scoring and four fresh fits | PL retention supported; neither A2 setup qualifies; SZ preprocessing claim needs qualification |
 | 2026-11-12 | [task-f-independent-review](2026-11-12-task-f-independent-review.md) | Independent preprocessing, paired-CV and rank-rule audit with two exact fit reruns | saved choices reproduced; repeat seeds pending; summary completeness fix proposed; arm-isolation guard added concurrently |

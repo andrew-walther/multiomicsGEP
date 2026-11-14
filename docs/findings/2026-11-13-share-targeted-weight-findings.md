@@ -1,5 +1,12 @@
 # S-16: share-targeted survival weight, stopped at the checkpoint audit
 
+**Continuation status:** Amendment 1 supersedes the historical stop below.
+The amended helper and Step 2 diagnostics are committed and pushed.
+Execution is paused at Andrew's request with one completed screen task.
+Use the [resume handoff](../reviews/2026-11-13-share-targeted-weight-resume-handoff.md)
+for the current state. The report below retains the original pre-amendment
+audit and must be rewritten after Steps 3 to 5 finish.
+
 Date: 2026-11-13. Author: Andrew Walther.
 
 Registration: [share-targeted survival weight plan](../plans/2026-11-13-share-targeted-survival-weight-plan.md).

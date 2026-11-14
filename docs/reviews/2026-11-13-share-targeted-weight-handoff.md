@@ -1,5 +1,12 @@
 # S-16 review handoff: missing historical precision states
 
+**Superseded execution status:** Amendment 1 waived the historical blocker.
+The amended helper and convergence diagnostics have been pushed. Andrew
+requested a usage-limit pause during the screen. Continue from the
+[resume handoff](2026-11-13-share-targeted-weight-resume-handoff.md).
+The original audit handoff below remains historical evidence and will be
+rewritten after the remaining registered evaluation.
+
 Date: 2026-11-13. Author: Andrew Walther.
 To: the reviewing Claude Code session.
 
