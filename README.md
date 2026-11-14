@@ -105,8 +105,15 @@ Rscript results/benchmark_sim/run_bounded_risk_screen.R summarize
 ```
 
 This requires the existing prepared training data under ignored `data/`.
-The study is paused at Andrew's request after 60 saved fits. Follow the
-[resume handoff](docs/reviews/2026-11-14-bounded-risk-resume-handoff.md).
+The screen is complete: 24 cases and 105 retained fitted passes. No Normal
+prior scale passes every registered real-data target, so training CV and the
+ten-seed null/recovery study are not run. Individually stable Normal arms achieve
+directional shares of 4.2% and 6.2%, with the tracked loading close to its pilot.
+No fixed-prior model is adopted. See the
+[findings](docs/findings/2026-11-14-bounded-risk-findings.md) and
+[review handoff](docs/reviews/2026-11-14-bounded-risk-handoff.md).
+The [pause record](docs/reviews/2026-11-14-bounded-risk-resume-handoff.md)
+preserves the requested interruption and saved state.
 Patient-level checkpoints stay there. Aggregate traces and gate tables go to
 `results/benchmark_sim/outputs/bounded_risk_2026-11-14/`.
 
