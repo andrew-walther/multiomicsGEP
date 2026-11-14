@@ -1,6 +1,7 @@
 # Review handoff: fixed-prior survival supervision
 
-**Paused draft.** Andrew requested a usage-limit pause on 2026-11-14. The real-data screen is complete. Synthetic Step 1 diagnostics and final audit/review are incomplete. Resume from the [pause handoff](../reviews/2026-11-14-bounded-risk-resume-handoff.md).
+**Complete.** The registered diagnostic and independent reporting review are finished.
+
 Date: 2026-11-14. Author: Andrew Walther.
 
 Addressed to the reviewing Claude Code session.
@@ -25,13 +26,15 @@ registered all-target gate.
 - `e0c5697b`: opt-in canonicalization trace, 50-sweep stable stopping, coefficient
   prior override, retained recalibration passes, separate reference controls,
   resumable screen and regression tests. Independently reviewed before fitting.
-- Step 1 aggregate-results and audit commit: pending completion of synthetic
-  diagnostics.
-- Final findings and review commit: see the branch history after this handoff
-  is complete.
+- `1421716a`: requested usage pause, 60 saved fits, partial-case inventory and
+  resume instructions.
+- `19f3cf29`: complete Step 1 evidence, 105 retained fits, final exports and
+  1,611 successful saved-state checks.
+- Final documentation commit: the branch commit containing this completed
+  handoff, available in the branch history.
 
 The branch is `s17-bounded-risk-supervision`, created from main at `6d12a0dd`.
-The implementation checkpoint is pushed. Every new scientific fit uses its
+The implementation and completed Step 1 evidence are pushed. Every new scientific fit uses its
 frozen numerical source. Later changes are tests and saved-state audits, outside
 those numerical source hashes. No merge or external scoring is authorized here.
 No protected status, roadmap, decision, progress-book or prelim source is edited.
@@ -66,6 +69,23 @@ as S-17 substitutes.
 Step 2 eligibility and selection are untested, not failed. Step 3's revised
 false-active coefficient null check and both recovery comparisons are also
 untested. The S-16 risk-variance null rule is not used. Step 4 is not run.
+
+## Synthetic convergence diagnostics
+
+All 24 S-9 strong-signal fits are complete at the registered weights 40, 100
+and 1,000. Every fit reaches 500 sweeps without stable convergence. Three
+Laplace fits meet the final native ELBO criterion but fail the risk window.
+No task error or warning is recorded in these fits. The planted standardized
+coefficient is about 6.7, far from every prior scale, so these are convergence
+diagnostics under a misspecified prior rather than recovery evidence.
+
+The weak-cell seed-1 grid is complete: 45 retained fits, 32 final arm states.
+All eight pilots are stable. Four of 24 final targets are stable, all at nominal
+share 0.05. These are Normal σ_b = 0.1 and 1, and Laplace σ_b = 0.5 and 1.
+Normal 0.1 achieves share 0.006221, while Laplace 0.5 achieves 0.218469 after
+three converged passes. Both miss the factor-of-two odds tolerance. The scale-1
+arms achieve about 0.0511. Every final weak target 0.25 and 0.5 reaches 500
+sweeps. The synthetic results do not enter the real-data pair gate.
 
 ## Stable convergence and statistical interpretation
 
@@ -132,8 +152,42 @@ patient-level fit states remain in ignored `data/`. At most two serial family
 processes run at once, with one BLAS thread each. No live numerical source is
 edited while a partition is running.
 
-Synthetic completeness, audit totals, timing and final independent findings
-review will be added after Step 1 finishes.
+The complete grid has 24 complete cases, 105 retained fitted passes, 88 final
+arm states and 663 program-share rows. All 1,611 saved-state audit checks pass.
+There are no guards, unavailable targets, recorded fit warnings or fit errors.
+The sole capped fit is described above. Retained-fit wall seconds sum to
+8,275.282 across concurrent workers. The findings give per-cell totals and
+partition timings, with interrupted work treated separately.
+
+At Andrew's usage pause, 60 fitted passes were preserved. They were reused on
+resume, and 45 further retained passes completed. An export I/O error later
+partially rewrote one CSV, while its full checkpoint trace remained intact.
+One unchanged retry restored it and succeeded. The repaired trace matched its
+checkpoint at tolerance 10⁻¹², then the complete audit passed. No model was
+rerun for this repair. Both original and retry logs are preserved privately.
+
+The fresh final suite also passes 879/0. Its log is
+`execution_notes/full-suite-resumed-final.log`.
+
+## Final independent review
+
+A fresh independent final review passes with no blocking issue or factual
+correction. Before reading the reports, it reconstructed the gates and
+all 105 trace windows. It then checked all 242,047 trace rows against the
+checkpoints, all 37,963 sweep-prior records, and all 81 pilot-loading matches.
+Direct checkpoint calculations confirmed the reported moderate real shares,
+the capped Laplace match, and the weak target misses.
+
+All 481 finite program shares agree with its direct calculations. The remaining
+182 rows have zero loading directions or loading second-moment denominators.
+They are explicitly undefined and retained. All 60 pause fit records match the
+final records, and all 24 case source/input signatures agree with current files.
+
+The reviewer inspected the saved audit and suite logs, rather than rerunning
+those complete commands, and fit no model. Its private report is
+`data/bounded_risk_2026-11-14/execution_notes/findings-independent-review-final.md`.
+The verdict clears reporting of the registered diagnostic. Scientific adoption,
+any new registration and any later external scoring remain separate decisions.
 
 ## Open questions and results ready for Chapter 4
 

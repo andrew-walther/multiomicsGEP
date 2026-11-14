@@ -1,5 +1,9 @@
 # Resume handoff: fixed-prior convergence screen
 
+**Historical pause record.** Work resumed and the registered grid is complete.
+Use the [final handoff](2026-11-14-bounded-risk-handoff.md) for current results.
+The commands and counts below document the state at the requested pause.
+
 Date: 2026-11-14. Author: Andrew Walther.
 
 ## Paused state

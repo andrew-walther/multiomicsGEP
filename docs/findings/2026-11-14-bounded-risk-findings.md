@@ -1,9 +1,13 @@
 # Fixed-prior survival supervision findings
 
-**Paused draft.** Andrew requested a usage-limit pause on 2026-11-14. The real-data screen is complete. Synthetic Step 1 diagnostics and final audit/review are incomplete. Resume from the [pause handoff](../reviews/2026-11-14-bounded-risk-resume-handoff.md).
+**Complete.** The registered diagnostic and independent reporting review are finished.
+
 Date: 2026-11-14. Author: Andrew Walther. Registration: S-17.
 
 ## Result
+
+The registered Step 1 grid is complete: 24 cases and 105 retained fitted
+passes across real data and the two seed-1 synthetic diagnostics.
 
 No tested Normal prior scale passes the registered real-data convergence screen.
 All four unit-weight Normal pilots converge stably, but every scale has a failed
@@ -109,8 +113,64 @@ convergence gate.
 
 ## Step 1: synthetic convergence diagnostics
 
-Synthetic diagnostic results and the completeness audit are being assembled.
-This section will be replaced after the registered Step 1 grid finishes.
+The strong-signal S-9 diagnostic uses p = 2,000, 1% molecular variance,
+seed 1 and K = 7. Every family and prior scale is fitted at fixed weights
+40, 100 and 1,000. All 24 fits reach 500 sweeps without stable convergence.
+Three Laplace fits meet the native ELBO criterion at the final sweep but fail
+the risk-stability window. No fit records a task error or warning.
+
+The table summarizes the three fixed weights for each prior. Coefficient ranges
+are final maxima across those three fits. The risk column is the largest final
+maximum absolute η. The planted standardized coefficient is about 6.7, far
+from every tested prior scale. These are convergence diagnostics under a
+misspecified prior, not recovery or predictive comparisons.
+
+| Prior | σ_b | Native ELBO criterion met | Range of final maximum absolute β | Largest final maximum absolute η |
+|---|---|---|---|---|
+| Normal | 0.1 | 0/3 | 1.144 to 112.202 | 109.651 |
+| Normal | 0.25 | 0/3 | 32.872 to 35.245 | 104.142 |
+| Normal | 0.5 | 0/3 | 33.862 to 45.657 | 126.401 |
+| Normal | 1 | 0/3 | 31.695 to 40.777 | 107.320 |
+| Laplace | 0.1 | 0/3 | 31.332 to 39.201 | 106.395 |
+| Laplace | 0.25 | 2/3 | 31.445 to 33.148 | 100.605 |
+| Laplace | 0.5 | 1/3 | 31.364 to 33.409 | 93.038 |
+| Laplace | 1 | 0/3 | 30.831 to 31.620 | 99.688 |
+
+The weak-cell seed-1 diagnostic uses the registered S-13 generator and K = 7.
+Its eight pilots all converge stably. Four of the 24 final target states are
+stable, all at nominal target 0.05. Every final target-0.25 and target-0.5 fit
+reaches 500 sweeps. The table gives final-pass sweeps and stable convergence.
+No guard, cap, warning or task error is recorded in this cell.
+
+| Prior | σ_b | Retained fits | Pilot sweeps | Target 0.05: sweeps, stable | Target 0.25 | Target 0.5 |
+|---|---|---|---|---|---|---|
+| Normal | 0.1 | 9 | 97 | 107, yes | 500, no | 500, no |
+| Normal | 0.25 | 5 | 105 | 500, no | 500, no | 500, no |
+| Normal | 0.5 | 4 | 105 | 500, no | 500, no | 500, no |
+| Normal | 1 | 6 | 105 | 53, yes | 500, no | 500, no |
+| Laplace | 0.1 | 4 | 196 | 500, no | 500, no | 500, no |
+| Laplace | 0.25 | 5 | 107 | 500, no | 500, no | 500, no |
+| Laplace | 0.5 | 6 | 106 | 208, yes | 500, no | 500, no |
+| Laplace | 1 | 6 | 105 | 53, yes | 500, no | 500, no |
+
+The four stable target-0.05 arms all use three calibration passes. Stability
+does not establish that the target share was attained:
+
+| Prior | σ_b | Achieved directional share | Loading correlation with pilot | Final maximum absolute β |
+|---|---|---|---|---|
+| Normal | 0.1 | 0.006221 | 0.202400 | 0.687 |
+| Normal | 1 | 0.051130 | 0.999821 | 0.660 |
+| Laplace | 0.5 | 0.218469 | 0.999934 | 4.412 |
+| Laplace | 1 | 0.051186 | 0.999817 | 0.658 |
+
+Normal σ_b = 0.1 and Laplace σ_b = 0.5 remain outside the factor-of-two
+odds tolerance after three converged passes. The former also has weak loading
+identity relative to its original pilot. The Normal and Laplace σ_b = 1 arms
+are within tolerance. The four-SD acceptance screen selects priors from the real
+data only. It is not applied as a new gate to these synthetic diagnostics.
+No recovery, validation concordance or null-safety conclusion is drawn here.
+
+
 
 ## Steps 2 and 3: not reached
 
@@ -122,26 +182,204 @@ Normal target-0.05 arms.
 
 ## Implementation and verification
 
-The opt-in fitter trace records the raw SD of each YF score before canonicalization, the scale actually applied, and coefficient means before and after rescaling. For a live program, beta_after = c_k beta_before. A collapsed score uses scale one, so the raw SD and applied scale are both retained. These are aggregate per-program quantities. The inputs are the current training matrix and posterior moments. The output is one row per program per sweep in history$s16.
+The opt-in fitter trace records each YF score's raw SD, applied canonical scale,
+and coefficient means before and after scaling. For a live program,
+β_after = c_k β_before. A collapsed score uses scale one, so raw SD and applied
+scale are recorded separately. Training matrices and posterior moments enter
+this block. Its output is one aggregate row per program per sweep in
+`history$s16`. It adds no diagnostic field when tracing is off.
 
-The new stable_convergence_window argument defaults to zero. A positive value requires tracing and ELBO stopping. For S-17 its value is 50. The stopping block first checks the existing current-sweep relative ELBO criterion. It then requires all 50 relative L2 changes in eta to be below 0.001 and the endpoint change in max absolute eta to be below 1%. The denominator is the beginning-of-window maximum, floored at machine epsilon. The algorithm keeps iterating until both criteria hold or the 500-sweep cap is reached. history$native_elbo_converged separately records the current ELBO criterion. No default fit or update formula changes.
+The fitter's `stable_convergence_window` defaults to zero. A positive value
+requires tracing and ELBO stopping. S-17 sets it to 50. The stopping block first
+checks the current native ELBO criterion, then all 50 relative L2 changes in η
+and the endpoint change in maximum absolute η. The window's initial maximum,
+floored at machine epsilon, is the latter denominator. Iteration continues until
+both criteria hold or sweep 500. `history$native_elbo_converged` records the
+current native criterion separately. Default fitting and update formulas do not
+change.
 
-The shared S-16 fitting helper accepts prior_beta through fit_control. Normal remains its default. The fixed shared prior is passed unchanged to each same-prior pilot and warm-started calibration fit. The calibration helper can retain pass_fits, including the complete trace, for every pass. The default remains false. The dataset and real-data helpers also accept separate two-step reference controls. A separate unit-weight fit is still needed for the estimated per-program working-model reference. The fixed-prior pilot must not be mislabeled as that reference.
+The shared `s16_fit()` helper accepts `prior_beta` through `fit_control`, with
+Normal unchanged as its default. Each same-prior pilot and warm start receives
+the fixed shared prior. `s16_calibrate(..., retain_pass_fits = TRUE)` retains
+every fitted pass and trace. Its default is false. The dataset and real-data
+helpers also accept separate two-step reference controls. An estimated-prior
+working-model reference still requires its own unit-weight fit. A fixed-prior
+pilot is not that reference.
 
-The new screen runner separates real and simulation stages and partitions each by family. Each process is serial. The Normal prior is created with ashr::normalmix(1, 0, sigma), and the equal-variance Laplace prior with ebnm::laplacemix(1, 0, sigma/sqrt(2)). These existing packages supply the fixed priors accepted by the fitter, without a new dependency. yaml reads the registered ranks and fitting tolerance from project configuration. Base R handles traces, checkpoint serialization and aggregate CSVs.
+`s17_controls(family, sigma)` returns the named opt-in fitter arguments.
+`ashr::normalmix(1, 0, sigma)` creates the Normal prior, while
+`ebnm::laplacemix(1, 0, sigma/sqrt(2))` creates the equal-variance Laplace prior.
+These existing packages supply prior objects that the fitter accepts. No new
+dependency is introduced. `yaml` reads project ranks and tolerance.
+`s17_screen(family, stage)` prepares the registered training data and runs the
+family's serial case grid. The separate real and simulation stages enforce the
+registered ordering and permit two independent single-threaded processes.
 
-Each case is keyed by dataset, family and sigma. The private checkpoint contains source/input hashes, package versions, controls, fits, warnings, elapsed time, posterior second moments and final Cox weights. Atomic writes preserve completed arms. A stale signature is rejected. A nonconverged pilot remains a reported failure and leaves target fits unavailable because the weight calculator requires a converged pilot. An unexpected error is saved and rethrown. A no-signal guard reuses the pilot at weight one and is explicitly marked. Its requested target has not been attained.
+`s17_case()` takes a dataset, family, scale, configuration and source signature.
+It returns and atomically saves a private case object keyed by dataset, family
+and scale. The object contains fits, calibration records, warnings, elapsed
+seconds, second moments and final Cox weights. Complete cases and completed
+arms are reused only with a matching signature. A nonconverged pilot remains
+reported, with targets explicitly unavailable. Unexpected errors are saved and
+rethrown. A no-signal guard reuses the pilot at weight one and does not establish
+the requested stronger share.
 
-The exporter independently recomputes the 50-sweep stability check from the saved trace, deduplicating its repeated sweep-level quantities across programs. It reports the final and peak risk/coefficients and the largest within-window deviation. Only endpoint risk drift enters the registered 1% gate. The real-data pair gate uses the pilot and final pass of all three targets and the final maximum coefficient mean limit of four prior SDs. Synthetic results do not determine which priors proceed.
+`s17_stability(fit, sigma)` independently evaluates the saved trace, returning
+a one-row data frame of window, convergence and coefficient-limit results.
+Repeated sweep-level quantities are deduplicated across programs. `s17_export()`
+writes these fit rows, per-program shares and traces as aggregate CSVs. It also
+reports final and peak coefficients and risk, plus the largest within-window
+risk deviation. Only the endpoint deviation enters the registered 1% gate.
+`s17_summarize()` requires all 24 complete, matching case checkpoints before
+combining exports. Its real-data pair gate uses only the pilot and final pass
+of all three targets, with the final four-SD coefficient limit. The synthetic
+results do not select priors for later steps.
 
-Fixing a Normal or Laplace scale imposes shrinkage, not a hard coefficient bound. Canonicalization preserves LF' and eta, but rescaling q(beta) while holding the prior fixed generally changes its KL divergence. The native objective is computed before this rescaling. These fits test the registered algorithm and do not establish an exact CAVI derivation under a fixed prior expressed throughout in standardized coordinates. The added trace makes this limitation observable. The four-SD rule is an empirical acceptance threshold.
+The separate `tests/audit_bounded_risk_screen.R` script verifies saved states
+without fitting a model. `audit_inputs()` reconstructs the three training
+inputs. `audit_equal()` checks shapes and finite numerical agreement to relative
+tolerance 10⁻¹⁰. This audit tolerance does not alter an acceptance threshold.
+`audit_track()` returns original-pilot matches and achieved shares for every
+available fit, using absolute Pearson loading correlation from base R's
+`stats::cor()`. A missing match remains undefined with a reason.
+`audit_screen()` checks the complete grid, source/input hashes, package versions,
+fixed priors, moments, traces and recomputed Cox weights. It writes aggregate
+check and tracking tables and exits nonzero for an audit failure. A recorded
+nonconverged fit is a scientific outcome and can pass this consistency audit.
 
+Fixing a Normal or Laplace scale imposes shrinkage, not a hard coefficient bound.
+Canonicalization preserves LF′ and η, but rescaling q(β) while holding its prior
+fixed generally changes the coefficient KL. The native objective is calculated
+before rescaling. These fits test the registered algorithm and do not establish
+an exact CAVI derivation under a fixed prior expressed throughout in standardized
+coordinates. The added trace makes this limitation observable. The four-SD rule
+is an empirical acceptance threshold.
 
 ## Reproduction and evidence
 
-Final commands, timing, audit totals and output ledger will be inserted after
-all Step 1 cases finish. Patient-level matrices, risks and checkpoints stay in
-ignored data/. Only aggregate outputs are committed.
+Run from the repository root with the original prepared training input and
+checkpoint directory available. The source/input signatures and package
+versions must match. Each family process is serial. Run each pair serially or
+concurrently, with at most two processes:
+
+```sh
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+Rscript results/benchmark_sim/run_bounded_risk_screen.R normal real
+Rscript results/benchmark_sim/run_bounded_risk_screen.R laplace real
+# Complete both real partitions before starting these:
+Rscript results/benchmark_sim/run_bounded_risk_screen.R normal sim
+Rscript results/benchmark_sim/run_bounded_risk_screen.R laplace sim
+# After both simulation partitions finish:
+Rscript results/benchmark_sim/run_bounded_risk_screen.R summarize
+Rscript tests/audit_bounded_risk_screen.R
+Rscript tests/run_tests.R
+```
+
+Complete cases and completed arms within partial cases are reused. A stale
+signature or unexpected case error stops execution. No external input is scored.
+Patient-level matrices, risk vectors and checkpoints remain under ignored
+`data/bounded_risk_2026-11-14/`. Only aggregate outputs are committed.
+
+The output directory is
+`results/benchmark_sim/outputs/bounded_risk_2026-11-14/`:
+
+| File or pattern | Contents |
+|---|---|
+| `screen_fits.csv` | Every calibration pass, final-state flag, native and stable convergence, coefficient limit, weight, cap, warning and elapsed seconds |
+| `screen_real_pair_gate.csv` | The eight family-by-scale real-data gates |
+| `screen_program_shares.csv` | Activity, standardized coefficients and exact directional and per-gene shares for every program and fitted pass |
+| `screen_loading_tracking.csv` | Original pilot matching and achieved shares, including nonconverged states, with explicit undefined-match reasons |
+| `screen_completeness_audit.csv` and `_summary.csv` | Saved-state checks and their counts |
+| `*_trace.csv` | Per-sweep objective, risk, coefficient, loading norm and canonicalization diagnostics |
+| `*_fits.csv` and `*_shares.csv` | Case-specific exports of the fit and program tables |
+| `pause_inventory.csv` and `pause_saved_fits.csv` | Historical 60-fit inventory at the requested usage pause, not the final denominator |
+
+The numerical implementation is `e0c5697b`, the requested pause is `1421716a`,
+and completed Step 1 evidence is `19f3cf29` on `s17-bounded-risk-supervision`.
+No merge is performed.
+
+The completed grid has **24 cases, 105 retained fitted passes and 88 final
+arm states**. The 17 extra fitted passes are recalibrations, four on real data
+and 13 in the weak cell. All 16 unit-weight pilots are stable. Across all final
+arm states, 24 are stable and 64 are not. The real-data gates alone determine
+whether the study proceeds. All eight gates fail.
+
+The complete saved-state audit passes **1,611 checks with zero failures**.
+It verifies all case and arm records, unchanged source/input hashes and package
+versions, priors at every sweep, trace dimensions, posterior moments and final
+Cox weights. The program table has 663 rows across all retained passes. There
+are no guards, unavailable targets, recorded fit warnings or fit errors. There
+is one capped fit, the real Laplace σ_b = 0.1 target-0.5 final pass.
+
+The final full suite passes **879 counted checks, zero failures**, plus the
+new standalone assertions. Its one previously recorded bounded-β
+profile-likelihood fallback warning is a test diagnostic, not a warning from a
+study fit. The default S-16 fixture passes exactly. The first suite attempt
+found a collapsing noise-only stability fixture. A planted, nonzero-β fixture
+now checks both rejection of an unstable window and later stable stopping.
+No update algebra changed, so the conditional algebra-verifier requirement was
+not triggered.
+
+The final suite log is `full-suite-resumed-final.log`. Summary and audit logs
+are `summarize-final-retry1.log` and `audit-final.log`, under the private
+`data/bounded_risk_2026-11-14/execution_notes/` directory.
+
+A fresh independent final review passes the completed diagnostic and reports
+with no blocking issue or factual correction. It independently reconstructed
+all 105 trace windows and native ELBO flags, checked 242,047 exported trace rows
+against checkpoints, and verified the fixed prior over 37,963 saved sweeps.
+It directly recalculated all finite directional shares and all 81 pilot matches,
+without using the audit's matching helper as proof. Of 663 program-share rows,
+481 are finite and 182 are undefined because a loading direction or its loading
+second-moment denominator is zero. Those rows remain explicitly undefined.
+They are not dropped or recoded as zero survival share.
+
+The review also verified all 60 pause records against the final retained records
+and all 24 current source/input signatures. It inspected the saved 1,611/0 audit
+and 879/0 suite logs, but did not rerun those complete commands or fit a model.
+The private review is
+`execution_notes/findings-independent-review-final.md` under the same ignored
+study directory. Its verdict approves reporting of the registered diagnostic,
+not a model, predictive claim, adoption or external scoring.
+
+### Timing and the requested pause
+
+Elapsed times below are sums of the retained fits' recorded wall-clock seconds.
+Concurrent workers overlap. These sums are not elapsed study duration and do
+not include discarded in-flight work at the requested pause.
+
+| Data | Prior | Retained fits | Stable fitted passes | Final arm states | Stable final states | Retained-fit seconds |
+|---|---|---|---|---|---|---|
+| Real | Normal | 17 | 7 | 16 | 6 | 1009.438 |
+| Real | Laplace | 19 | 9 | 16 | 6 | 1131.662 |
+| Strong S-9 | Normal | 12 | 0 | 12 | 0 | 1313.321 |
+| Strong S-9 | Laplace | 12 | 0 | 12 | 0 | 1309.244 |
+| Weak S-13 | Normal | 24 | 14 | 16 | 6 | 1965.601 |
+| Weak S-13 | Laplace | 21 | 11 | 16 | 6 | 1546.016 |
+
+The retained-fit total is 8,275.282 seconds. The two simulation partition logs
+also preserve command wall times, including export and discarded interrupted
+work in the original attempts:
+
+| Partition | Before requested pause, seconds | Resumed successful command, seconds |
+|---|---|---|
+| Normal simulation | 1,384.57 | 1,957.36 |
+| Laplace simulation | 1,253.29 | 1,672.67 |
+
+At the usage-limit pause, 60 retained fitted passes were saved in 15 complete
+and two partial cases. The two workers were deliberately interrupted. On
+Andrew's authorization, the 60 saved passes were reused and 45 further retained
+passes completed. Interrupted unsaved work is excluded from the final fit
+count, rather than counted as a scientific failure. The historical pause
+inventory is preserved separately from the final denominator.
+
+The first combined export failed with a filesystem I/O error while rewriting
+one generated trace CSV. The disk reported about 100 GiB free. The complete
+trace remained in its private checkpoint. One unchanged export retry succeeded,
+and the repaired CSV matched that checkpoint at tolerance 10⁻¹². The subsequent
+full audit passed. No model was rerun and no numerical source changed for this
+recovery. The original failure log is retained as `summarize-final.log`.
+
 
 ## Decisions and limits
 
