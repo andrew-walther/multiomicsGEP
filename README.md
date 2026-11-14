@@ -71,12 +71,19 @@ Rscript tests/run_tests.R
 ```
 
 The experimental [share-target weight calculator](code/share_targeted_ws.R)
-inverts a registered directional precision ratio at a converged training
-state. Run `Rscript tests/test_share_targeted_ws.R` for its behavioral checks
+inverts the gene-precision-weighted directional curvature ratio at a converged
+training state. Recalibration tracks the loading selected at the unit-weight
+pilot even if its activity changes. Run `Rscript tests/test_share_targeted_ws.R` for its behavioral checks
 and `Rscript results/benchmark_sim/audit_share_targeted_ws.R` for the saved-state
 audit. The audit needs the existing local checkpoints and prepared training
 matrix. See the [S-16 findings](docs/findings/2026-11-13-share-targeted-weight-findings.md)
-for the missing-state blocker and interpretation limits.
+for Amendment 1, the registered convergence/null gates and interpretation limits.
+The study uses `run_share_targeted_diagnostics.R` for raw-weight and optional
+50-sweep ramp diagnostics, and `summarize_share_targeted_diagnostics.R` to
+rebuild their aggregate summaries. `run_share_targeted_weight.R` provides
+`smoke`, `screen`, `real` and `structure` modes with at most two workers.
+Fit checkpoints and settings belong under ignored `data/`. Only targets
+allowed by the diagnostic and null gates proceed to real-data evaluation.
 
 ## Selected findings
 

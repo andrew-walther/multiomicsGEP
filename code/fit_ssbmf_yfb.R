@@ -462,6 +462,8 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   rule; "outputs" requires relative changes of LF' and YFβ both < 1e-4.
 #'   Explicitly passing either value records both final criteria; omitting the
 #'   argument preserves the default fit object bit for bit.
+#' @param survival_weight_ramp integer: opt-in geometric ramp length, or zero to disable.
+#' @param trace_s16 logical: record canonical pooled per-sweep directional diagnostics.
 #' @param trace_supervision logical (default FALSE). When TRUE, `history$prior_trace`
 #'   also records each non-cohort sweep's beta prior before/after refitting and
 #'   its raw coefficient pseudo-observations/precisions. `history$trace`
@@ -576,7 +578,16 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            center_projection = FALSE,
                            feature_group = NULL,
                            modality_weight = NULL,
-                           F_prior_by_group = TRUE) {
+                           F_prior_by_group = TRUE,
+                           trace_s16 = FALSE,
+                           survival_weight_ramp = 0L) {
+
+  if (!is.logical(trace_s16) || length(trace_s16) != 1L || is.na(trace_s16))
+    stop("trace_s16 must be TRUE or FALSE.")
+  if (trace_s16 && (!canonicalize || !is.null(cohort_id) || !is.null(strata_id) ||
+                    !is.null(beta_cohort_id) || !is.null(feature_group) ||
+                    !is.null(modality_weight) || prune))
+    stop("trace_s16 requires a canonical pooled, unweighted, unpruned fit.")
 
   # ---- S-13 options (derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/) ----------------
   # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
@@ -714,6 +725,18 @@ fit_ssbmf_yfb <- function(Y, time, status,
                                       c(0, if (is.null(beta_slab_sd)) 1 else beta_slab_sd)),
       point_laplace = ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1)))
   }
+  if (length(survival_weight_ramp) != 1L || !is.numeric(survival_weight_ramp) ||
+      !is.finite(survival_weight_ramp) || survival_weight_ramp < 0 ||
+      survival_weight_ramp != as.integer(survival_weight_ramp) || survival_weight_ramp == 1L)
+    stop("survival_weight_ramp must be zero or an integer of at least two.")
+  if (survival_weight_ramp > 0L &&
+      (!canonicalize || !survival_block_weight || beta_posterior != "meanfield" ||
+       beta_prior_mode != "per_program" || prior_beta != "normal" ||
+       !is.null(cohort_id) || !is.null(strata_id) || !is.null(beta_cohort_id) ||
+       !is.null(feature_group) || !is.null(modality_weight) || prune || w_S <= 0 ||
+       max_iter <= survival_weight_ramp))
+    stop("survival_weight_ramp requires canonical pooled unweighted unpruned A1, positive w_S, and max_iter > ramp.")
+  w_S_target <- w_S
   # Weights applied to the genomics and survival terms of the F update
   # (used by the trace; the update itself receives alpha_F or w_S directly).
   F_w_gen  <- if (is.null(w_S)) 1 - alpha_F else 1
@@ -1028,6 +1051,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
     converged  = FALSE,
     n_iter     = max_iter
   )
+  if (trace_s16) history$s16 <- vector("list", max_iter)
   if (trace_supervision) {
     trace_names <- c("beta_mean", "beta_second", "shareA_median", "shareA_p90",
                      "shareB_median", "shareB_p90", "shareA_unweighted_median",
@@ -1057,6 +1081,15 @@ fit_ssbmf_yfb <- function(Y, time, status,
   EBeta_cov <- matrix(0, K, K); beta_sigma2 <- NULL; Mbeta <- matrix(0, K, K)
   beta_lik_weight <- if (canonicalize && survival_block_weight) 1 else w_S
   for (iter in 1:max_iter) {
+    if (survival_weight_ramp > 0L) {
+      # The objective changes during the ramp. Sweep r reaches the target;
+      # the stopping comparison begins only after two target-weight objectives.
+      w_S <- if (iter < survival_weight_ramp)
+        exp(log(w_S_target) * (iter - 1) / (survival_weight_ramp - 1)) else w_S_target
+      F_w_surv <- w_S
+      beta_lik_weight <- if (survival_block_weight) 1 else w_S
+    }
+    if (trace_s16) eta_s16_start <- as.vector(projection_Y %*% EF %*% EBeta)
     # Reconstruction powers multiply both Gaussian precision and signal. Keep
     # Tau itself unweighted: its featurewise MLE is unchanged by positive powers.
     reconstruction_tau <- if (is.null(feature_weight)) Tau else Tau * feature_weight
@@ -1450,6 +1483,29 @@ fit_ssbmf_yfb <- function(Y, time, status,
       }
     }
 
+    if (trace_s16) {
+      eta_s16_end <- as.vector(projection_Y %*% EF %*% EBeta)
+      cox_s16 <- calc_cox_taylor_yf(eta_s16_end, time, status)$w
+      norms_s16 <- sqrt(colSums(EF^2))
+      shares_s16 <- vapply(seq_len(K), function(k) {
+        if (norms_s16[k] == 0) return(NA_real_)
+        direction <- EF[, k] / norms_s16[k]
+        expression <- sum(EL2[, k]) * sum(Tau * direction^2)
+        survival <- w_S * EBeta2[k] * sum(cox_s16 * as.vector(projection_Y %*% direction)^2)
+        if (expression + survival == 0) NA_real_ else survival / (expression + survival)
+      }, numeric(1))
+      history$s16[[iter]] <- data.frame(
+        iteration = iter, program = seq_len(K), weight = w_S,
+        ramp = iter <= survival_weight_ramp, elbo = history$elbo_full[iter],
+        elbo_rel_signed = if (iter > 1 && is.finite(history$elbo_full[iter - 1]) &&
+          history$elbo_full[iter - 1] != 0) (history$elbo_full[iter] - history$elbo_full[iter - 1]) /
+          abs(history$elbo_full[iter - 1]) else NA_real_,
+        eta_start_max = max(abs(eta_s16_start)), eta_end_max = max(abs(eta_s16_end)),
+        eta_rel_change = sqrt(sum((eta_s16_end - eta_s16_start)^2)) /
+          max(sqrt(sum(eta_s16_start^2)), .Machine$double.eps),
+        beta_max = max(abs(EBeta)), norm_F = norms_s16, directional_share = shares_s16)
+    }
+
     if (verbose && iter %% 10 == 0) {
       delta_elbo_str <- if (is.finite(history$delta_elbo_rel[iter])) {
         sprintf("%.2e", history$delta_elbo_rel[iter])
@@ -1468,7 +1524,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
       history$delta_elbo_rel[iter] < tol
     if (record_output_convergence) history$elbo_converged <- elbo_converged
     stop_now <- if (converge_on == "elbo") elbo_converged else history$outputs_converged
-    if (iter > 5 && iter > N_frozen && stop_now) {
+    if (iter > 5 && iter > N_frozen && iter > survival_weight_ramp && stop_now) {
       if (verbose) {
         cat(sprintf("\n  Converged at iteration %d  (relative ELBO change = %.2e)\n",
                     iter, history$delta_elbo_rel[iter]))
@@ -1526,6 +1582,10 @@ fit_ssbmf_yfb <- function(Y, time, status,
     neg_kl           = kl_L + kl_F +           # per-program -KL terms (last iteration)
                        (if (survival_block_weight) w_S else 1) * kl_beta
   )
+  if (trace_s16) {
+    result$history$s16 <- do.call(rbind, history$s16[seq_len(history$n_iter)])
+    result$CoxW <- cox_s16
+  }
   # S-13 fields only when an S-13 option is on, so default fit objects are unchanged
   if (survival_block_weight || joint_beta) {
     result$survival_block_weight <- survival_block_weight
