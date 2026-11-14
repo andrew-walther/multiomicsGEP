@@ -56,3 +56,31 @@ local({
             identical(second$posterior_state$g_beta, prior))
 })
 cat("Fixed shared Laplace warm start: passed\n")
+
+# Verify the dataset dispatcher routes the two fits to their requested controls.
+local({
+  source("results/benchmark_sim/run_share_targeted_weight.R", local = TRUE)
+  calls <- list()
+  s16_fit <- function(Y, time, status, weight, cfg, initial = NULL, fit_control = list()) {
+    calls$pilot <<- fit_control
+    list(fit = list(history = list(converged = TRUE), tag = "pilot"))
+  }
+  s16_twostep <- function(Y, time, status, cfg, fit_control = list()) {
+    calls$twostep <<- fit_control
+    list(fit = list(history = list(converged = TRUE), tag = "twostep"))
+  }
+  s16_checkpoint <- function(fit, Y, time, status) list(tag = fit$tag)
+  s16_sim_score <- function(fit, d, null) list(tag = fit$tag)
+  d <- list(Ytr = matrix(1:4, 2), time = 1:2, event = c(1, 0))
+  fixed <- list(beta_prior_mode = "shared", beta_prior_fix = TRUE)
+  reference <- list(beta_prior_mode = "per_program")
+  result <- s16_dataset(d, list(), targets = numeric(), fit_control = fixed,
+                        reference_control = reference)
+  stopifnot(identical(calls$pilot, fixed), identical(calls$twostep, reference),
+            identical(result$pilot$metrics$tag, "pilot"),
+            identical(result$twostep$metrics$tag, "twostep"))
+  calls <- list()
+  s16_dataset(d, list(), targets = numeric(), fit_control = fixed)
+  stopifnot(identical(calls$pilot, fixed), identical(calls$twostep, fixed))
+})
+cat("Reference-control routing: passed\n")

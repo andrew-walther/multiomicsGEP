@@ -7,6 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-14 | [bounded-risk-findings](2026-11-14-bounded-risk-findings.md) | S-17 fixed-prior supervision, risk stability and conditional evaluation gates | paused draft at user request; real-data screen complete with no qualifying scale; synthetic diagnostics and final audit/review pending |
 | 2026-11-13 | [share-targeted-weight-findings](2026-11-13-share-targeted-weight-findings.md) | S-16 exact share targeting, convergence diagnostics, simulation null gate and reference CV/structure | complete under registered fallback; target 0.01 fails null variance gate; unit weight retained; no external scoring |
 | 2026-11-13 | [weight-path-findings](2026-11-12-weight-path-findings.md) | Fixed methylation likelihood-weight path, all-truth block correlations and descriptive TCGA programs | complete; repeats exact; 150/150 simulation and 4/4 new TCGA converged; no usable weight or new TCGA program; task D paused |
 | 2026-11-12 | [modality-weights-findings](2026-11-12-modality-weights-findings.md) | Reconstruction weights, registered joint/exclusive recovery and fixed ICGC scoring | complete; neither weight effective; TCGA withheld; 200/200 converged, zero full pattern successes; fixed ICGC scoring descriptive |

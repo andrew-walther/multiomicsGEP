@@ -105,6 +105,8 @@ Rscript results/benchmark_sim/run_bounded_risk_screen.R summarize
 ```
 
 This requires the existing prepared training data under ignored `data/`.
+The study is paused at Andrew's request after 60 saved fits. Follow the
+[resume handoff](docs/reviews/2026-11-14-bounded-risk-resume-handoff.md).
 Patient-level checkpoints stay there. Aggregate traces and gate tables go to
 `results/benchmark_sim/outputs/bounded_risk_2026-11-14/`.
 

@@ -4,6 +4,8 @@ Reports from independent reviewers, and external advice recorded as received.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-14 | [bounded-risk-resume-handoff](2026-11-14-bounded-risk-resume-handoff.md) | Requested usage pause, preserved S-17 cases and exact resume commands | active resume instructions; all workers stopped |
+| 2026-11-14 | [bounded-risk-handoff](2026-11-14-bounded-risk-handoff.md) | S-17 fixed-prior convergence gates, implementation, provenance and review checks | paused draft; no qualifying real-data scale; synthetic diagnostics and final audit/review pending |
 | 2026-11-13 | [share-targeted-weight-resume-handoff](2026-11-13-share-targeted-weight-resume-handoff.md) | Historical usage pause, preserved task and exact resume command | superseded by completed final handoff; retained as provenance |
 | 2026-11-13 | [share-targeted-weight-handoff](2026-11-13-share-targeted-weight-handoff.md) | S-16 completed fallback, gates, commits, reproducibility and independent review | evaluation complete; null gate fails; scientific adoption and external scoring remain unapproved |
 | 2026-11-12 | [task-a-independent-review](2026-11-12-task-a-independent-review.md) | Independent audit of L/F prior comparisons A and A2, criteria, saved scoring and four fresh fits | PL retention supported; neither A2 setup qualifies; SZ preprocessing claim needs qualification |
