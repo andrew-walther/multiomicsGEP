@@ -87,6 +87,27 @@ allowed by the diagnostic and null gates proceed to real-data evaluation.
 The completed S-16 fallback did not pass its primary null gate. Unit weight
 remains the working model, with no new external scoring or model adoption.
 
+The registered [fixed-prior supervision study](docs/plans/2026-11-14-bounded-risk-supervision-plan.md)
+tests fixed Normal and Laplace priors on the survival coefficients. The opt-in
+`stable_convergence_window = 50L` control requires the existing ELBO criterion
+and the registered 50-sweep risk-score stability check. Its default is zero.
+The screen reuses the share-target weight calculator and retains every
+calibration pass. Run the two prior families with at most two concurrent R
+processes and one BLAS thread each:
+
+```sh
+Rscript results/benchmark_sim/run_bounded_risk_screen.R normal real
+Rscript results/benchmark_sim/run_bounded_risk_screen.R laplace real
+# After both real-data partitions finish:
+Rscript results/benchmark_sim/run_bounded_risk_screen.R normal sim
+Rscript results/benchmark_sim/run_bounded_risk_screen.R laplace sim
+Rscript results/benchmark_sim/run_bounded_risk_screen.R summarize
+```
+
+This requires the existing prepared training data under ignored `data/`.
+Patient-level checkpoints stay there. Aggregate traces and gate tables go to
+`results/benchmark_sim/outputs/bounded_risk_2026-11-14/`.
+
 ## Selected findings
 
 The working rank-5 expression fit uses 2,218 genes from 273 TCGA and CPTAC

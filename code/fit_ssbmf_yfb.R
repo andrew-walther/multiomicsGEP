@@ -463,7 +463,11 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   Explicitly passing either value records both final criteria; omitting the
 #'   argument preserves the default fit object bit for bit.
 #' @param survival_weight_ramp integer: opt-in geometric ramp length, or zero to disable.
-#' @param trace_s16 logical: record canonical pooled per-sweep directional diagnostics.
+#' @param trace_s16 logical: record canonical pooled per-sweep directional diagnostics,
+#'   including score SD and coefficient means before and after canonicalization.
+#' @param stable_convergence_window Number of traced sweeps required for the S-17
+#'   stability gate, or 0 (default) for the existing stopping rule. A positive
+#'   value requires trace_s16 and ELBO convergence.
 #' @param trace_supervision logical (default FALSE). When TRUE, `history$prior_trace`
 #'   also records each non-cohort sweep's beta prior before/after refitting and
 #'   its raw coefficient pseudo-observations/precisions. `history$trace`
@@ -580,7 +584,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            modality_weight = NULL,
                            F_prior_by_group = TRUE,
                            trace_s16 = FALSE,
-                           survival_weight_ramp = 0L) {
+                           survival_weight_ramp = 0L,
+                           stable_convergence_window = 0L) {
 
   if (!is.logical(trace_s16) || length(trace_s16) != 1L || is.na(trace_s16))
     stop("trace_s16 must be TRUE or FALSE.")
@@ -588,6 +593,12 @@ fit_ssbmf_yfb <- function(Y, time, status,
                     !is.null(beta_cohort_id) || !is.null(feature_group) ||
                     !is.null(modality_weight) || prune))
     stop("trace_s16 requires a canonical pooled, unweighted, unpruned fit.")
+  if (!is.numeric(stable_convergence_window) || length(stable_convergence_window) != 1L ||
+      !is.finite(stable_convergence_window) || stable_convergence_window < 0 ||
+      stable_convergence_window != floor(stable_convergence_window))
+    stop("stable_convergence_window must be a nonnegative integer.")
+  if (stable_convergence_window > 0 && !trace_s16)
+    stop("stable_convergence_window requires trace_s16 = TRUE.")
 
   # ---- S-13 options (derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/) ----------------
   # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
@@ -695,6 +706,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
     if(beta_prior_mode[1]=="shared")beta_prior_init <- posterior_init$g_beta
   }
   converge_on <- match.arg(converge_on)
+  if (stable_convergence_window > 0 && converge_on != "elbo")
+    stop("stable_convergence_window requires converge_on = 'elbo'.")
   if (record_output_convergence && !exists("multimodal_yfb_relative_change", mode = "function"))
     source("code/fit_multimodal_yfb.R")
 
@@ -1444,6 +1457,12 @@ fit_ssbmf_yfb <- function(Y, time, status,
     # Leaves L F', eta and the ELBO unchanged; fixes sd(Y EF_k) = 1 for the
     # next iteration's ZF.
     if (canonicalize) {
+      if (trace_s16) {
+        # Keep the raw SD as well as the applied scale: collapsed programs use scale 1.
+        score_sd_s16 <- vapply(seq_len(K), function(k)
+          stats::sd(as.vector(projection_Y %*% EF[, k])), numeric(1))
+        beta_before_s16 <- EBeta
+      }
       cz <- canonicalize_yf_factors(projection_Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
                                     prior_F = prior_F_state, feature_group = groups)
       EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
@@ -1503,7 +1522,9 @@ fit_ssbmf_yfb <- function(Y, time, status,
         eta_start_max = max(abs(eta_s16_start)), eta_end_max = max(abs(eta_s16_end)),
         eta_rel_change = sqrt(sum((eta_s16_end - eta_s16_start)^2)) /
           max(sqrt(sum(eta_s16_start^2)), .Machine$double.eps),
-        beta_max = max(abs(EBeta)), norm_F = norms_s16, directional_share = shares_s16)
+        beta_max = max(abs(EBeta)), norm_F = norms_s16, directional_share = shares_s16,
+        score_sd_before = score_sd_s16, canonical_scale = cz$scale,
+        beta_before = beta_before_s16, beta_after = EBeta)
     }
 
     if (verbose && iter %% 10 == 0) {
@@ -1524,6 +1545,20 @@ fit_ssbmf_yfb <- function(Y, time, status,
       history$delta_elbo_rel[iter] < tol
     if (record_output_convergence) history$elbo_converged <- elbo_converged
     stop_now <- if (converge_on == "elbo") elbo_converged else history$outputs_converged
+    if (stable_convergence_window > 0) {
+      history$native_elbo_converged <- elbo_converged
+      stable_window <- FALSE
+      if (iter >= stable_convergence_window) {
+        rows <- history$s16[seq.int(iter - stable_convergence_window + 1L, iter)]
+        eta_change <- vapply(rows, function(x) x$eta_rel_change[1], numeric(1))
+        eta_start <- rows[[1]]$eta_start_max[1]
+        eta_end <- rows[[length(rows)]]$eta_end_max[1]
+        stable_window <- all(is.finite(eta_change)) && is.finite(eta_start) &&
+          is.finite(eta_end) && all(eta_change < 1e-3) &&
+          abs(eta_end - eta_start) / max(eta_start, .Machine$double.eps) < .01
+      }
+      stop_now <- elbo_converged && stable_window
+    }
     if (iter > 5 && iter > N_frozen && iter > survival_weight_ramp && stop_now) {
       if (verbose) {
         cat(sprintf("\n  Converged at iteration %d  (relative ELBO change = %.2e)\n",
