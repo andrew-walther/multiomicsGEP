@@ -17,17 +17,14 @@ dir.create(out, recursive = TRUE, showWarnings = FALSE)
 #' @param fit Converged canonical fit or reconstructed reduced state.
 #' @param Y,time,status Training matrix and survival outcomes.
 #' @param label Source label. @param selected Program indices to report.
-#' @param trace Last-sweep trace per program, or NULL when unavailable.
 #' @return Aggregate data frame without patient-level information.
 #' @examples
 #' # audit_one(fit, Y, time, status, "S9", 1L)
-audit_one <- function(fit, Y, time, status, label, selected, trace = NULL) {
+audit_one <- function(fit, Y, time, status, label, selected) {
   x <- share_targeted_ws(fit, Y, time, status, .5)
   a <- x$diagnostics[selected, , drop = FALSE]
   a$source <- label
   a$loading_second_moment_bound <- x$loading_second_moment_bound
-  a$trace_share <- if (is.null(trace)) NA_real_ else trace[selected]
-  a$trace_difference <- a$per_gene_median_share - a$trace_share
   a$directional_fold_error <- pmax(a$directional_ratio / a$closed_directional_ratio,
                                     a$closed_directional_ratio / a$directional_ratio)
   exact_gene_ratio <- a$per_gene_median_share / (1 - a$per_gene_median_share)
@@ -46,9 +43,8 @@ for (v in c(.0025, .01, .05)) {
   Y <- s9_zscore(d$Y)
   r <- abs(cor(d$truth, ck$fit$EF)); r[!is.finite(r)] <- 0
   k <- which.max(r)
-  tr <- tail(ck$fit$history$trace$shareA_median, 1)[1, ]
   rows[[length(rows) + 1L]] <- audit_one(ck$fit, Y, d$time, d$event,
-                                         sprintf("S9_v%s_seed1_w1", v), k, tr)
+                                         sprintf("S9_v%s_seed1_w1", v), k)
 }
 
 # K=5 S-11: the registered EL² bound, not the S-15 state.
@@ -75,7 +71,7 @@ write.csv(do.call(rbind, rows), file.path(out, "saved_share_diagnostics.csv"), r
 #' # inventory_checkpoints("path/to/fits", "S13", FALSE)
 inventory_checkpoints <- function(directory, source, full_fit = FALSE) {
   files <- list.files(directory, pattern = "[.]rds$", full.names = TRUE)
-  if (!length(files)) stop(sprintf("No checkpoints in %s", directory))
+  if (!length(files)) return(data.frame(source = source, files = 0L, state = 0L, EL = 0L, EL2 = 0L, EF = 0L, EBeta = 0L, EBeta2 = 0L, Tau = 0L, full_trace = 0L, final_shareA = 0L))
   counts <- lapply(files, function(path) {
     x <- readRDS(path)
     z <- if (full_fit) x$fit else x$state

@@ -9,11 +9,9 @@
 #' Calculate a survival weight from a directional precision share
 #'
 #' At the supplied canonical fit state, r_k = w_S E[β_k²]
-#' f̂_k'Y'WY f̂_k / (mean(τ) sum_i E[l_ik²]). The target weight
+#' f̂_k'Y'WY f̂_k / (sum_i E[l_ik²] · sum_j τ_j f̂_jk²). The target weight
 #' inverts s = r/(1+r), holding all posterior moments and W fixed.
-#' The closed forms are approximations, not inputs to the weight. The registered
-#' mean(τ) denominator approximates directional expression curvature when τ varies
-#' by feature. This helper supports pooled, unweighted fits only. It rejects
+#' The closed forms are approximations, not inputs to the weight. Mean τ appears only in the closed-form approximations. This helper supports pooled, unweighted fits only. It rejects
 #' stored projection centering and other identifiable unsupported controls.
 #' The caller must supply the same training matrix used in the fit. Some fitter
 #' options are not stored in the fit, so the caller must verify this scope.
@@ -21,15 +19,19 @@
 #' @param Y Numeric training matrix, patients by features, used for fitting.
 #' @param time,status Training event times and 0/1 event indicators.
 #' @param target_share Desired directional share strictly between zero and one.
+#' @param pilot_loading Optional fixed pilot loading vector for tracking across passes.
+#'   Omit for the initial w_S = 1 pilot.
 #' @param w_current Positive weight at the fit state, defaulting to fit$w_S or 1.
 #' @return List containing w_S, selected_program, per-program diagnostics, ratio,
-#'   no_signal_guard, capped, and loading_second_moment_bound. Missing EL2 is
+#'   no_signal_guard, capped, pilot_loading, lost_activity, matching_correlation,
+#'   and loading_second_moment_bound. Missing EL2 is
 #'   replaced by EL², giving an upper bound on the precision ratios and shares.
 #' @examples
 #' # Source fit_ssbmf_yfb.R first, then call with a converged canonical fit.
 #' @seealso calc_cox_taylor_yf
 share_targeted_ws <- function(fit, Y, time, status, target_share,
-                              w_current = if (is.null(fit$w_S)) 1 else fit$w_S) {
+                              w_current = if (is.null(fit$w_S)) 1 else fit$w_S,
+                              pilot_loading = NULL) {
   #' Check whether an argument is a finite numeric scalar.
   #' @param x Candidate value.
   #' @return Logical scalar.
@@ -52,6 +54,10 @@ share_targeted_ws <- function(fit, Y, time, status, target_share,
       !scalar(w_current) || w_current <= 0) stop("invalid target_share or w_current")
   if (!is.null(fit$w_S) && (!scalar(fit$w_S) || fit$w_S != w_current))
     stop("w_current must match fit$w_S")
+  if (is.null(pilot_loading) && w_current != 1) stop("initial pilot must have w_S = 1")
+  if (!is.null(pilot_loading) && (!is.numeric(pilot_loading) || !is.null(dim(pilot_loading)) ||
+      length(pilot_loading) != p || any(!is.finite(pilot_loading)) ||
+      stats::sd(pilot_loading) == 0)) stop("invalid pilot_loading")
   EL <- fit$EL; EF <- fit$EF; beta <- fit$EBeta; beta2 <- fit$EBeta2; tau <- fit$Tau
   if (!is.matrix(EL) || !is.numeric(EL) || !is.matrix(EF) || !is.numeric(EF) ||
       nrow(EL) != n || nrow(EF) != p || ncol(EL) < 1L || ncol(EL) != ncol(EF) ||
@@ -82,7 +88,7 @@ share_targeted_ws <- function(fit, Y, time, status, target_share,
   for (k in seq_len(K)) {
     if (norm_f[k] > 0 && sum_l2[k] > 0) {
       projected <- as.vector(Y %*% (EF[, k] / norm_f[k]))
-      directional[k] <- w_current * beta2[k] * sum(weights * projected^2) / (mean(tau) * sum_l2[k])
+      directional[k] <- w_current * beta2[k] * sum(weights * projected^2) / (sum_l2[k] * sum(tau * (EF[, k] / norm_f[k])^2))
       gene_ratio <- w_current * beta2[k] * colSums(Y^2 * weights) / (tau * sum_l2[k])
       per_gene[k] <- stats::median(gene_ratio / (1 + gene_ratio))
     }
@@ -96,13 +102,28 @@ share_targeted_ws <- function(fit, Y, time, status, target_share,
     per_gene_median_share = per_gene, closed_directional_ratio = approx_directional,
     closed_directional_share = approx_directional / (1 + approx_directional),
     closed_gene_ratio = approx_gene, closed_gene_share = approx_gene / (1 + approx_gene))
-  selected <- if (any(active)) which.max(replace(abs(b), !active, -Inf)) else NA_integer_
-  if (is.na(selected)) return(list(w_S = 1, selected_program = selected, diagnostics = diagnostics,
-    ratio = NA_real_, no_signal_guard = TRUE, capped = FALSE, loading_second_moment_bound = bound))
+  if (is.null(pilot_loading)) {
+    selected <- if (any(active)) which.max(replace(abs(b), !active, -Inf)) else NA_integer_
+    if (is.na(selected)) return(list(w_S = 1, selected_program = selected, diagnostics = diagnostics,
+      ratio = NA_real_, no_signal_guard = TRUE, capped = FALSE, pilot_loading = NULL,
+      lost_activity = FALSE, matching_correlation = NA_real_, loading_second_moment_bound = bound))
+    pilot_loading <- EF[, selected]
+    if (stats::sd(pilot_loading) == 0) stop("selected pilot loading has undefined correlation")
+    matching_correlation <- 1
+  } else {
+    correlations <- vapply(seq_len(K), function(k) {
+      if (stats::sd(EF[, k]) == 0) return(NA_real_)
+      abs(stats::cor(pilot_loading, EF[, k]))
+    }, numeric(1))
+    if (all(is.na(correlations))) stop("no loading has a defined pilot correlation")
+    selected <- which.max(replace(correlations, is.na(correlations), -Inf))
+    matching_correlation <- correlations[selected]
+  }
   ratio <- directional[selected]
   if (!is.finite(ratio) || ratio <= 0) stop("selected program has undefined or zero directional ratio")
   proposed <- w_current * (target_share / (1 - target_share)) / ratio
   list(w_S = min(proposed, 1e5), selected_program = selected, diagnostics = diagnostics,
        ratio = ratio, no_signal_guard = FALSE, capped = proposed > 1e5,
-       loading_second_moment_bound = bound)
+       pilot_loading = pilot_loading, lost_activity = !active[selected],
+       matching_correlation = matching_correlation, loading_second_moment_bound = bound)
 }
