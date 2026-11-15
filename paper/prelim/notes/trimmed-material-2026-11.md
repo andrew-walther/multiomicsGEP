@@ -416,3 +416,29 @@ Limitations are marked.
 > A separate script checks each update against a brute-force evaluation of the expected objective and against the code (73 checks).
 
 **Efron disclosure (drafted, struck by Andrew 2026-11-15; the chapter states Breslow ties for both fits).** On the full training data the two-step Cox risk scores under Efron and Breslow ties correlate 0.9999998, with C 0.66948 (Efron) and 0.66953 (Breslow); source `results/benchmark_sim/outputs/k5_working_2026-11-12/joint_vs_twostep_check.txt`.
+
+
+## 2026-11-15 Chapter 4 Results restructure (round-5 review, items R-01 to R-16)
+
+Moved out when the Results were restructured into five subsections (commit after `f955bd07`).
+Reason: duplicates of the Continuing Work subsection, planned steps, software verification,
+process narration, an outdated statement, and the initial two-modality simulation held out by
+the confirmed content map.
+
+> The planned evaluation will compare the alternative weights of @sec-choose-weight on the same grid and add cells with more realistic survival effects.
+
+> Cohort-specific coefficient fits in TCGA-PAAD and CPTAC remain part of the planned evaluation.
+
+> These results come from the proposed extension of @sec-mmodal, which is still in development, and they are preliminary. The feature-group implementation reproduced the frozen single-modality posterior means and ELBO history exactly on both test datasets. The grouped loading-prior and prediction checks also agreed with their independent calculations. This establishes the tested implementation behavior, not a predictive advantage from combining data types.
+
+> After correction of empty loading blocks, every fit in the initial two-modality simulation converged, but recovery was low even for expression alone.
+
+> These results are not validated by simulation. [...] Its converged expression result cannot replace the reference in this table without rerunning the matched joint comparison.
+
+> The fixed methylation fits have not been scored in the ICGC set. (Outdated: they were scored, C 0.636 and 0.594.)
+
+> With 144 patients the cross-validated concordance is noisy, so this comparison is descriptive. Cross-validation was run only for the numbers of sites at which the full fit converged. Methylation programs with survival signal that expression lacks would motivate the joint model. If there are none, the case for the joint model rests on interpretation.
+
+> Tracking the latter factor across counts gives correlations of 0.61 and 0.59 with two 10,000-CpG programs. Those programs also share expression structure, with $R^2$ of 0.52 and 0.43 when regressed on all expression programs. [...] Thus methylation contributes structure absent from expression even at 10,000 CpGs, but that structure forms a separate program more clearly from 50,000 CpGs upward.
+
+> The cause of non-convergence at large weights has not been found. (Recast in the chapter as "remains under investigation".)
