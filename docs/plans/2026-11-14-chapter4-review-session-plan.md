@@ -132,6 +132,9 @@ modalities).
 - No mannered prose. Avoid semicolons and dashes as punctuation. Title Case headings. Bold
   matrices and vectors, italic scalars. Table captions above, figure captions below.
 - Apply the `human-writer` skill to all drafting and revision.
+- "Fitted" only as an adjective before a noun ("the fitted model", "the fitted coefficients").
+  The passive verb is "fit": "the model is fit by maximizing...", never "is fitted by" or "is
+  fitted to". Review A flags every misuse.
 
 ## 3. Decisions (settled with Andrew, 2026-11-14)
 
