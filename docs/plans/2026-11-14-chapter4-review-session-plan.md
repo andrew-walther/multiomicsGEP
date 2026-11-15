@@ -567,6 +567,14 @@ Next: Discussion and Appendix C sign-off list.
 (`round5/ch4/discussion-appendix-proposed.qmd`). Gene lists script committed. Young (2026)
 Sec. 2.3.4 checked: supports the DeSurv vs NMF factor-difference sentence (D-06a).
 
+**Status 2026-11-15 (Phase 4 done).** D-01 to D-06 and A-01 to A-05 accepted (gene lists at 25 per
+pole; a loading cutoff needs per-loading posterior summaries the saved fit lacks). Applied in
+`c26171de`; chapter 58 pp, prelim 244 pp, tests pass, Appendix C TOC matches the map (C.1-C.15).
+Open question to Andrew: keep the name "survival-supervised Bayesian matrix factorization".
+
+**Status 2026-11-15 (Phase 5 started).** Review A (writing, Sonnet) and Review B (committee, Opus)
+launched in parallel on `c26171de`.
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
