@@ -294,7 +294,35 @@ modalities).
   outline is after-submission work.
 - All outdated currency rows are fixed.
 
-## 3a. Content map: chapter body and Appendix C (proposed, to confirm in Phase 2)
+### Answers from Andrew, 2026-11-15 (Phase 2 round 2)
+
+- Ties: state Breslow for the SSBMF fit and the two-step Cox step (risk scores correlate
+  0.9999998; the reported two-step exhibits used Efron, disclosed in one appendix clause unless
+  Andrew strikes it at sign-off).
+- Body adds one sentence that at w_S = 1 the joint and two-step programs are the same (unlike
+  DeSurv against NMF), and that this may change once the supervision weight is settled.
+- Signed loadings make program interpretation harder: a Limitation.
+- Content map confirmed with the changes below.
+
+**Confirmed map (2026-11-15).** The Section 3a tables stand with these changes. Methods and
+Results headings as in the tables, results headings descriptive. Continuing Work has three
+items: Supervision Weight Tuning, Extension of SSBMF to Several Data Modalities, Number of
+Programs Under Stronger Supervision. Appendix C: C.1 Model Specification and Prior
+Distributions; C.2 Variational Update Algorithm and Derivations; C.3 Alternative
+Parameterization Linking Survival and Patient Scores; C.4 PDAC Datasets; C.5 Cross-Validation
+Procedure for Model Selection; C.6 Rules for Risk Groups and Program Classification; C.7 Tuning
+the Survival Weight via Cross-Validation in Simulation; C.8 Recovery of Prognostic Programs With
+Weak Expression Signal (adds the non-matched variance paragraph and the two-program simulation in
+one sentence); C.9 Choice of Gene Set, Input Scaling, Number of Programs and Survival Weight (adds
+nested-CV weight selection, `fig:size-curve`, and the rank-5 vs rank-7 correspondence); C.10
+Comparison of Alternative Priors; C.11 Comparison of the Two Model Parameterizations; C.12
+Agreement of Joint and Two-Step Programs (from the saved rank-5 w_S = 1 and w_S = 0 fits); C.13
+Preliminary Simulations of the Joint Expression and Methylation Model (two-direction and
+three-program simulations; the initial simulation is held out); C.14 Survival Analysis of
+Programs in the External Cohorts; C.15 Gene Lists for Each Program. Page budget: body 28–30 pp,
+Appendix C 15–18 pp.
+
+## 3a. Content map: chapter body and Appendix C (confirmed 2026-11-15; changes in Section 3)
 
 The current chapter has 12 Methods subsections, 8 Results subsections, 10 figures and
 14 tables, plus two appendix sections. The map below is a starting proposal and the headings
