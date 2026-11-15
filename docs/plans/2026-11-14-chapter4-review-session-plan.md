@@ -396,7 +396,8 @@ re-renders the draft and each step can be reverted.
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
 writing rules in Section 2, but not this session's conclusions. Neither applies any edit.
 
-**Review A: writing.** Uses the `human-writer` skill. Finds writing tics, typos, choppy sentences
+**Review A: writing.** Uses the `human-writer` skill: it reads all of
+`~/.claude/skills/human-writer/ (SKILL.md, ai-tropes.md, voice-profile.md)` before starting and applies every rule in them. Finds writing tics, typos, choppy sentences
 that should be joined, ambiguous referents ("it", "this", "that" with an unclear object),
 undefined or uncited terms and abbreviations, jargon an outside biostatistician would not know,
 and claims stronger than the evidence. Output `round5/ch4/proposed-edits.md` in the Chapter 1
