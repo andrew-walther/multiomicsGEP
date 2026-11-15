@@ -547,6 +547,12 @@ Next: Methods sign-off list.
 full proposed text (`round5/ch4/methods-proposed.qmd`, which also drafts Appendix C.1 to C.6)
 sent to Andrew; awaiting decisions.
 
+**Status 2026-11-15 (Phase 4, Methods applied).** M-01 to M-20 accepted except M-20c (no Efron
+disclosure; Breslow stated for both fits). New style rule from Andrew, applied from here on: write
+what was done and settled on; no negative statements or decision narration unless a direct
+comparison is justified by results or literature. Applied in `b9d24164`; chapter 57 pp, prelim
+243 pp, assembly tests pass. Next: Results sign-off list.
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
