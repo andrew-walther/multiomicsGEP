@@ -154,7 +154,7 @@ make_f1 <- function() {
       scale_x_log10(breaks = brk, labels = lab, limits = c(0.22, 14000)) +
       scale_colour_manual(values = COL_CELL, name = "Planted variance") +
       scale_shape_manual(values = c(16, 17, 15), name = "Planted variance") +
-      labs(x = "Survival weight", y = ylab) + theme_prelim()
+      labs(x = "Supervision weight", y = ylab) + theme_prelim()
   }
   pA <- base("Planted program recovered (of 10)", "recovered") + scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2))
   pB <- base("Mean false-active programs", "fa")
@@ -216,7 +216,7 @@ make_f12 <- function() {
       facet_wrap(~cell, nrow = 1, scales = if (logy || !is.null(ylim)) "fixed" else "free_y") + xs + leg + labs(y = ylab) + theme_prelim()
     if (logy) p <- p + scale_y_log10(breaks = c(0.03, 0.1, 0.3, 1, 3), limits = c(0.012, 4))
     if (!is.null(ylim)) p <- p + scale_y_continuous(limits = ylim, breaks = seq(0, 10, 5))
-    p + labs(x = if (bottom) "Survival weight" else NULL) +
+    p + labs(x = if (bottom) "Supervision weight" else NULL) +
       theme(axis.text.x = if (bottom) element_text() else element_blank(),
             axis.ticks.x = if (bottom) element_line() else element_blank(),
             strip.text = if (top) element_text(size = 8.5) else element_blank(),
@@ -228,7 +228,7 @@ make_f12 <- function() {
   p4 <- ggplot(cnt, aes(w_S, Freq)) +
     geom_col(fill = COL_SUP, alpha = 0.55, width = 0.12, colour = NA) + facet_wrap(~cell, nrow = 1) +
     scale_x_log10(breaks = brk, labels = brk) + scale_y_continuous(limits = c(0, 10.5), breaks = seq(0, 10, 5)) +
-    labs(x = "Survival weight", y = "Chosen by CV (of 10)") + theme_prelim() +
+    labs(x = "Supervision weight", y = "Chosen by CV (of 10)") + theme_prelim() +
     theme(strip.text = element_blank(), strip.background = element_blank())
   p <- (p1 / p2 / p3 / p4) + plot_layout(guides = "collect", heights = c(1, 1, 0.8, 0.8)) &
     theme(legend.position = "bottom")

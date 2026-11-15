@@ -64,7 +64,7 @@ We implemented a rule that chooses $w_S$ by cross-validated partial likelihood a
 
 On PDAC, the model was configured by cross-validation in two training cohorts and evaluated once in five external PDAC validation cohorts. It was compared with a rank-matched two-step fit, unsupervised fits of larger rank, DeSurv, an elastic-net Cox model and the Purity Independent Subtyping of Tumors (PurIST) classifier [@Rashid2020]. Risk groups and the main prognostic programs were defined on the training data, and the genes of those programs were compared with published subtype signatures. Preliminary results for methylation alone and for a joint expression and methylation fit are also reported.
 
-Continuing work will complete the remaining aims. The main open problem is a supervision weight that lets survival change the loadings where the data support it. The extension to expression and methylation is a proposed contribution that is still in development. It shares patient scores across data types and gives each its own loading prior. We give its model form and preliminary results here. The method is in development, its simulation study is preliminary, and it was scored only descriptively in a small external set. The third open item is choosing the number of programs reliably when supervision is stronger.
+Continuing work will complete the remaining aims. The first open problem is a supervision weight that lets survival change the loadings where the data support it. The extension to expression and methylation is a proposed contribution that is still in development. It shares patient scores across data types and gives each its own loading prior. We give its model form and preliminary results here. The extension is in development, its simulation study is preliminary, and it was scored only descriptively in a small external set. The third open item is choosing the number of programs reliably when supervision is stronger.
 
 The rest of the chapter is organized as follows. @sec-methods defines the model, its priors and variational algorithm, and how a fitted model scores new patients. It then describes the simulation studies, the PDAC cohorts, model selection by training cross-validation and the comparison methods, and it ends with the continuing work. @sec-results reports the simulations, training cross-validation, concordance in five external PDAC cohorts, the prognostic programs and preliminary results for methylation and the joint model. @sec-discussion interprets the results, states the limitations and describes future work. The appendix gives the derivations, the selection procedures and supporting results.
 
@@ -187,7 +187,8 @@ Risk groups were defined by one cutpoint per score, chosen on the out-of-fold tr
 
 ## Continuing Work {#sec-continuing}
 
-### Supervision Weight Tuning
+### Supervision Weight Tuning {#sec-ch4-weight-tuning}
+
 
 At $w_S=1$ survival supplied almost none of the loading precision on the PDAC data (@sec-res-cv), and the joint and two-step fits found the same programs. Raising the weight to a large fixed value failed: with 2,000 genes in simulation, every fit at a fixed weight of 40 or more stopped at the sweep limit before converging (@sec-res-sim). We will develop a rule that sets $w_S$ from the data and lets survival change the loadings where the data support it.
 
@@ -215,7 +216,7 @@ The rank $K=5$ was chosen by training cross-validation at $w_S=1$, where surviva
 
 ## Recovery of Prognostic Programs in Simulation {#sec-res-sim}
 
-With 2,000 genes and $w_S=1$, the joint SSBMF fit recovered the planted program in 10 of 10 datasets in each of the three planted-variance cells, with a mean of 0.9, 0.1 and 0.0 false-active programs, and every fit converged (Figure \ref{fig:sim-s9}). In the cross-validated-weight simulation, which used the same three cells, the matched two-step EBMF and Cox fit also recovered it in 10 of 10 datasets in every cell (Table \ref{tab:strength}). Cross-validated concordance chose $w_S=1$ in 55 of the 60 datasets, the share-targeted weight in three and $w_S=10$ in two. Every fit with $w_S\ge40$ stopped at 300 sweeps before converging, and recovery fell in most cells. In those fits the largest $|E[\beta_k]|$ ranged from 17 to 26, against an SD of the true predictor of 9 to 26. The cause of the non-convergence is an open question (@sec-discussion). With 50 genes, every fixed positive weight recovered the program and false activity rose with the weight. The fit that set the weight to target a survival share of 0.2 recovered the program in 0 of 10 datasets in every cell with 50 genes and in 2, 2 and 6 of 10 with 2,000 genes, since its calibrated weight of 0.002 to 0.02 left the fit close to unsupervised.
+With 2,000 genes and $w_S=1$, the joint SSBMF fit recovered the planted program in 10 of 10 datasets in each of the three planted-variance cells, with a mean of 0.9, 0.1 and 0.0 false-active programs, and every fit converged (Figure \ref{fig:sim-s9}). In the cross-validated-weight simulation, which used the same three cells, the matched two-step EBMF and Cox fit also recovered it in 10 of 10 datasets in every cell (Table \ref{tab:strength}). Cross-validated concordance chose $w_S=1$ in 55 of the 60 datasets, the share-targeted weight in three and $w_S=10$ in two. Every fit with $w_S\ge40$ stopped at 300 sweeps before converging, and recovery fell in most cells. In those fits the largest $|E[\beta_k]|$ ranged from 17 to 26, against an SD of the true predictor of 9 to 26. The cause of the non-convergence is an open question (@sec-ch4-weight-tuning). With 50 genes, every fixed positive weight recovered the program and false activity rose with the weight. The fit that set the weight to target a survival share of 0.2 recovered the program in 0 of 10 datasets in every cell with 50 genes and in 2, 2 and 6 of 10 with 2,000 genes, since its calibrated weight of 0.002 to 0.02 left the fit close to unsupervised.
 
 ```{=latex}
 \begin{figure}[!htb]
@@ -355,7 +356,7 @@ The joint fit's mean concordance over the five series was 0.630, against 0.614 f
 \label{tab:comparators}
 \small
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{lcccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.75in}cccc}
 \toprule
 Model & Mean $C$ & \shortstack{Calibration\\slope range} & \shortstack{HR per SD\\(95\% CI)} & \shortstack{Supervised minus\\model (95\% CI)} \\
 \midrule
@@ -492,7 +493,8 @@ The simulations show where supervised discovery can help and how much of that he
 
 Placing the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$, gave nearly the same programs and predictions on these data, and the projection scores new patients directly from their expression (Appendix \ref{app:param-compare}). Methylation alone had lower concordance than expression, and every methylation program with stable survival activity overlapped an expression program. Some methylation programs, including one with an immune signature, were largely unexplained by the expression programs (@sec-res-mmodal). The preliminary joint fit found the same programs as the single-modality fits, and methylation dominated its shared scores. Therefore, a balanced model is needed to find programs shared across expression and methylation and programs specific to one of them.
 
-## Limitations
+## Limitations {#sec-ch4-limitations}
+
 
 The programs are contrasts. Under the point-Laplace priors a loading can take either sign, and each program sets the genes at its positive pole against those at its negative pole. Such a program is harder to interpret than the additive set of genes a nonnegative factorization gives. The point-Laplace prior suits the expression input, which is z-standardized within cohort, and the nonnegative point-exponential prior lowered cross-validated concordance (Appendix \ref{app:lf-prior}).
 
@@ -506,11 +508,11 @@ The continuing work of @sec-continuing has three parts: a data-driven supervisio
 
 The survival term enters every update only through the score $u_i$, the weight $W_{ii}$ and the working response $r_i$ of a second-order expansion (Appendix \ref{app:vi}). Any outcome model whose log-likelihood is twice differentiable in a linear predictor can take the place of the Cox model, with the same coefficient, score and loading updates. A logistic model for treatment response, an accelerated failure time model for survival data with non-proportional hazards, or cause-specific hazards for competing causes of death would each change only how $u_i$, $W_{ii}$ and $r_i$ are computed. With treatment information, interactions between treatment and the program scores in the outcome model would separate programs that predict prognosis from programs that predict benefit from a specific therapy. The second kind would be more useful for choosing treatment, the use for which PDAC subtype classifiers such as PurIST were proposed [@Rashid2020].
 
-The reported fit uses one baseline hazard for the two training cohorts (@sec-discussion). A partial likelihood stratified by cohort sums the per-cohort terms, and each cohort's Breslow estimate then enters $u_i$ and $W_{ii}$ in place of the pooled estimate. Clinical covariates such as stage, age and resection margin could enter the linear predictor with their own coefficients under a weakly informative prior. Each program coefficient would then measure the risk a program explains beyond those factors. This extension needs cohorts that record the same clinical variables for every patient, such as cohorts from prospective trials.
+The reported fit uses one baseline hazard for the two training cohorts (@sec-ch4-limitations). A partial likelihood stratified by cohort sums the per-cohort terms, and each cohort's Breslow estimate then enters $u_i$ and $W_{ii}$ in place of the pooled estimate. Clinical covariates such as stage, age and resection margin could enter the linear predictor with their own coefficients under a weakly informative prior. Each program coefficient would then measure the risk a program explains beyond those factors. This extension needs cohorts that record the same clinical variables for every patient, such as cohorts from prospective trials.
 
 Expression is standardized within each cohort, and a patient's risk score therefore measures risk relative to the other patients in the same cohort. The training cutpoint is applied unchanged in every series, but a high-risk label marks a score that is high within its cohort, and the share of patients above the cutpoint depends on each cohort's case mix. The external calibration slopes, which ranged from 0.35 to 1.85 (Table \ref{tab:comparators}), show how much the scale of the score varied between series. A risk score on a scale shared across cohorts would make the strata transferable. Single-sample classifiers such as PurIST score each sample on its own, without cohort-level standardization [@Rashid2020], and features of that kind could replace the z-scores as model input. The training baseline hazard would then convert a score into a predicted survival probability at a fixed time, and strata defined on that probability would have the same meaning in every cohort.
 
-The multimodal model of @sec-mmodal combines expression and methylation. The CPTAC cohort also measured protein abundance, phosphorylation and glycosylation [@Cao2021], and TCGA-PAAD includes reverse-phase protein array data [@Raphael2017]. Adding these data types makes the feature imbalance of @sec-mmodal larger and adds a second problem: patients measured on only some data types. The shared scores of each patient can be estimated from the data types that patient has, with the score precision summed over the observed types. The model could then use all 273 training patients together with the 144 who have methylation data.
+The multimodal model of @sec-mmodal combines expression and methylation. The CPTAC cohort also measured protein abundance, phosphorylation and glycosylation [@Cao2021], and TCGA-PAAD includes reverse-phase protein array data [@Raphael2017]. Adding these data types makes the feature imbalance of @sec-mmodal larger and adds a second problem: patients measured on only some data types. The shared scores of each patient can be estimated from the data types that patient has, with the score precision summed over the observed types. The model could then use all 273 training patients, including the 144 TCGA-PAAD patients with methylation data.
 
 Bulk tumor samples mix tumor, stromal, immune and normal pancreatic cells, and Program 4 showed that a prognostic program can partly reflect normal tissue in the sample (@sec-res-programs). Gene expression programs learned from single-cell data [@Kotliar2019] could serve as cell-type references in two ways. Comparing each fitted program's loadings with the reference programs would show whether it describes tumor cells or the cells around them. A loading prior centered on known cell-type programs would let the remaining programs describe variation that the references leave out.
 
@@ -559,7 +561,10 @@ $$
 $$
 with score $u_i=\delta_i-\hat\theta_i\hat H(t_i)$, weight $W_{ii}=\hat\theta_i\hat H(t_i)$ and working response $r_i$. The exact diagonal of the negative Hessian also contains $-\hat\theta_i^2\sum_{s\le t_i}d(s)/\hat S(s)^2$. We omit that term, which is small relative to the first when risk sets are large, and set a lower bound of $10^{-6}$ on $W_{ii}$. Since the $u_i$ sum to zero, $\sum_iW_{ii}=D$, the number of events, before the bound is applied. Taking expectations under $q$,
 $$
-E[\ell_{\mathrm{Cox}}(\boldsymbol\eta)]\approx\ell_{\mathrm{Cox}}(\hat{\boldsymbol\eta})-\frac12\sum_iW_{ii}\Bigl[(r_i-\bar\eta_i)^2+\operatorname{Var}(\eta_i)\Bigr]+C,\qquad \operatorname{Var}(\eta_i)=\sum_k\Bigl(E[z_{ik}^2]E[\beta_k^2]-\bar z_{ik}^2E[\beta_k]^2\Bigr).
+\begin{aligned}
+E[\ell_{\mathrm{Cox}}(\boldsymbol\eta)]&\approx\ell_{\mathrm{Cox}}(\hat{\boldsymbol\eta})-\frac12\sum_iW_{ii}\Bigl[(r_i-\bar\eta_i)^2+\operatorname{Var}(\eta_i)\Bigr]+C,\\
+\operatorname{Var}(\eta_i)&=\sum_k\Bigl(E[z_{ik}^2]E[\beta_k^2]-\bar z_{ik}^2E[\beta_k]^2\Bigr).
+\end{aligned}
 $$
 For program $k$ the part of the working response left to it is $r_i^{-k}=r_i-\sum_{k'\neq k}\bar z_{ik'}E[\beta_{k'}]$.
 
@@ -732,7 +737,7 @@ We also examined the combined contribution of the programs that matched no plant
 \label{tab:inputs-rank}
 \small
 \par\medskip{\raggedright\textbf{A. Gene screen and input scaling}\par}\smallskip
-\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}cccc@{}}
+\begin{tabular*}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.1in}@{\extracolsep{\fill}}cccc@{}}
 \toprule
 Input & Genes & Mean $C$ (SE) & \shortstack{Difference from\\selected input (SE)} & \shortstack{Folds\\converged} \\
 \midrule
@@ -797,7 +802,7 @@ A point-exponential prior on $\mathbf{L}$ and $\mathbf{F}$ keeps every score and
 \small
 \begin{tabular}{lccccc}
 \toprule
-Planted share & \shortstack{Recovered\\(of 10)} & \shortstack{False-active\\programs} & \shortstack{Converged\\(of 10)} & \shortstack{Validation\\$C$} & \shortstack{Calibration\\slope} \\
+\shortstack{Planted\\share} & \shortstack{Recovered\\(of 10)} & \shortstack{False-active\\programs} & \shortstack{Converged\\(of 10)} & \shortstack{Validation\\$C$} & \shortstack{Calibration\\slope} \\
 \midrule
 0.05\% & 5 / 8 & 3.0 / 2.6 & 10 / 10 & 0.832 / 0.839 & 1.58 / 1.26 \\
 0.25\% & 10 / 10 & 0.9 / 3.0 & 10 / 10 & 0.947 / 0.940 & 1.45 / 1.39 \\
@@ -815,7 +820,7 @@ Planted share & \shortstack{Recovered\\(of 10)} & \shortstack{False-active\\prog
 \label{tab:lf-prior-real}
 \small
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{>{\raggedright\arraybackslash}p{2.3in}ccccc}
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.85in}ccccc}
 \toprule
 Prior and input & \shortstack{Mean\\$C$} & \shortstack{Difference from\\point-Laplace (SE)} & \shortstack{Folds\\converged} & \shortstack{Survival-active\\programs} & \shortstack{Cohort\\correlation} \\
 \midrule
@@ -870,7 +875,7 @@ Survival-active programs per fold & 2.6 & 2.4 & 2.4 & 2.6 \\
 
 In simulation, recovery was similar except near the detection threshold. This comparison fit both models at rank 5 from a shared starting decomposition, with the generator, settings and seeds of the fixed-weight simulation and of the strong-survival cells of the near-threshold simulation (@sec-sim-design). At $w_S=1$ both recovered the planted program in every dataset of the three variance cells of the fixed-weight simulation. In the near-threshold cell, where the planted program carried 0.05% of the expression variance, the latent-score model recovered it in 5 of 10 datasets and the projection model in 4. The 5 of 10 reported for the projection model in @sec-res-sim comes from the near-threshold simulation itself, which fit rank 7 from the fitter's default start. At $w_S=1$ the latent-score model marked more programs survival-active that matched no planted program, a mean of 1.2 to 1.8 per fit in the three variance cells against 0.0 to 0.9 for the projection model. At $w_S=10$ both marked few such programs, and in the near-threshold cell the latent-score model recovered the planted program in 7 of 10 datasets and the projection model in 3. All training fits and every simulation fit at $w_S=1$ converged, and the 7 of 208 simulation fits that reached the sweep limit were all at $w_S=10$, 5 of them from the latent-score model.
 
-The joint SSBMF fit uses the projection model, which predicts as well as the latent-score model and in the three variance cells it produced fewer survival-active programs without a planted match at the supervision weight used on the real data, though near the detection threshold it produced more (2.9 per fit against 1.4). It also scores a new patient directly from measured expression, where the latent-score model needs fold-in. The two models differ in what a coefficient means. In the latent-score model, $\exp(\beta_k)$ is the hazard ratio per unit of latent program activity, given the other programs. In the projection model it is the hazard ratio per standard deviation of the projection score, a weighted sum of gene levels. Since $\mathbf{Y}\mathbf{F}\approx\mathbf{L}(\mathbf{F}^\top\mathbf{F})$, the projection mixes the latent activities of programs that share genes. On these data the two were nearly equal, with correlations of 0.985 to 0.999 between each latent score and its projection.
+The joint SSBMF fit uses the projection model. It predicts as well as the latent-score model, and at the supervision weight used on the real data it produced fewer survival-active programs without a planted match in the three variance cells, though more near the detection threshold (2.9 per fit against 1.4). It also scores a new patient directly from measured expression, where the latent-score model needs fold-in. The two models differ in what a coefficient means. In the latent-score model, $\exp(\beta_k)$ is the hazard ratio per unit of latent program activity, given the other programs. In the projection model it is the hazard ratio per standard deviation of the projection score, a weighted sum of gene levels. Since $\mathbf{Y}\mathbf{F}\approx\mathbf{L}(\mathbf{F}^\top\mathbf{F})$, the projection mixes the latent activities of programs that share genes. On these data the two were nearly equal, with correlations of 0.985 to 0.999 between each latent score and its projection.
 
 ## Agreement of Joint and Two-Step Molecular Programs
 
@@ -880,7 +885,7 @@ The joint SSBMF fit uses the projection model, which predicts as well as the lat
 
 \label{app:joint-sim}Two-modality simulations compared separate and pooled loading priors with expression alone at rank 5, varying the feature-count ratio and methylation sparsity. The first simulation planted two informative prognostic directions. Recovery of the first direction requires absolute loading correlation at least 0.7, survival activity and the correct coefficient sign. Matches to either true direction are excluded from false activity even if their coefficient sign is wrong, while recovery still requires the correct sign, and recovery of the second direction is reported descriptively. The joint and expression-only fits used the same simulated data and starting decomposition.
 
-All 120 fits converged. With 50 features in each modality and 3% nonzero methylation loadings, the expression-only fit recovered the first program in 9 of 10 datasets, the separate-prior fit in 10 of 10 and the pooled-prior fit in 9 of 10, and the joint fits averaged 0.4 and 0.1 false-active programs. With 15% nonzero methylation loadings and the same feature counts, both joint fits recovered the first program in 9 of 10 datasets, against 5 of 10 for expression alone. Recovery was lower with 250 methylation features: 4 or 5 of 10 for separate priors and 4 of 10 for pooled priors, against 5 or 7 of 10 for expression alone. Therefore, separate priors recovered the first program as often as pooled priors or once more in 10 datasets, and with 250 methylation features both recovered it less often than expression alone. The two calculations also differ in how the loading divergence is evaluated: the grouped calculation uses the refitted prior, and the pooled calculation uses the incoming prior. Their objective values and stopping times therefore reflect both the prior grouping and this difference.
+All 120 fits converged. With 50 features in each modality and 3% nonzero methylation loadings, the expression-only fit recovered the first program in 9 of 10 datasets, the separate-prior fit in 10 of 10 and the pooled-prior fit in 9 of 10, and the joint fits averaged 0.4 and 0.1 false-active programs. With 15% nonzero methylation loadings and the same feature counts, both joint fits recovered the first program in 9 of 10 datasets, against 5 of 10 for expression alone. Recovery was lower with 250 methylation features: 4 or 5 of 10 for separate priors and 4 of 10 for pooled priors, against 5 or 7 of 10 for expression alone. Therefore, separate priors recovered the first program as often as pooled priors or once more in 10 datasets, and with 250 methylation features both recovered it less often than expression alone. The separate-prior and pooled-prior fits also differ in how the loading divergence is evaluated: the grouped calculation uses the refitted prior, and the pooled calculation uses the incoming prior. Their objective values and stopping times therefore reflect both the prior grouping and this difference.
 
 A second simulation planted an expression-only, a methylation-only and a joint program, with 50 genes, 50 CpG sites and 120 training patients. Separate loading priors found the right loading and data-type pattern more often than one pooled prior: in 5 against 1 of 10 datasets for the expression-only program, 2 against 0 for the methylation-only program and 7 against 5 for the joint program. Every fit missed at least one of the three programs, and the methylation-only program, which had the smaller coefficient, was rarely found by either prior.
 
@@ -937,15 +942,22 @@ Training direction & Protective & Adverse & Adverse \\
 \label{app:gene-lists}Tables \ref{tab:gene-lists} and \ref{tab:gene-lists-other} list, for each program of the joint SSBMF fit, the 50 genes with the largest positive and the 50 with the most negative posterior mean loadings, about the top 5% of the 2,218 genes. Every gene has a nonzero loading on every program, and the cutoff of 50 per pole is a display choice.
 
 ```{=latex}
-\begin{table}[!htbp]
-\centering
+{\small
+\setlength{\LTcapwidth}{\textwidth}
+\begin{longtable}{@{}l l p{4.6in}@{}}
 \caption[Genes with the largest loadings at each pole of the survival-active programs]{Genes with the largest loadings at each pole of the survival-active programs of the joint SSBMF fit (rank 5), 50 per pole, in decreasing order of absolute posterior mean loading. The positive pole is the direction in which the program score increases. Program 2 is protective at its positive pole, and Programs 4 and 5 are adverse at theirs.}
-\label{tab:gene-lists}
-\small
-\begin{tabular}{@{}l l p{4.6in}@{}}
+\label{tab:gene-lists}\\
 \toprule
 Program & Pole & Genes \\
 \midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\textit{Table \thetable, continued}}\\
+\toprule
+Program & Pole & Genes \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
 2 & Positive & METTL7A, ATP2A3, ACACB, PDCD4, ACSS1, AKAP7, KIAA1324, LGALS2, ADH1B, C7, TMED6, CLU, AQP1, ABCB1, NOSTRIN, GATM, KCNK3, C6, P2RX1, CAPN6, ABAT, ATP8A1, NTRK2, SLC4A4, F11, FREM1, TGFBR3, PDZK1, SLC39A5, GPC3, SV2B, NDRG2, SLC43A1, KIF12, LONRF2, NR5A2, CTNND2, PAH, GP2, SYBU, C2orf72, AOX1, SELP, ATP13A4, FXYD2, SLC17A4, FBLN5, FLRT2, CTRL, BTG2 \\
   & Negative & LOXL2, MMP14, LDHA, P4HA1, SLC16A3, PGK1, GJB2, ENO2, FSCN1, SLC2A1, ITGA3, PLAU, CALU, ALDOA, RAI14, FN1, ENO1, GAPDH, PLOD1, MYOF, ANLN, AHNAK2, TPM4, CDH3, PLOD2, COL11A1, TPI1, TGFBI, CELSR1, COL12A1, IL1RAP, ANXA1, LAMB3, BMP1, ARL4C, COL7A1, CNN2, TMSB10, PLXNA1, NRP2, SDC1, PFKP, ACTN1, ITGB4, CD276, PLAUR, MET, SERPINH1, CDCP1, LGALS1 \\
 \addlinespace
@@ -954,9 +966,8 @@ Program & Pole & Genes \\
 \addlinespace
 5 & Positive & UHMK1, ARHGAP5, RAD21, PRKDC, TAOK1, DDX21, ATP13A3, IQGAP1, IL6ST, VPS13C, DDX3X, ZDHHC20, CLCN3, SMCHD1, ROCK1, SLC38A1, EGFR, ACSL4, CD2AP, ZKSCAN1, APOL6, RALGAPA2, SLK, SYNE2, HIPK2, TMOD3, PRKAR1A, SLFN5, ADAM10, SLC38A2, DST, TM9SF2, ASPH, CDK6, CCDC47, WNK1, PKP2, ATP2A2, PDZD8, EPS8, SKIL, NEK7, LMAN1, SGMS2, TOP2A, CPD, HSP90AA1, KIAA0754, YWHAZ, DOCK9 \\
   & Negative & RCN3, CHPF, MXRA8, LOXL1, EFEMP2, NPDC1, JUND, SPON2, MFAP2, ISLR, RPL28, RARRES2, ID3, PCOLCE, GPX1, EMILIN1, CST3, GAS6, PDLIM7, HTRA3, GPC1, NBL1, COMP, CFD, MIF, FCGRT, RPS15, IER2, SLC25A6, LGALS1, OBSL1, COL6A2, CERCAM, MEG3, SHC2, MFGE8, HSPB1, MEGF6, HTRA1, MMP11, THY1, CILP2, TSPO, GRN, CD99, PKD1, NUPR1, TPM2, PLD3, PCSK1N \\
-\bottomrule
-\end{tabular}
-\end{table}
+\end{longtable}
+}
 ```
 
 ```{=latex}
