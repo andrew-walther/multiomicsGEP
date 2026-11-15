@@ -543,6 +543,10 @@ Chapter 4 fact-sheet update were applied in bios-dissertation. Sign-off log:
 `bios-dissertation/prelim/full-draft/notes/human-writer-review/round5/ch4/section-edits.md`.
 Next: Methods sign-off list.
 
+**Status 2026-11-15 (Phase 4, Methods list sent).** Methods sign-off list M-01 to M-20 and the
+full proposed text (`round5/ch4/methods-proposed.qmd`, which also drafts Appendix C.1 to C.6)
+sent to Andrew; awaiting decisions.
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
