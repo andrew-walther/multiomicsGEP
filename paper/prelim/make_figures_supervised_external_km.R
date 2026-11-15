@@ -71,25 +71,36 @@ for (i in seq_len(nrow(ref))) {
 
 # Kaplan–Meier figures ----
 months <- seq(0, 60, by = 12)
-groups <- c("Low", "Middle", "High")
 colors <- c(Low = "#006878", Middle = "#555555", High = "#B34226")
 patterns <- c(Low = "solid", Middle = "dashed", High = "dotdash")
 
 #' Draw within-series Kaplan–Meier curves and risk counts for one frozen score.
+#'
+#' Each series is split at its own quantiles of the signed score: the 1/3 and 2/3
+#' quantiles (three groups) for split = "tertile", or the median (two groups) for
+#' split = "median". Expression is z-scored within each series, so every score has
+#' mean 0 in every series and the groups describe ranking within that series.
 #' @param score_name Column name in the ignored external score cache.
-#' @param direction Sign from training, applied before defining risk tertiles.
+#' @param direction Sign from training, applied before defining the groups, so that
+#'   "High" is the adverse training direction.
 #' @param filename PDF basename in the Chapter 4 figures directory.
+#' @param split "tertile" (Low, Middle, High) or "median" (Low, High).
 #' @return Invisibly returns the ggplot, after writing a vector PDF.
 #' @examples
 #' # plot_tertiles("risk", 1, "sup_external_km_risk.pdf")
-plot_tertiles <- function(score_name, direction, filename) {
+#' # plot_tertiles("Z2", -1, "sup_external_km_program_2_median.pdf", split = "median")
+plot_tertiles <- function(score_name, direction, filename, split = c("tertile", "median")) {
+  split <- match.arg(split)
+  groups <- if (split == "tertile") c("Low", "Middle", "High") else c("Low", "High")
+  probs <- if (split == "tertile") c(1/3, 2/3) else 0.5
+  legend_title <- if (split == "tertile") "Risk tertile" else "Score group (series median)"
   curves <- list()
   risk_counts <- list()
   for (cohort in names(cohort_names)) {
     d <- scores_by_cohort[[cohort]]
     signed_score <- direction * d[[score_name]]
-    cutoffs <- quantile(signed_score, c(1/3, 2/3), names = FALSE)
-    stopifnot(cutoffs[1] < cutoffs[2])
+    cutoffs <- quantile(signed_score, probs, names = FALSE)
+    stopifnot(!is.unsorted(cutoffs, strictly = TRUE))
     d$tertile <- cut(signed_score, c(-Inf, cutoffs, Inf), labels = groups, include.lowest = TRUE)
     stopifnot(all(groups %in% as.character(d$tertile)))
 
@@ -129,8 +140,8 @@ plot_tertiles <- function(score_name, direction, filename) {
     geom_text(data = tick_labels, aes(time, y = -0.075, label = time),
               inherit.aes = FALSE, size = 8.5 / .pt) +
     facet_wrap(vars(series), ncol = 2) +
-    scale_colour_manual(name = "Risk tertile", values = colors, breaks = groups) +
-    scale_linetype_manual(name = "Risk tertile", values = patterns, breaks = groups) +
+    scale_colour_manual(name = legend_title, values = colors[groups], breaks = groups) +
+    scale_linetype_manual(name = legend_title, values = patterns[groups], breaks = groups) +
     scale_y_continuous(breaks = seq(0, 1, by = 0.25), labels = c("0", "0.25", "0.5", "0.75", "1")) +
     coord_cartesian(xlim = c(-8, 62), ylim = c(-0.48, 1.03), expand = FALSE) +
     labs(x = "Months", y = "Survival probability") +
@@ -149,6 +160,10 @@ plot_tertiles <- function(score_name, direction, filename) {
 plot_tertiles("risk", 1, "sup_external_km_risk.pdf")
 for (k in programs$program) {
   plot_tertiles(paste0("Z", k), sign(beta[k]), sprintf("sup_external_km_program_%d.pdf", k))
+  # Median split (Chapter 4 Appendix C, 2026-11-15). The tertile files above are kept
+  # unchanged because the dated November writeups read them.
+  plot_tertiles(paste0("Z", k), sign(beta[k]), sprintf("sup_external_km_program_%d_median.pdf", k),
+                split = "median")
 }
 
 # Cohort-specific program direction ----

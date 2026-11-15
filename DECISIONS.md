@@ -3,6 +3,18 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-15 — Per-program Kaplan–Meier curves split at the series median (Andrew)
+
+Chapter 4 Appendix C now shows the per-program Kaplan–Meier curves (Programs 2, 4 and 5) with
+each external series split at the median of its program score, in place of within-series
+tertiles. Tertiles came from the November 5 exhibit plan as a display choice; the median split
+gives larger groups (45 per group in Dijk against 30 per tertile) and matches the high/low
+format of the risk-score figure. Program scores have mean 0 in every series (expression is
+z-scored within each cohort), so a fixed training cutpoint would give nearly the same split;
+groups that transfer between cohorts need the shared-scale inputs in Chapter 4 Future Work.
+The tertile PDFs are kept unchanged for the November writeups, which read them
+(`make_figures_supervised_external_km.R`, `split = "median"`, files `*_median_k5.pdf`).
+
 ## 2026-11-15 — Chapter 4 round-5 review decisions (Andrew)
 
 **Decided.** The round-5 writing review (137 items) and committee review (C-01 to C-30) were

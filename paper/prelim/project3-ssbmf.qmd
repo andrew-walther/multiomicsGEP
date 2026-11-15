@@ -888,7 +888,7 @@ Raising the methylation likelihood to a power $w_m$ below 1 emptied the methylat
 
 ## Survival Analysis of Programs in the External Cohorts
 
-\label{app:program-survival}Separate external Cox regressions estimated protective associations for Program 2 and adverse associations for Program 4 in all five series (Table \ref{tab:external-program-direction}). The intervals excluded one for Program 2 in Dijk, PACA-AU RNA-seq (upper limit 0.998) and Puleo, and for Program 4 in both PACA-AU series and Puleo. Program 5 had adverse associations in the two PACA-AU series, with intervals that included one, and a protective association in Dijk. These regressions are unadjusted, and their directions can differ from the coefficients of the joint training fit. The Kaplan--Meier curves (Figures \ref{fig:km-program-2} to \ref{fig:km-program-5}) group patients by the training coefficient's risk direction.
+\label{app:program-survival}Separate external Cox regressions estimated protective associations for Program 2 and adverse associations for Program 4 in all five series (Table \ref{tab:external-program-direction}). The intervals excluded one for Program 2 in Dijk, PACA-AU RNA-seq (upper limit 0.998) and Puleo, and for Program 4 in both PACA-AU series and Puleo. Program 5 had adverse associations in the two PACA-AU series, with intervals that included one, and a protective association in Dijk. These regressions are unadjusted, and their directions can differ from the coefficients of the joint training fit. The Kaplan--Meier curves (Figures \ref{fig:km-program-2} to \ref{fig:km-program-5}) split each series at the median of its program score, with the high group in the adverse direction of the training coefficient.
 
 ```{=latex}
 \begin{table}[!htb]
@@ -913,22 +913,22 @@ Training direction & Protective & Adverse & Adverse \\
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/sup_external_km_program_2_k5.pdf}
-\caption[Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 2 of the joint SSBMF fit by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-2}
+\includegraphics[width=\linewidth]{figures/sup_external_km_program_2_median_k5.pdf}
+\caption[Kaplan--Meier curves for Program 2 split at the within-series median of the program score]{Kaplan--Meier curves for Program 2 of the joint SSBMF fit, with each series split at the median of its program score. The high group lies in the adverse direction of the training coefficient. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-2}
 \end{figure}
 ```
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/sup_external_km_program_4_k5.pdf}
-\caption[Kaplan--Meier curves for Program 4 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 4 of the joint SSBMF fit by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-4}
+\includegraphics[width=\linewidth]{figures/sup_external_km_program_4_median_k5.pdf}
+\caption[Kaplan--Meier curves for Program 4 split at the within-series median of the program score]{Kaplan--Meier curves for Program 4 of the joint SSBMF fit, with each series split at the median of its program score. The high group lies in the adverse direction of the training coefficient. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-4}
 \end{figure}
 ```
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/sup_external_km_program_5_k5.pdf}
-\caption[Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 5 of the joint SSBMF fit by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-5}
+\includegraphics[width=\linewidth]{figures/sup_external_km_program_5_median_k5.pdf}
+\caption[Kaplan--Meier curves for Program 5 split at the within-series median of the program score]{Kaplan--Meier curves for Program 5 of the joint SSBMF fit, with each series split at the median of its program score. The high group lies in the adverse direction of the training coefficient. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-5}
 \end{figure}
 ```
 
