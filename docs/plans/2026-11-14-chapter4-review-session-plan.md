@@ -206,8 +206,12 @@ modalities).
   model with its specified form, and any other key outstanding conceptual item or result needed
   to complete the project (for example, choosing the number of programs reliably when
   supervision is stronger, if the session judges it key). No internal study labels (such as
-  "S-15") and no software deliverables (such as "we will also build an R package"). Each item says
-  what will be done and how it will be evaluated.
+  "S-15") and no software deliverables in Methods or Results. Each item says what will be done
+  and how it will be evaluated. For the several-modality model, state the results it is expected
+  to give: mainly gains in biological interpretation, from programs shared across expression
+  and methylation and from methylation-specific programs, rather than an expected improvement
+  in the risk score's concordance. The software (an R package) may be mentioned only in the
+  Discussion's Future Considerations.
 
 ## 3a. Content map: chapter body and Appendix C (proposed, to confirm in Phase 2)
 
@@ -338,7 +342,8 @@ chapter. For each section check:
   model's results are labeled preliminary.
 - **Discussion:** Relevance of Results, Limitations, and Future Considerations, which names each
   open item (w_S tuning, the multimodal extension, and any other item under D10) and points back
-  to the Continuing Work subsection.
+  to the Continuing Work subsection. It may also mention releasing the software as an R package.
+  The Aims and Methods should not.
 - **Appendix C:** build sections C.1, C.2, ... per D6 and the confirmed map, methods sections
   before results sections. Each section is
   referenced from the body and kept brief: motivation, "Table X compares...", the finding.
