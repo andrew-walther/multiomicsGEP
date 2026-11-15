@@ -234,7 +234,7 @@ DeSurv's slopes stay below 1 (0.45 to 0.67) and SSBMF's range from 0.35 to 1.85.
 
 ### Q-21. Do the posterior intervals for the coefficients cover the true effects?
 
-**Suggested answer.** Not yet, and the chapter lists it as planned evaluation. In the
+**Suggested answer.** Not yet. The Discussion names interval coverage as part of the open problem, and it is not yet planned work. In the
 fixed-weight simulation at $w_S=1$ the 95% interval for the planted coefficient contained the
 true value in none of the 30 fits with 2,000 genes and in 6 of the 30 with 50 genes, because the
 posterior means were shrunk to less than half the true value
@@ -242,5 +242,5 @@ posterior means were shrunk to less than half the true value
 the coefficient update: each coefficient's Normal prior variance is estimated from its single
 pseudo-observation, $\hat\sigma_k^2=\max(0,x_k^2-s_k^2)$, and the posterior SD ignores the
 uncertainty in that estimate. The strong-survival simulations are far stronger than the PDAC data
-(true-predictor SD 9 to 26 against coefficients of at most 0.42), and coverage at realistic
-strength will be checked with the survival-weight comparison.
+(true-predictor SD 9 to 26 against coefficients of at most 0.42), and coverage was measured only
+at that strength.

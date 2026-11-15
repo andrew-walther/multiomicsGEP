@@ -16,8 +16,8 @@ applied to `paper/prelim/project3-ssbmf.qmd` with these author decisions:
 - The full derivation and update algorithm are in Appendix C.2, with no references to the
   repository.
 - Coefficient attenuation is attributed to the joint coefficient update (one-observation Normal
-  prior), not the survival share. Interval coverage is a planned evaluation; the low simulated
-  coverage is in the oral Q&A prep, not the chapter.
+  prior), not the survival share. Interval coverage is named as an open problem in the Discussion and is not planned work
+  (Andrew, 2026-11-15); the low simulated coverage is in the oral Q&A prep, not the chapter.
 - The two-step tie method is not stated (it was fit with Efron, a negligible difference).
 - Claims are qualified where intervals include one or differences are within an SE; adverse and
   protective directions are still named.
