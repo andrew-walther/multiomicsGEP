@@ -1448,8 +1448,11 @@ still govern adoption of survival supervision.
 
 - [x] Real-data comparators (GitHub issue #6 item 7). A clinical model was not
   possible under the registered rule.
-- [ ] Redraw the Chapter 4 Kaplan–Meier figures with the fixed training cutpoint
-  instead of within-cohort tertiles.
+- [x] Redraw the Chapter 4 Kaplan–Meier figures with the fixed training cutpoint
+  instead of within-cohort tertiles. Done for the risk score
+  (`paper/prelim/make_figure_fixed_cutpoint_km.R`, Figure `fig:km-risk`). The per-program
+  curves in Appendix C still use within-series tertiles; a transferable risk scale is listed
+  in Chapter 4 Future Work (2026-11-15).
 - [ ] Check the fold-stability part of the program rule in simulation (needs
   fold-level program identities in the simulation checkpoints).
 - [ ] Registered LB versus YFB comparison with fold-in prediction.
