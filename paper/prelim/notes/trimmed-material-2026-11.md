@@ -457,3 +457,36 @@ Previous Limitations and Future Work, replaced by the revised versions (the mult
 > We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-continuing). Each will be compared in simulation and in training cross-validation on PDAC. The extension to several data types (@sec-mmodal) is the second contribution still in development. Its fitter reproduces the current model for one data type, and separate loading priors found programs on one data type more often than a pooled prior when the feature counts were equal. The open problem is balance when methylation sites far outnumber genes, which a power on the reconstruction likelihood does not solve. Two alternatives will be derived and tested in simulation: weighting methylation only in the score update, and summarizing CpG sites, for example by genomic region, so that the feature counts are closer while every site still contributes. The balanced model will then be fitted to the matched TCGA patients at 10,000 and 100,000 sites and judged mainly on the programs it finds: which genes and sites load together, whether methylation adds programs the expression fit lacks, and whether the joint fit recovers the methylation-specific program seen at 100,000 sites. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 >
 > \FloatBarrier
+
+
+## 2026-11-15 Chapter 4 round-5 writing review (Review A, proposed-edits.md)
+
+Text removed or replaced when the accepted Review A items were applied.
+
+- J-03 (Limitations; outdated: the gene screen and input scaling were re-run with training cross-validation only, and the validation series are used only for scoring):
+
+> Comparisons on the five validation series informed the gene screen and input scaling earlier in development, before training cross-validation confirmed them, and those series were therefore seen during development.
+
+- I-02 (Future Work; repeated Continuing Work):
+
+> The first is a data-driven survival weight that lets survival change the loadings where the data support it. The cross-validated weight, a calibrated weight on the partial likelihood and normalized loss terms will be compared on recovery, calibration, convergence and cross-validated concordance. The second is the extension to several data types, where the open problem is balance when methylation sites far outnumber genes. The balanced model will be judged mainly on the programs it finds. The third is rank selection under the chosen weight.
+
+- I-03 (Comparison of Alternative Priors overview; numbers repeated in the subsections):
+
+> A point-exponential prior on the scores and loadings, fit to nonnegative input, lowered within-cohort cross-validated concordance at rank 7 from 0.658 to between 0.573 and 0.635 across four input setups, and at most one of five folds converged. At rank 5 it gave 0.519 against 0.655. Shared point-Laplace, point-normal and Normal coefficient priors gave within-cohort concordance of 0.649 to 0.656 at rank 7, against 0.658 for the Normal prior, with nearly the same simulation results, and 0.648 to 0.649 at rank 5, against 0.655. The working model therefore keeps them.
+
+- I-05 (Training Cross-Validation; restated the Model Selection section):
+
+> Training cross-validation also chose the gene set, the input scaling, the rank and the priors.
+
+- H-11 (Comparison of Parameterizations; replaced by convergence counts, per Andrew):
+
+> The simulation run reported numerical warnings whose messages were lost, which limits what these runs show about numerical stability.
+
+- E-03 (repeat of the paragraph's first sentence):
+
+> The reconstruction, the risk score and the objective are the same before and after rescaling.
+
+- F-08: the term "working model" (the current best configuration) was replaced by "the joint SSBMF fit" or "selected" throughout.
+- J-21 (not applied): the enrichment table rows are the two sets with the smallest adjusted p-value per pole (`make_figures_supervised_programs.R`, T5 block), so the caption was kept.
+- G-11: the proposed "do not correct the imbalance" was recast positively ("the imbalance therefore remains") under the no-negative-statement rule.
