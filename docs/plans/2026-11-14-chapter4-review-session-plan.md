@@ -175,6 +175,29 @@ modalities).
   (Methods, Evaluation, Results, a section on the programs, Discussion with Continuing Work) is
   also a guide for ordering.
 
+- **D9. Describing w_S as a power on the likelihood (Yusha's comment, 2026-11-14).** Yusha
+  questioned the term "generalized-Bayes" on page 5 of
+  `derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.pdf`, which calls the
+  w_S ≠ 1 objective the bound for "a power (generalized-Bayes) posterior". The chapter (The SSBMF
+  Model, currently source line 89) says the objective "is a variational bound for an update that
+  raises the Cox partial likelihood to the power w_S" and cites Bissiri et al. (2016) and Holmes
+  and Walker (2017). Weight tuning is continuing work, not a main part of the proposal, so in
+  the chapter:
+  - Describe w_S plainly as a weight on the Cox log partial likelihood in the objective, with
+    w_S = 1 the standard variational Bayes fit that the reported results use. Do not use the
+    term "generalized Bayes".
+  - Keep any power-likelihood interpretation to one cited sentence, and state what it does not
+    cover: only the survival block is weighted while the expression term keeps weight 1; the
+    Cox partial likelihood is not a full likelihood (Bissiri et al.'s loss-based updating may
+    cover this; verify in the paper before saying so); the
+    cited calibration work mostly concerns tempering with powers at most 1, while w_S > 1
+    upweights; and the variant that weights both the Cox term and the KL term for **β** is not
+    a power posterior on **β**. If the sentence cannot be made accurate briefly, drop it.
+  - Check that the citations support the exact claim made. Review B is asked to check this
+    (Phase 5).
+  - The derivation document's wording is outside this review. Revisiting it, and the formal
+    framing of w_S, is thesis work after the prelim.
+
 ## 3a. Content map: chapter body and Appendix C (proposed, to confirm in Phase 2)
 
 The current chapter has 12 Methods subsections, 8 Results subsections, 10 figures and
@@ -297,6 +320,7 @@ chapter. For each section check:
   past tense. Model Selection by Training Cross-Validation states plainly how w_S = 1 was chosen.
   Then Continuing Work in the future tense: supervision weight tuning, with at most a sentence on
   the newest studies (D2), and the multimodal extension (D4).
+  Apply D9 wherever w_S is described as a power on the likelihood.
 - **Results:** each subsection opens with its question and states its finding in the first two
   sentences. Detail that does not change a conclusion moves to the appendix or is cut. The joint
   model's results are labeled preliminary.
@@ -328,7 +352,8 @@ Andrew's decision.
 **Review B: committee member.** A biostatistics committee member reading the chapter cold. Finds
 inconsistencies between sections, gaps in the argument, unsupported claims, missing comparisons
 or citations, errors in notation or numbers, and questions likely at the oral prelim. It should
-also flag content that could be cut without loss. Output `round5/ch4/committee-proposals.md` in
+also flag content that could be cut without loss, and check whether every description of w_S
+as a power on the likelihood is accurate and supported by its citations (D9). Output `round5/ch4/committee-proposals.md` in
 the Chapter 1 format: items ordered by how likely they are to come up, each with the problem,
 the current text and a proposed revision. Any new reference is checked on Crossref or PubMed and
 staged in `round5/ch4/new-citations.bib`, not added to `prelim/references.bib` until accepted.
