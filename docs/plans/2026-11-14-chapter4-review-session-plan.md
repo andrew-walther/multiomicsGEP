@@ -370,6 +370,12 @@ math check, and the committee-member review, since these depend on statistical r
    Table 4.8 ("Programs of the working model on the training cohorts (n = 273)") has a run of
    blank space before its dot leader.
 
+**Status 2026-11-15 (Phase 1 done).** Deadline confirmed with Andrew: the written prelim is due
+tonight, 2026-11-15 at 11:59 pm (not 11-16). Source `97eaf20e` and draft (bios `a19adb8`) in
+sync, both repos clean. Baseline: draft 54 pages, full prelim 240 pages. Draft pages with few
+words (floats alone or gaps): 21, 23, 24, 37, 38 (97 words), 39–41, 50, 54. Phase 3 and 3b
+subagents launched.
+
 ### Phase 2. Outline and curation review (about 45 minutes, with Andrew)
 
 Go through the content map in Section 3a row by row. For each subsection and each figure or
@@ -382,6 +388,16 @@ the Discussion all match it.
 
 Record anything held out in `multiomicsGEP/paper/prelim/notes/trimmed-material-2026-11.md`
 (a new dated section) so it can be reused in the thesis or a manuscript.
+
+**Status 2026-11-15 (Phase 2 proposal sent to Andrew, awaiting confirmation).** Findings while
+checking map sources: (a) `program_correspondence/` compares the rank-5 and rank-7 fits, not the
+joint and two-step fits; joint–two-step agreement exists only as loading correlations above
+0.99999 (training-CV redo and S-16 findings), so C.12 is proposed to be dropped and the rank-5
+vs rank-7 correspondence folded into C.9. (b) The saved rank-5 fit
+(`k5_working_2026-11-12/s11/fits/size_D4_N2218_w1_f0.rds`) stores posterior means only (EF,
+EBeta, EBeta2), no inclusion probabilities, and every loading is nonzero, so C.14 uses the
+top-50-by-|loading| rule. (c) Real-data w_S selection (nested CV) proposed for C.9 with the other
+training-CV tuning results.
 
 ### Phase 3. Currency check (subagent, runs alongside Phase 2)
 
