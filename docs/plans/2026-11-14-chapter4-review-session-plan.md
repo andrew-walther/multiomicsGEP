@@ -134,7 +134,8 @@ modalities).
 - Apply the `human-writer` skill to all drafting and revision.
 - "Fitted" only as an adjective before a noun ("the fitted model", "the fitted coefficients").
   The passive verb is "fit": "the model is fit by maximizing...", never "is fitted by" or "is
-  fitted to". Review A flags every misuse.
+  fitted to". The same holds for the active past ("we fit the model") and a verb right after a
+  noun ("a line fit to them"). Review A flags every misuse.
 
 ## 3. Decisions (settled with Andrew, 2026-11-14)
 
