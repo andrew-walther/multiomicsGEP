@@ -262,6 +262,38 @@ modalities).
     Andrew. Never change code or the derivation to match the chapter.
   - An edit that adds or changes math names its source in the Phase 4 approval or the review item.
 
+### Answers from Andrew, 2026-11-15 (Phase 2 round 1)
+
+- Deadline is tonight, 2026-11-15, 11:59 pm.
+- Results headings: descriptive and short, not finding-style.
+- Continuing Work gets a third item, "Number of Programs Under Stronger Supervision".
+- Aims and outline: no software or R package outside Future Work.
+- C.12 is kept and rebuilt: the saved rank-5 fits at w_S = 1 and w_S = 0
+  (`k5_working_2026-11-12/s11/fits/size_D4_N2218_w{1,0}_f0.rds`) match one to one, with loading
+  correlations 0.999994 to 0.9999997, score correlations at least 0.99998 and 49 or 50 of the 50
+  largest loadings shared. The rank-5 vs rank-7 comparison goes to C.9.
+- C.14: 50 genes per active program split by sign. Signed (bipolar) loadings are noted as a
+  limitation: programs are contrasts, not additive parts. The nonnegative point-exponential prior was
+  tested (C.10) and lowered concordance.
+- Converged preliminary two-modality simulations may go to Appendix C.
+- Math: define every symbol (MC undefined rows), clear up the inconsistent rows, cite the uncited
+  ones (one-SE rule: Breiman et al. 1984 and Hastie et al. 2009, as used by DeSurv).
+- Drop the "73 checks" count from the chapter (not a relevant detail).
+- Ties: refit with Breslow if quick, else report. Check 2026-11-15: on the full training data the
+  two-step Cox risk scores under Efron and Breslow correlate 0.9999998 and C differs in the fifth
+  decimal, so the exhibits are not rerun; the chapter states Efron for the two-step Cox step.
+- Rescaling (MC-24): the derivation is right (`SSBMF-YFB-model-derivation-full.tex` L536–543,
+  L903–905). Rescaling changes neither the reconstruction, the risk scores, the objective nor the
+  survival share. It fixes the units of β_k and keeps thresholds on a fixed scale. The chapter's
+  claim about w_S meaning the same for every program is removed.
+- Generalized Bayes (the D9 sentence at L89): drop the term unless a citation clearly supports it,
+  and cite a source for the weighting itself.
+- Multimodal model: say "in development" (not "paused").
+- Abstract: fix X-01 (only Program 2 stable across folds; Programs 4 and 5 survival-active in the
+  adverse direction) and X-02 (rank already chosen by training CV). Update the fact sheet. Slide
+  outline is after-submission work.
+- All outdated currency rows are fixed.
+
 ## 3a. Content map: chapter body and Appendix C (proposed, to confirm in Phase 2)
 
 The current chapter has 12 Methods subsections, 8 Results subsections, 10 figures and
