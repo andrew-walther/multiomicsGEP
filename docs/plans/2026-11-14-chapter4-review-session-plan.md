@@ -1,7 +1,9 @@
 # Chapter 4 (SSBMF) prelim review: session plan
 
 Written 2026-11-14 for a review session run from `bios-dissertation`. Author: Andrew Walther.
-Decisions in Section 3 were settled with Andrew on 2026-11-14.
+Decisions in Section 3 were settled with Andrew on 2026-11-14. Revised 2026-11-15 with lessons
+from the Chapter 3 review (`bios-dissertation/prelim/full-draft/notes/human-writer-review/round5/ch4/plan-edits-proposed.md`,
+P-01 to P-18, all accepted).
 
 The chapter is Chapter 4 of the prelim (Project 3). Its rendered draft is
 `bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/project3-ssbmf-draft.pdf`
@@ -18,8 +20,12 @@ The chapter is Chapter 4 of the prelim (Project 3). Its rendered draft is
   `prelim-edit-sync` skill (`prelim/full-draft/tools/prelim_review.py`).
 - Render with RStudio's Quarto 1.10, not the `quarto` on PATH (see `bios-dissertation/AGENTS.md`).
   After each render, compare the page count with the committed PDF.
-- **Deadline.** `bios-dissertation/ROADMAP.md` lists the written prelim for 2026-11-16, and
-  project memory says Sunday 2026-11-15 at 11:59 pm. Confirm at the start of the session.
+- **Time.** The full Chapter 3 review, run with the same phases on 2026-11-15, took about six
+  hours, including both independent reviews and the closing checks. Chapter 4 is shorter, with no
+  journal manuscript to revise alongside it, so the whole review (Phases 1 to 6) should take four to
+  six hours. Confirm the written-prelim date in Phase 1 (`bios-dissertation/ROADMAP.md` lists
+  2026-11-16). The current chapter (`97eaf20e`) remains the version of record until the revised one
+  is committed.
 
 ## 1. Goals for the session
 
@@ -74,24 +80,26 @@ modalities).
 
 | Section | Words | Notes for review |
 |---|---:|---|
-| Introduction: Background & Motivation | 690 | |
-| Introduction: Aims & Contributions | 590 | Four aims, chapter scope, open problems, outline paragraph |
+| Introduction: Background and Motivation | 690 | |
+| Introduction: Aims and Contributions | 590 | Four aims, chapter scope, open problems, outline paragraph |
 | Methods: Model, Weight and Objective, VI | 910 | |
 | Methods: Choosing the Survival Weight | 370 | The tested CV rule plus proposed alternatives; check it still describes the current w_S scheme |
 | Methods: Prediction, Simulation, Data, Tuning, Screen/Rank, Priors | 1,650 | |
 | Methods: Proposed Extension to Additional Data Modalities | 890 | Longest Methods subsection, and it is proposed work; candidate for trimming |
 | Methods: Comparators, Risk Groups, Program Classification | 410 | |
 | Results (eight subsections) | 7,200 | Too long. Programs (1,660) and Training CV (1,430) are the longest |
-| Discussion: Relevance, Limitations, Future | 730 | Future Considerations must name the open items |
+| Discussion: Interpretation of the Results, Limitations, Future Work | 730 | Future Work must name the open items |
 | Appendix (two prior comparisons) | 950 | |
 
 ### Models for structure and content
 
 - **Andrew's Chapter 2 (Project 1)**,
   `bios-dissertation/prelim/project-proposals/project1-spillover/draft/project1-spillover-draft.qmd`.
-  The finished chapter to match for style and section names: Introduction (Background &
-  Motivation, Aims & Contributions), method sections, Simulation Study, Application, Discussion
-  (Relevance of Results, Limitations, Future Considerations), short supplementary sections.
+  The finished chapter to match for style and section names: Introduction (Background and
+  Motivation, Aims and Contributions), method sections, Simulation Study, Application, Discussion
+  (Interpretation of the Results, Limitations, Future Work), short supplementary sections. The
+  same heading names are now used in Chapters 2, 3 and 4 (`97eaf20e`). The label
+  `{#sec-future-considerations}` is kept so existing references still work.
 - **Chapter 2 of Amber Young's dissertation (DeSurv)**,
   `~/Library/CloudStorage/OneDrive-UniversityofNorthCarolinaatChapelHill/UNC Dissertation (Liu)/papers/DeSurv/Young_unc_0153D_24541.pdf`
   (chapter starts on page 22, Appendix A on page 98). **Use it only to judge what kind of
@@ -132,6 +140,14 @@ modalities).
 - No mannered prose. Avoid semicolons and dashes as punctuation. Title Case headings. Bold
   matrices and vectors, italic scalars. Table captions above, figure captions below.
 - Apply the `human-writer` skill to all drafting and revision.
+- No ", so" as a connective (40 in the source on 2026-11-15). When replacing several, vary the
+  replacement ("which means", "and therefore", a new sentence) rather than using one phrase
+  every time.
+- No "whereas" (1 in the source). No sentence-initial "Because" (4 in the source).
+- No paragraphs that open with a bold lead-in. Use a `###` heading instead; in Appendix C keep
+  these headings out of the table of contents (see D6).
+- Define every abbreviation at first use, in the body and again in Appendix C if it is first used
+  there. Common ones such as iid need no definition.
 - American English throughout: spelling and usage.
 - "Fitted" only as an adjective before a noun ("the fitted model", "the fitted coefficients").
   The passive verb is "fit": "the model is fit by maximizing...", never "is fitted by" or "is
@@ -142,7 +158,7 @@ modalities).
 
 - **D1. Proposed work.** Proposed methods stay in Methods, in a last subsection after the
   current method is fully described, and are named again in the Discussion's Future
-  Considerations. One "Continuing Work" subsection holds all of the proposed methodology,
+  Work. One "Continuing Work" subsection holds all of the proposed methodology,
   with working parts "Supervision Weight Tuning" and "Extension of SSBMF to Several Data
   Modalities", plus any other key outstanding methodological item or result (D10).
 - **D2. The two newest supervision studies.** Include them only if they matter to the reader.
@@ -156,18 +172,23 @@ modalities).
   placed alone on a page (float placement, sizing, combining panels).
 - **D4. Joint expression and methylation model.** Described as continuing work in Methods, its
   preliminary results reported in Results (including the methylation-specific programs), and
-  both named in Future Considerations.
+  both named in Future Work.
 - **D5. Scope and tense.** This is a project-proposal chapter for a project with substantial
   progress. It reads as a thesis chapter on the current state of the work and gives proper
   attention to what is proposed next: tuning the survival weight w_S, the extension to several
   modalities, and any other key outstanding item (D10).
   Completed work is in the past tense. Proposed work, in Continuing Work and Future
-  Considerations, is in the future tense.
+  Work, is in the future tense.
 - **D6. Appendix C layout.** One numbered list of sections, C.1, C.2, ..., with no "Part" or
   "Supplementary Methods/Results" headings. Methods sections come first, then results sections,
   as in Appendix A of Amber Young's dissertation. That appendix and the CTJ supplement
   (`SpatialCRT/projects/IncidenceDesign/paper/ctj_manuscript/supplementary_info/Supplementary_Information.tex`)
   are references for ordering and kind of content, not templates.
+  If any section gets `###` subheadings, check how `paper/prelim/tools/prelim_transform.py`
+  numbers them. In the prelim they become C.n.m and would enter the table of contents at depth 2.
+  Keep them out as Chapter 3 does: a raw LaTeX line after the appendix heading,
+  `\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}`, and a reset to `{2}` at the end of the
+  file. Check the table of contents of the rebuilt prelim.
 - **D7. Headings and names.** Every heading must make sense to a reader scanning the table of
   contents who has not worked on the project: clear, specific to what the section shows, and
   brief. No internal labels or undefined abbreviations in headings (not "LB", "YFB", "D4",
@@ -216,7 +237,7 @@ modalities).
   to give: mainly gains in biological interpretation, from programs shared across expression
   and methylation and from methylation-specific programs, rather than an expected improvement
   in the risk score's concordance. The software (an R package) may be mentioned only in the
-  Discussion's Future Considerations.
+  Discussion's Future Work.
 
 - **D11. Math accuracy (added 2026-11-14).** Every equation, symbol and formula in the chapter and
   Appendix C must be correct for the current code and the fits behind the reported results. This
@@ -322,6 +343,12 @@ points to for a reason.
 
 ## 4. Work plan
 
+Record as you go. After each phase and each of Andrew's decisions, write it into this file:
+answers under Section 3, the confirmed map in Section 3a, and a dated **Status** line under the
+phase with commit hashes. Commit the plan in `multiomicsGEP`. A compacted or fresh session resumes
+from this file and the review files, not from the conversation. (The Chapter 3 session was
+compacted several times and lost nothing because of this.)
+
 Model use. The main session (Opus) plans, decides with Andrew, and checks every subagent result
 before relying on it. Delegate bounded work to Sonnet subagents (model "sonnet"), each with a
 complete brief (goal, files, what done looks like):
@@ -339,7 +366,9 @@ math check, and the committee-member review, since these depend on statistical r
 2. Confirm the source and the generated draft are in sync (`git status` in both repos; the draft
    PDF dated after the last source commit).
 3. Record the baseline: source commit hash, draft page count, full-prelim page count, and the
-   pages where a float stands alone or leaves a large gap.
+   pages where a float stands alone or leaves a large gap. Known: in the prelim's List of Tables,
+   Table 4.8 ("Programs of the working model on the training cohorts (n = 273)") has a run of
+   blank space before its dot leader.
 
 ### Phase 2. Outline and curation review (about 45 minutes, with Andrew)
 
@@ -361,7 +390,11 @@ ledger and findings files, and lists any claim made out of date by commits after
 only checks what the chapter says. It does not propose adding new results. Output:
 `bios-dissertation/prelim/full-draft/notes/human-writer-review/round5/ch4/currency-check.md`,
 one row per claim: location, current text, source, status (current / outdated / unsourced),
-proposed text.
+proposed text. It also compares the chapter's Project 3 claims with
+`bios-dissertation/prelim/abstract/abstract-text.qmd` and `notes/abstract-fact-sheet.md`, Chapter 1
+Section 1.3 (`prelim/literature-review/draft/`) and `presentation/prelim-slides/OUTLINE.md`, and
+flags mismatches only. The abstract fills pages iii and iv exactly, so any edit there needs an
+equal cut, and Andrew decides it.
 
 ### Phase 3b. Math check (subagent, runs alongside Phase 2)
 
@@ -372,10 +405,16 @@ the derivation or code), status (verified / cited / wrong / undefined / inconsis
 and proposed text. Wrong, undefined or inconsistent rows are fixed in Phase 4, before the
 Phase 5 reviews.
 
-### Phase 4. Content edits (Andrew-led, section by section)
+### Phase 4. Content edits (section by section, with a written sign-off list)
 
 Apply the target outline and the currency fixes first, so the reviewers read the revised
-chapter. For each section check:
+chapter. For each section, write the proposed edits to `round5/ch4/section-edits.md` in the
+Chapter 1 round-5 format: ID, the currency-check and math-check rows each item answers, location
+(source line), current text and proposed text. Restructuring is described as moves (from, to,
+what changes) rather than full text. Items that change a claim or a number go last. **Stop** for
+Andrew's decisions by ID, recorded in a log table at the top of the file. Apply the accepted items
+with a Sonnet subagent, check its diff, commit and push in `multiomicsGEP`, and show the
+re-rendered section. For each section check:
 
 - **Introduction:** the aims match what the chapter delivers, and the open problems match the
   Discussion.
@@ -388,7 +427,7 @@ chapter. For each section check:
 - **Results:** each subsection opens with its question and states its finding in the first two
   sentences. Detail that does not change a conclusion moves to the appendix or is cut. The joint
   model's results are labeled preliminary.
-- **Discussion:** Relevance of Results, Limitations, and Future Considerations, which names each
+- **Discussion:** Interpretation of the Results, Limitations, and Future Work, which names each
   open item (w_S tuning, the multimodal extension, and any other item under D10) and points back
   to the Continuing Work subsection. It may also mention releasing the software as an R package.
   The Aims and Methods should not.
@@ -399,8 +438,13 @@ chapter. For each section check:
 - **Math:** apply the Phase 3b rows for the section, and check any new or moved equation under
   D11 before showing it to Andrew.
 
-Commit the source in `multiomicsGEP` after each section or group of sections, so the hook
-re-renders the draft and each step can be reverted.
+Commit and push the source in `multiomicsGEP` after each section or group of sections, so the
+hook re-renders the draft and each step can be reverted. After the first section commit, and after
+any commit that changes labels or cross-references, run
+`PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH" python3 prelim/full-draft/tools/build_prelim.py`
+and `python3 prelim/full-draft/tools/test_prelim_assembly.py` from the bios-dissertation root
+(Sonnet subagent). In Chapter 3 the chapter rendered cleanly but the full build's own checks
+stopped in Phase 6 (a cross-reference followed by a colon; fixed in bios `d61df5b`).
 
 ### Phase 5. Independent reviews (two subagents in parallel)
 
@@ -415,7 +459,11 @@ and claims stronger than the evidence. Output `round5/ch4/proposed-edits.md` in 
 round-5 format: groups by issue type (A typos and grammar, B ambiguous referents, C flow, D
 undefined terms and jargon, ...), and for each item an ID, location (section, source line), the
 current text and the proposed text. Claim-changing items go in a separate final group that needs
-Andrew's decision.
+Andrew's decision. Group items so a whole group can be accepted at once, and put items that need
+judgment (rewording a claim, cutting a sentence) in their own groups. For a repeated pattern, such
+as the ", so" joins, list them in one group with a different replacement for each. Every proposed
+sentence follows the writing rules in Section 2, and a proposal that adds or changes a number
+names the file it comes from.
 
 **Review B: committee member.** A biostatistics committee member reading the chapter cold. Finds
 inconsistencies between sections, gaps in the argument, unsupported claims, missing comparisons
@@ -426,18 +474,33 @@ as a power on the likelihood is accurate and supported by its citations (D9). Ou
 the Chapter 1 format: items ordered by how likely they are to come up, each with the problem,
 the current text and a proposed revision. Any new reference is checked on Crossref or PubMed and
 staged in `round5/ch4/new-citations.bib`, not added to `prelim/references.bib` until accepted.
-Proposals that add length need a matching cut.
+Proposals that add length need a matching cut. Every proposed sentence follows the writing
+rules in Section 2, and a proposal that adds or changes a number names its source file. The output
+has two parts: (i) proposed text changes, ordered by how likely they are to come up, with each
+proposed cut offered as options (a) and (b) where there is a real choice; (ii) questions likely at
+the oral prelim that need no text change, each with a suggested answer.
 
 ### Phase 6. Decide and apply
 
 1. Andrew replies by item ID ("accept all A, reject C3, edit B2"). Record decisions in a log
    table at the top of each proposals file.
-2. Apply accepted items to `project3-ssbmf.qmd`, commit in `multiomicsGEP`, and let the hook sync
-   the draft.
+2. Before applying an accepted item that adds or changes a number or a claim, check it against
+   its source file; if it does not match, report it to Andrew instead of applying it. Apply
+   accepted items to `project3-ssbmf.qmd`, commit and push in `multiomicsGEP`, and let the hook
+   sync the draft. An accepted reference is added to `paper/ssbmf-refs.bib` and
+   `bios-dissertation/prelim/references.bib` with identical fields before the commit that cites
+   it (the sync's bib check stops on any mismatch).
 3. Re-render the standalone draft and the full prelim. Compare page counts with the baseline.
    Check figure and table numbering, cross-references and the reference list.
-4. Update `bios-dissertation/ROADMAP.md` (Chapter 4 review done, page counts) and, if the
-   chapter's account of the project changed, `multiomicsGEP/PROJECT_STATUS.qmd`.
+4. Update `multiomicsGEP/PROJECT_STATUS.qmd`, `ROADMAP.md`, `DECISIONS.md` (one dated entry for
+   this review's decisions) and README/AGENTS where the global rules ask, and
+   `bios-dissertation/ROADMAP.md` (Chapter 4 review done, chapter and full-prelim page counts).
+5. Write Review B part (ii), with a format tag for each question (main slide, backup slide or
+   spoken answer), to `presentation/prelim-slides/prelim-qa-prep.md` for the Part III slides, as
+   Chapter 3 did in `SpatialCRT/projects/IncidenceDesign/presentation/prelim-qa-prep.md`.
+6. Done-when audit: a Sonnet subagent checks each Section 5 item against the files (grep, page
+   counts, logs) and reports the evidence for each. The main session reviews the report before
+   telling Andrew the work is done.
 
 ## 5. Done when
 
@@ -448,13 +511,21 @@ Proposals that add length need a matching cut.
 - Completed work is in the past tense and proposed work in the future tense.
 - Every number and status claim matches its source as of `14af817d` or later (the currency
   check has no "outdated" rows left).
-- Future Considerations names every open item, and each one appears in Methods as proposed work.
+- Future Work names every open item, and each one appears in Methods as proposed work.
 - Every equation and symbol is defined and either cited or verified against the derivation and
   code (the math check has no open rows).
 - Both review files exist, every item has a decision, and accepted items are applied.
 - The chapter is in American English, and "fitted" appears only before a noun (no "is fitted",
   "we fitted" or "fitted to" left).
-- The draft and the full prelim render without errors, with page counts recorded.
+- No ", so" joins, "whereas", sentence-initial "Because" or bold paragraph lead-ins remain, and
+  every abbreviation is defined at first use.
+- Appendix C subheadings, if any, are kept out of the table of contents.
+- The prelim abstract, Chapter 1 Section 1.3 and the slide outline agree with the chapter, or each
+  mismatch has Andrew's decision.
+- The oral-prelim questions are in `presentation/prelim-slides/prelim-qa-prep.md`.
+- The draft and the full prelim render without errors, the assembly test passes, and page counts
+  are recorded.
+- The done-when audit reports evidence for every item above.
 
 ## 6. Prompt to start the session in `bios-dissertation`
 
@@ -473,17 +544,23 @@ To run the whole plan, Phases 1 to 6, with stops only where Andrew's input is ne
 I'm reviewing Chapter 4 (Project 3, SSBMF) for the written prelim. Read
 ../multiomicsGEP/docs/plans/2026-11-14-chapter4-review-session-plan.md first, then this repo's
 AGENTS.md and ROADMAP.md. Edits go to ../multiomicsGEP/paper/prelim/project3-ssbmf.qmd, never to
-the generated draft. The decisions in Section 3 are settled.
+the generated draft. The decisions in Section 3 are settled. Confirm the written-prelim date with
+me in Phase 1. The Chapter 3 review took about six hours with the same phases, so plan for four
+to six hours.
 
 Work through the whole plan, Phases 1 to 6, in order. Stop and wait for me only at these points:
 (1) after Phase 2, to confirm the content map before any prose edits;
-(2) after each section in Phase 4, to approve the edits before you commit them in multiomicsGEP;
+(2) after each section in Phase 4, to approve that section's sign-off list before you apply the
+    edits, then commit and push them in multiomicsGEP;
 (3) after Phase 5, when the two review files are ready for my accept/reject decisions.
 Launch the Phase 3 currency check and the Phase 3b math check as subagents during Phase 2
 (decision D11: all math defined, and cited or verified against the derivation and code), and run
-the two Phase 5 reviews
-as parallel subagents. Keep the plan's Section 5 "Done when" list as the finish line, and tell me
-which items are still open whenever you stop.
+the two Phase 5 reviews as parallel subagents.
+
+After each phase and each of my decisions, write it into the plan (answers under Section 3, the
+confirmed map in Section 3a, a dated Status line under the phase) and commit the plan, so a
+compacted or fresh session can resume from the files. Keep the plan's Section 5 "Done when" list
+as the finish line, and tell me which items are still open whenever you stop.
 ```
 
 The session must be able to edit and commit in `multiomicsGEP`. Add that folder to the session if
