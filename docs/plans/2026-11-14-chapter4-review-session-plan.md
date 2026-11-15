@@ -578,6 +578,13 @@ genes, so a 250 cutoff would be arbitrary here; options sent to Andrew.
 **Status 2026-11-15 (Phase 5 started).** Review A (writing, Sonnet) and Review B (committee, Opus)
 launched in parallel on `c26171de`.
 
+**Status 2026-11-15 (Phase 5 done, awaiting Andrew).** Appendix C.15 rebuilt at 50 genes per pole
+for all five programs (Andrew; `0bb0fc8f`). Review A: `round5/ch4/proposed-edits.md`, 137 items
+(groups A-J). Review B: `round5/ch4/committee-proposals.md`, C-01 to C-30 and Q-01 to Q-20; 8
+verified references appended to `new-citations.bib`. Spot-checked: C-01 interval coverage
+(`docs/findings/2026-11-04-survival-weight-p2000-findings.md` L26-27) and C-08 prior-variance
+estimate (`code/update_beta.R:350`). Stop for Andrew's accept/reject decisions.
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
