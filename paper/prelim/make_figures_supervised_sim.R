@@ -243,7 +243,7 @@ make_f12 <- function() {
 #' \dontrun{make_f13()}
 make_f13 <- function() {
   m <- read.csv(file.path(S14_DIR, "metrics.csv"))
-  arms <- c(twostep = "Two-step", A1_w1 = "Supervised, w_S = 1", A1_w5 = "Supervised, w_S = 5")
+  arms <- c(twostep = "Two-step", A1_w1 = "Supervised, weight 1", A1_w5 = "Supervised, weight 5")
   m <- m[m$arm %in% names(arms), ]
   m$share_lab <- factor(paste0(m$share * 100, "%"), levels = c("0.05%", "0.1%", "0.2%"))
   m$strength_lab <- factor(c(strong = "Strong survival", realistic = "Realistic survival")[m$strength],
@@ -265,17 +265,17 @@ make_f13 <- function() {
   gg <- function(s, sh, a, col) agg[agg$strength_lab == s & agg$share_lab == sh & agg$armf == a, col]
   S <- "Strong survival"; R <- "Realistic survival"
   check("strong 0.05% recovered two-step", gg(S, "0.05%", "Two-step", "recovered"), 0, 0)
-  check("strong 0.05% recovered A1 w1", gg(S, "0.05%", "Supervised, w_S = 1", "recovered"), 5, 0)
-  check("strong 0.05% recovered A1 w5", gg(S, "0.05%", "Supervised, w_S = 5", "recovered"), 9, 0)
+  check("strong 0.05% recovered A1 w1", gg(S, "0.05%", "Supervised, weight 1", "recovered"), 5, 0)
+  check("strong 0.05% recovered A1 w5", gg(S, "0.05%", "Supervised, weight 5", "recovered"), 9, 0)
   check("strong 0.1% recovered two-step", gg(S, "0.1%", "Two-step", "recovered"), 8, 0)
-  check("strong 0.1% recovered A1 w1", gg(S, "0.1%", "Supervised, w_S = 1", "recovered"), 10, 0)
-  check("realistic 0.1% recovered A1 w5", gg(R, "0.1%", "Supervised, w_S = 5", "recovered"), 0, 0)
-  check("realistic 0.1% recovered A1 w1", gg(R, "0.1%", "Supervised, w_S = 1", "recovered"), 9, 0)
-  check("realistic 0.2% recovered A1 w5", gg(R, "0.2%", "Supervised, w_S = 5", "recovered"), 7, 0)
+  check("strong 0.1% recovered A1 w1", gg(S, "0.1%", "Supervised, weight 1", "recovered"), 10, 0)
+  check("realistic 0.1% recovered A1 w5", gg(R, "0.1%", "Supervised, weight 5", "recovered"), 0, 0)
+  check("realistic 0.1% recovered A1 w1", gg(R, "0.1%", "Supervised, weight 1", "recovered"), 9, 0)
+  check("realistic 0.2% recovered A1 w5", gg(R, "0.2%", "Supervised, weight 5", "recovered"), 7, 0)
   check("strong 0.05% C two-step", gg(S, "0.05%", "Two-step", "C"), 0.644, 0.0006)
-  check("strong 0.05% C A1 w1", gg(S, "0.05%", "Supervised, w_S = 1", "C"), 0.800, 0.0006)
+  check("strong 0.05% C A1 w1", gg(S, "0.05%", "Supervised, weight 1", "C"), 0.800, 0.0006)
   check("strong 0.05% oracle C", gg(S, "0.05%", "Two-step", "oracle"), 0.936, 0.0006)
-  check("realistic 0.2% C A1 w1", gg(R, "0.2%", "Supervised, w_S = 1", "C"), 0.728, 0.0006)
+  check("realistic 0.2% C A1 w1", gg(R, "0.2%", "Supervised, weight 1", "C"), 0.728, 0.0006)
   expect_dC <- list(strong = c(0.156, 0.041, 0.008), realistic = c(0.038, 0.008, 0.002))
   for (s in names(expect_dC)) for (i in 1:3) {
     sh <- c(5e-4, 1e-3, 2e-3)[i]
@@ -306,12 +306,12 @@ make_f3 <- function() {
   s <- read.csv(file.path(REAL_DIR, "summary.csv")); s <- s[s$part == "size" & s$arm %in% c("w1", "w0cox"), ]
   pref <- read.csv(file.path(REAL_DIR, "size_preferred.csv"))
   d <- data.frame(genes = s$n_genes, C = s$mean_C, se = s$se_C,
-                  arm = factor(c(w1 = "Supervised, w_S = 1", w0cox = "Two-step")[s$arm], levels = c("Supervised, w_S = 1", "Two-step")))
+                  arm = factor(c(w1 = "Supervised, weight 1", w0cox = "Two-step")[s$arm], levels = c("Supervised, weight 1", "Two-step")))
   d <- d[order(d$arm, d$genes), ]
   cat("\nF3 (real-data size curve): key values\n"); print(d, row.names = FALSE, digits = 3)
   cat("Preferred sizes:\n"); print(pref[, c("arm", "preferred_vs_all_genes")], row.names = FALSE)
   g <- function(n, a, col) d[d$genes == n & d$arm == a, col]
-  S1 <- "Supervised, w_S = 1"; T2 <- "Two-step"
+  S1 <- "Supervised, weight 1"; T2 <- "Two-step"
   exp1 <- c(`2218` = 0.663, `3000` = 0.663, `5000` = 0.657, `8001` = 0.647, `12001` = 0.643, `17900` = 0.648)
   exp2 <- c(`2218` = 0.652, `3000` = 0.653, `5000` = 0.652, `8001` = 0.650, `12001` = 0.653, `17900` = 0.652)
   se1  <- c(0.024, 0.026, 0.030, 0.030, 0.037, 0.038); se2 <- c(0.026, 0.027, 0.031, 0.033, 0.037, 0.037)
@@ -345,7 +345,7 @@ COHORT_LAB <- c(Dijk = "Dijk", Moffitt_GEO_array = "Moffitt (array)", PACA_AU_ar
 make_ext <- function() {
   e <- read.csv(file.path(EXTERNAL_DIR, "external_cindex.csv"))
   e$cohort_lab <- factor(COHORT_LAB[e$cohort], levels = rev(COHORT_LAB))
-  e$model_lab <- factor(c(w1 = "Supervised, w_S = 1", twostep = "Two-step")[e$model], levels = c("Supervised, w_S = 1", "Two-step"))
+  e$model_lab <- factor(c(w1 = "Supervised, weight 1", twostep = "Two-step")[e$model], levels = c("Supervised, weight 1", "Two-step"))
   cat("\nF4/F9 (external): key values\n"); print(e[, c("cohort", "model", "n", "events", "C", "lo", "hi", "cal_slope", "cal_se")], row.names = FALSE, digits = 3)
   ex <- list(Dijk = c(0.584, 0.567, 0.55, 0.36, 0.35), Moffitt_GEO_array = c(0.537, 0.531, 0.36, 0.36, 0.28),
              PACA_AU_array = c(0.656, 0.656, 0.78, 0.33, 0.73), PACA_AU_seq = c(0.681, 0.671, 1.57, 0.43, 1.26),
