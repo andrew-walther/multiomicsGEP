@@ -337,6 +337,21 @@ Appendix C 15–18 pp.
 - Generalized-Bayes sentence: keep one defined, cited sentence (Bissiri et al. 2016) with its
   qualifier; cite DeSurv (Young2026) for the weighting precedent; Mairal et al. (2008) not used.
 
+### Answers from Andrew, 2026-11-15 (Phase 6)
+
+- Review A: groups A-G and I accepted (A6 with the alternative wording); H accepted except H11
+  (state the stability issue without "numerical warnings"); J accepted with claims kept to the
+  findings. "Therefore, ..." replaces "... are therefore ...". Define and cite every acronym.
+  Drop "working model"; define the projection model (η = YFβ) and the latent-score model (η = Lβ).
+- J3/C3: validation cohorts only score the fixed model; the Limitations sentence is outdated.
+  J17/J18: correct the comparisons and define each study. J19: add the mixed-signal study.
+- Review B: C1-C30 accepted, with C-01 narrowed to the planned comparison, C-14 without Efron,
+  C-09 as the full derivation and algorithm in Appendix C.2, and C-30 defining a factor as the
+  column pair (l_k, f_k) and a program as the genes the factor describes.
+- The derivation appendix makes no reference to Andrew's repositories.
+- Table 4.7 should not sit alone on a page. Future Work should add extensions beyond the current
+  aims, as Chapters 2 and 3 do.
+
 ## 3a. Content map: chapter body and Appendix C (confirmed 2026-11-15; changes in Section 3)
 
 The current chapter has 12 Methods subsections, 8 Results subsections, 10 figures and
@@ -584,6 +599,15 @@ for all five programs (Andrew; `0bb0fc8f`). Review A: `round5/ch4/proposed-edits
 verified references appended to `new-citations.bib`. Spot-checked: C-01 interval coverage
 (`docs/findings/2026-11-04-survival-weight-p2000-findings.md` L26-27) and C-08 prior-variance
 estimate (`code/update_beta.R:350`). Stop for Andrew's accept/reject decisions.
+
+**Status 2026-11-15 (Phase 6 done).** Review A applied (`7cdcc3e7`), Appendix C.2 replaced by the
+full derivation and algorithm (`f3e825b8`), Review B applied (`b178539c`). An independent Opus
+review of the applied edits found no math errors; its fixes (stopping-rule minimum, defined cells
+and block-weighted fit, two-step attribution, v_k definition, undefined "arm", positive
+restatements) are in `f3ac90ae`, with the expanded Future Work and Table 4.6/4.7 placement.
+Table 4.7's caption was shortened so it shares a page with text (`469ea77a`). Q&A prep has 21
+questions with format tags. Standalone chapter 71 pp, synced draft 68 pp, full prelim 254 pp;
+assembly tests pass (bios `c58c250`).
 
 ### Phase 5. Independent reviews (two subagents in parallel)
 

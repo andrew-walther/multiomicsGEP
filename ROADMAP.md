@@ -79,6 +79,8 @@ release, promoter/enhancer mapping rules and cross-modality program comparisons.
 
 **Prelim Chapter 4 Introduction (2026-11-11).** Rewritten as a journal-paper introduction: Background & Motivation (literature, gap, question) and Aims & Contributions (aims, current and planned contributions, outline). No results, dates or literature-review callbacks. Old text and follow-ups for the body revamp are in `paper/prelim/notes/trimmed-material-2026-11.md`.
 
+**Prelim Chapter 4 review (2026-11-15).** Round-5 writing and committee reviews, the full derivation appendix (C.2) and an independent check of the edits are applied ([session plan](docs/plans/2026-11-14-chapter4-review-session-plan.md); DECISIONS 2026-11-15). Future Work now lists extensions beyond the current aims. Oral-prelim questions are in `presentation/prelim-slides/prelim-qa-prep.md`. Chapter 71 pp standalone, 68 pp in the synced draft.
+
 **Prelim Chapter 4 (2026-11-06).**
 
 - [x] Revise the chapter around the survival-weighted YFB fit. The

@@ -47,6 +47,18 @@ in the near-threshold cell. The program rule has been reapplied at K = 5 and ide
 only Program 2 as a main program. The open methods problem from November 6 remains: fits are not stable at survival
 weights large enough to move real-data loadings (about 10⁴).
 
+## Prelim Chapter 4 review (2026-11-15)
+
+The round-5 review of Chapter 4 is applied: writing review A, committee review B, the full
+derivation and update algorithm in Appendix C.2 (ported from
+`derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.tex`, without
+repository references), and fixes from an independent check. Program 2-5 variance shares
+(3.6% to 14.6%) are recorded in `docs/findings/2026-11-15-k5-variance-shares.md`. The chapter
+defines a factor as the column pair (l_k, f_k) and a program as the genes it describes. Future
+Work adds other outcome models, cohort strata and clinical covariates, more data types,
+cell-type references and other cancers. Q&A prep for the Part III slides:
+`presentation/prelim-slides/prelim-qa-prep.md` (Q-01 to Q-21).
+
 ## Week of November 9: tasks A to F
 
 All six tasks used pooled training data and training CV only. The detailed sections
