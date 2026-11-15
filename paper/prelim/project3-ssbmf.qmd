@@ -44,7 +44,7 @@ comparison are complete. The joint fit is not validated by simulation.
 
 # Introduction {#sec-intro}
 
-## Background & Motivation
+## Background and Motivation
 
 Pancreatic cancer has a poor prognosis, and few patients survive five years after diagnosis [@SEER2026]. Most cases are pancreatic ductal adenocarcinoma (PDAC). Expression studies have divided PDAC into molecular subtypes that differ in survival and in response to treatment [@Collisson2011], but the taxonomies do not agree: @Collisson2011 described three subtypes and @Bailey2016 described four. Bulk tumor samples also mix malignant and stromal cells. @Moffitt2015 used virtual microdissection to separate basal-like and classical tumor expression from normal and activated stromal expression, and in The Cancer Genome Atlas (TCGA) cohort several subtype assignments were associated with tumor purity [@Raphael2017]. A gene expression program describes this variation in a different way. It is a set of genes that vary together across samples, and each patient has a continuous score for how strongly the program is expressed [@Brunet2004; @Kotliar2019]. Programs can capture variation within a subtype and across the tumor and stromal compartments, so they can be used to ask which molecular patterns are associated with survival.
 
@@ -54,7 +54,7 @@ Two lines of work address parts of this problem. DeSurv adds a Cox loss to non-n
 
 We found no empirical Bayes factorization that estimates several programs together with their Cox associations and reports posterior uncertainty for those associations. We also found none that extends such a model to matched expression and methylation with a separate loading prior for each data type. A joint model raises one more question that the two-step pipeline avoids: how much weight survival should receive relative to the molecular data. If survival receives too little weight, a joint fit finds the same programs as an expression-only fit and addresses only the second weakness. This chapter asks whether a joint Bayesian model can find prognostic programs that an expression-only factorization misses. In such a model, survival enters through its likelihood with a weight chosen from the data, and uncertainty in the programs carries into their survival associations.
 
-## Aims & Contributions
+## Aims and Contributions
 
 The project has four aims. The first is to develop survival-supervised Bayesian matrix factorization (SSBMF), which jointly fits an empirical Bayes factorization of molecular data and a Cox model. Its purpose is to identify molecular programs associated with survival and to estimate those associations with posterior uncertainty. The second is to choose the strength of supervision and the number of programs from the data, so that survival shapes the programs when the survival signal supports it. The third is to extend the model to several matched data types, starting with gene expression and DNA methylation, with a separate loading prior for each type. The fourth is to evaluate the method in simulation and in independent PDAC cohorts, against two-step pipelines and existing supervised methods, and to release it as software.
 
@@ -656,7 +656,7 @@ In the 50 ICGC donors with matched data and 30 deaths, concordance was 0.660 for
 
 # Discussion {#sec-discussion}
 
-## Relevance of Results
+## Interpretation of the Results
 
 On the PDAC data the supervised and two-step fits gave the same loadings and nearly the same predictions, in training cross-validation and in the validation series. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, but at the survival weight chosen from the data, survival supplied almost none of the loading precision. These results therefore do not show improved molecular program discovery on these data.
 
@@ -668,7 +668,7 @@ Placing the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsy
 
 The rank-5 weight search retains 27 inner fits that reached the iteration cap, although the selected full and outer fits converged. The survival-active label of Programs 3 and 4 differs between ranks 5 and 7, so it is not stable for those two programs. Training cross-validation supports the gene screen and the input scaling. Comparisons on the five validation series had informed these choices earlier, so those series are not untouched by development. The rank and screen comparisons were repeated over five random partitions of the same 273 patients. That shows the choices do not depend on how patients are assigned to folds, but it does not measure sampling variability. The reported fit pools the two training cohorts with one baseline hazard, so it does not model a difference in baseline hazard between TCGA-PAAD and CPTAC. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its reported settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
 
-## Future Considerations
+## Future Work
 
 We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be compared in simulation and in training cross-validation on PDAC. The extension to several data types (@sec-mmodal) is the second contribution still in development. Its fitter reproduces the current model for one data type, and separate loading priors found programs on one data type more often than a pooled prior when the feature counts were equal. The open problem is balance when methylation sites far outnumber genes, which a power on the reconstruction likelihood does not solve. Two alternatives will be derived and tested in simulation: weighting methylation only in the score update, and summarizing CpG sites, for example by genomic region, so that the feature counts are closer while every site still contributes. The balanced model will then be fitted to the matched TCGA patients at 10,000 and 100,000 sites and judged mainly on the programs it finds: which genes and sites load together, whether methylation adds programs the expression fit lacks, and whether the joint fit recovers the methylation-specific program seen at 100,000 sites. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 
