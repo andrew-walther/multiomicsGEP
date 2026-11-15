@@ -609,6 +609,15 @@ Table 4.7's caption was shortened so it shares a page with text (`469ea77a`). Q&
 questions with format tags. Standalone chapter 71 pp, synced draft 68 pp, full prelim 254 pp;
 assembly tests pass (bios `c58c250`).
 
+**Status 2026-11-15 (Chapter 4 review complete).** Done-when audit run (Sonnet); its small items
+fixed (`c73071a9`, `837595e4`), review files given a decisions log and check resolutions (bios).
+Andrew's final notes applied in `efb1ca6f`: Future Work citations verified on PubMed (Cao 2021
+protein, phospho and glyco data; TCGA-PAAD reverse-phase protein array; PurIST for treatment
+choice), a paragraph on a risk scale shared across cohorts, coverage removed from planned work
+(open problem only), and one expectation notation. Every Section 5 item passes except the slide
+outline, which Andrew will update with the slide revision. Synced draft 69 pp, standalone 71 pp,
+full prelim 255 pp; assembly tests pass.
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
