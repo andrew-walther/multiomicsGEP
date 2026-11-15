@@ -415,4 +415,4 @@ Limitations are marked.
 
 > A separate script checks each update against a brute-force evaluation of the expected objective and against the code (73 checks).
 
-**Efron disclosure (drafted, struck by Andrew 2026-11-15; the chapter states Breslow ties for both fits).** On the full training data the two-step Cox risk scores under Efron and Breslow ties correlate 0.9999998, with C 0.66953 and 0.66948.
+**Efron disclosure (drafted, struck by Andrew 2026-11-15; the chapter states Breslow ties for both fits).** On the full training data the two-step Cox risk scores under Efron and Breslow ties correlate 0.9999998, with C 0.66948 (Efron) and 0.66953 (Breslow); source `results/benchmark_sim/outputs/k5_working_2026-11-12/joint_vs_twostep_check.txt`.
