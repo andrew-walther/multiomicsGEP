@@ -322,6 +322,21 @@ three-program simulations; the initial simulation is held out); C.14 Survival An
 Programs in the External Cohorts; C.15 Gene Lists for Each Program. Page budget: body 28–30 pp,
 Appendix C 15–18 pp.
 
+### Answers from Andrew, 2026-11-15 (Phase 4, Introduction)
+
+- Introduction items I-01 to I-10 accepted; abstract option (a) (drop rank selection from the
+  proposed-work sentence, no compensating cut needed).
+- Nothing from the math or currency checks needed settling before Phase 4; their rows are applied
+  section by section.
+- Rescaling of loadings is not a methods issue for later work.
+- Joint vs two-step: the takeaway for Results and the Discussion is that the current supervision
+  does not change the factorization (apart from recovering a very low-variance survival program
+  in simulation), unlike DeSurv, whose supervision visibly changed its NMF factors.
+- Signed-loadings Limitation: state it as a tradeoff of point-Laplace against point-exponential
+  priors; point-Laplace was chosen for now because the expression inputs are z-standardized.
+- Generalized-Bayes sentence: keep one defined, cited sentence (Bissiri et al. 2016) with its
+  qualifier; cite DeSurv (Young2026) for the weighting precedent; Mairal et al. (2008) not used.
+
 ## 3a. Content map: chapter body and Appendix C (confirmed 2026-11-15; changes in Section 3)
 
 The current chapter has 12 Methods subsections, 8 Results subsections, 10 figures and
@@ -521,6 +536,12 @@ any commit that changes labels or cross-references, run
 and `python3 prelim/full-draft/tools/test_prelim_assembly.py` from the bios-dissertation root
 (Sonnet subagent). In Chapter 3 the chapter rendered cleanly but the full build's own checks
 stopped in Phase 6 (a cross-reference followed by a colon; fixed in bios `d61df5b`).
+
+**Status 2026-11-15 (Phase 4, Introduction applied).** Phase 2 map confirmed (Section 3). The
+Introduction items I-01 to I-09 were applied to `paper/prelim/project3-ssbmf.qmd`; I-10 and the
+Chapter 4 fact-sheet update were applied in bios-dissertation. Sign-off log:
+`bios-dissertation/prelim/full-draft/notes/human-writer-review/round5/ch4/section-edits.md`.
+Next: Methods sign-off list.
 
 ### Phase 5. Independent reviews (two subagents in parallel)
 
