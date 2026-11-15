@@ -563,6 +563,10 @@ DeSurv contrast. Applied in `b8ae070d`; chapter 56 pp, prelim 242 pp, tests pass
 again that Chapter 3 be swept for negative statements after Chapter 4 (bios ROADMAP step 2).
 Next: Discussion and Appendix C sign-off list.
 
+**Status 2026-11-15 (Phase 4, Discussion and Appendix list sent).** D-01 to D-06 and A-01 to A-05
+(`round5/ch4/discussion-appendix-proposed.qmd`). Gene lists script committed. Young (2026)
+Sec. 2.3.4 checked: supports the DeSurv vs NMF factor-difference sentence (D-06a).
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
