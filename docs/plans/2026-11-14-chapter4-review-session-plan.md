@@ -137,8 +137,9 @@ modalities).
 
 - **D1. Proposed work.** Proposed methods stay in Methods, in a last subsection after the
   current method is fully described, and are named again in the Discussion's Future
-  Considerations. Working headings: "Continuing Work", with "Supervision Weight Tuning" and
-  "Extension of SSBMF to Several Data Modalities".
+  Considerations. One "Continuing Work" subsection holds all of the proposed methodology,
+  with working parts "Supervision Weight Tuning" and "Extension of SSBMF to Several Data
+  Modalities", plus any other key outstanding methodological item or result (D10).
 - **D2. The two newest supervision studies.** Include them only if they matter to the reader.
   At most a brief comment, used to explain how supervision is currently set through w_S and why
   choosing w_S remains open. No new tables, figures or appendix sections for them.
@@ -154,7 +155,7 @@ modalities).
 - **D5. Scope and tense.** This is a project-proposal chapter for a project with substantial
   progress. It reads as a thesis chapter on the current state of the work and gives proper
   attention to what is proposed next: tuning the survival weight w_S, the extension to several
-  modalities, and the related items (rank selection under stronger supervision, the R package).
+  modalities, and any other key outstanding item (D10).
   Completed work is in the past tense. Proposed work, in Continuing Work and Future
   Considerations, is in the future tense.
 - **D6. Appendix C layout.** One numbered list of sections, C.1, C.2, ..., with no "Part" or
@@ -186,8 +187,8 @@ modalities).
   - Describe w_S as a weight on the Cox log partial likelihood in the objective, with w_S = 1
     the standard variational Bayes fit that the reported results use.
   - The term "generalized Bayes" (or a power-likelihood reading) may be used only if it is
-    defined for the reader and cited, never dropped in without context. Keep it brief: a few
-    sentences, not a subsection. The point is that tuning w_S is work in progress: some
+    defined for the reader and cited, never dropped in without context. Keep it brief within the
+    Continuing Work subsection (D1, D10). The point is that tuning w_S is work in progress: some
     approaches have been tried, and settling the weight and its interpretation is an open item.
   - Where the reading is used, say what it does not cover: only the survival block is weighted
     while the expression term keeps weight 1; the Cox partial likelihood is not a full
@@ -199,6 +200,14 @@ modalities).
     (Phase 5).
   - The derivation document's wording is outside this review. Revisiting it, and the formal
     framing of w_S, is thesis work after the prelim.
+
+- **D10. What Continuing Work contains.** Proposed methodology and results that a reader can
+  understand as stated: the supervision weight and how it will be chosen, the several-modality
+  model with its specified form, and any other key outstanding conceptual item or result needed
+  to complete the project (for example, choosing the number of programs reliably when
+  supervision is stronger, if the session judges it key). No internal study labels (such as
+  "S-15") and no software deliverables (such as "we will also build an R package"). Each item says
+  what will be done and how it will be evaluated.
 
 ## 3a. Content map: chapter body and Appendix C (proposed, to confirm in Phase 2)
 
@@ -218,7 +227,7 @@ to the notes file.
 | PDAC Training and Validation Cohorts | Two training cohorts and five external cohorts in brief (table in C.4) | PDAC Data and Evaluation |
 | Model Selection by Training Cross-Validation | Five-fold training CV, how rank 5, the gene screen and input scaling were chosen, and how w_S = 1 was chosen. Full procedure in C.5 | Tuning Protocol; Gene Screen, Input Scaling and Rank; current-practice part of Choosing the Survival Weight |
 | Comparison Methods and Evaluation | Two-step EBMF and Cox, larger-rank EBMF and Cox, DeSurv, elastic-net Cox, PurIST. Concordance, calibration, risk groups. Program classification in brief (rule in C.6) | Comparators, Risk Groups and Program Classification; part of PDAC Data and Evaluation |
-| Continuing Work | *Supervision Weight Tuning*: why w_S = 1 leaves survival little influence on the loadings, why large fixed weights fail, the alternatives proposed, and one sentence that tuning efforts are in progress. *Extension of SSBMF to Several Data Modalities*: model form and what remains open. A sentence that K = 5 currently comes from training cross-validation, and that letting the priors prune programs from a larger starting K may be revisited if it proves reliable. Future tense | Proposed parts of Choosing the Survival Weight; Proposed Extension to Additional Data Modalities (shortened) |
+| Continuing Work | *Supervision Weight Tuning*: why w_S = 1 leaves survival little influence on the loadings, why large fixed weights fail, the alternatives proposed, and one sentence that tuning efforts are in progress. *Extension of SSBMF to Several Data Modalities*: the proposed model form, with patient scores shared across modalities and a loading matrix **F**_m for each modality m with its own estimated prior, and what remains open. Other key outstanding items per D10. A sentence that K = 5 currently comes from training cross-validation, and that letting the priors prune programs from a larger starting K may be revisited if it proves reliable. Future tense | Proposed parts of Choosing the Survival Weight; Proposed Extension to Additional Data Modalities (shortened) |
 
 Sensitivity to the Priors moves to the appendix (C.10).
 
@@ -320,15 +329,16 @@ chapter. For each section check:
   Discussion.
 - **Methods:** the current method first, in the order of the confirmed Section 3a map, in the
   past tense. Model Selection by Training Cross-Validation states plainly how w_S = 1 was chosen.
-  Then Continuing Work in the future tense: supervision weight tuning, with at most a sentence on
-  the newest studies (D2), and the multimodal extension (D4).
+  Then the single Continuing Work subsection in the future tense: supervision weight tuning, with
+  at most a sentence on the newest studies (D2), the multimodal extension with its model form
+  (D4), and any other key outstanding items (D10).
   Apply D9 wherever w_S is described as a power on the likelihood.
 - **Results:** each subsection opens with its question and states its finding in the first two
   sentences. Detail that does not change a conclusion moves to the appendix or is cut. The joint
   model's results are labeled preliminary.
 - **Discussion:** Relevance of Results, Limitations, and Future Considerations, which names each
-  open item (w_S tuning, multimodal extension, rank selection under stronger supervision, the
-  R package) and points back to its Methods subsection.
+  open item (w_S tuning, the multimodal extension, and any other item under D10) and points back
+  to the Continuing Work subsection.
 - **Appendix C:** build sections C.1, C.2, ... per D6 and the confirmed map, methods sections
   before results sections. Each section is
   referenced from the body and kept brief: motivation, "Table X compares...", the finding.
