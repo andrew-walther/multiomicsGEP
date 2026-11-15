@@ -512,7 +512,7 @@ The multimodal model of @sec-mmodal combines expression and methylation. The CPT
 
 Bulk tumor samples mix tumor, stromal, immune and normal pancreatic cells, and Program 4 showed that a prognostic program can partly reflect normal tissue in the sample (@sec-res-programs). Gene expression programs learned from single-cell data [@Kotliar2019] could serve as cell-type references in two ways. Comparing each fitted program's loadings with the reference programs would show whether it describes tumor cells or the cells around them. A loading prior centered on known cell-type programs would let the remaining programs describe variation that the references leave out.
 
-The model applies to any cancer with expression and survival data. TCGA and CPTAC include other cancers with both, and fits across several cancers would show whether supervision finds low-variance prognostic programs more often in real data than the PDAC fit did, and whether a program learned in one cancer carries prognostic information when scored in another.
+TCGA and CPTAC include other cancers with expression and survival data. Fits to them would show whether supervision finds low-variance prognostic programs more often than in PDAC, and whether a program learned in one cancer predicts survival in another.
 
 \FloatBarrier
 
