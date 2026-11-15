@@ -558,6 +558,11 @@ comparison is justified by results or literature. Applied in `b9d24164`; chapter
 (`70057347`). Post-review steps recorded in bios ROADMAP (Ch1 review, Ch1-3 writing-rule sweep,
 abstract/continuity, full-prelim review).
 
+**Status 2026-11-15 (Phase 4, Results applied).** R-01 to R-16 accepted, R-15a revised to drop the
+DeSurv contrast. Applied in `b8ae070d`; chapter 56 pp, prelim 242 pp, tests pass. Andrew asked
+again that Chapter 3 be swept for negative statements after Chapter 4 (bios ROADMAP step 2).
+Next: Discussion and Appendix C sign-off list.
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
