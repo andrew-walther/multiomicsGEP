@@ -366,3 +366,26 @@ Proposals that add length need a matching cut.
 > never to the generated draft. The decisions in Section 3 are settled. Start with Phase 1, then
 > walk me through the Phase 2 review of the Section 3a content map (body versus Appendix C), and
 > launch the Phase 3 currency check as a subagent while we do it.
+
+### Full-plan prompt
+
+To run the whole plan, Phases 1 to 6, with stops only where Andrew's input is needed:
+
+```text
+I'm reviewing Chapter 4 (Project 3, SSBMF) for the written prelim. Read
+../multiomicsGEP/docs/plans/2026-11-14-chapter4-review-session-plan.md first, then this repo's
+AGENTS.md and ROADMAP.md. Edits go to ../multiomicsGEP/paper/prelim/project3-ssbmf.qmd, never to
+the generated draft. The decisions in Section 3 are settled.
+
+Work through the whole plan, Phases 1 to 6, in order. Stop and wait for me only at these points:
+(1) after Phase 2, to confirm the content map before any prose edits;
+(2) after each section in Phase 4, to approve the edits before you commit them in multiomicsGEP;
+(3) after Phase 5, when the two review files are ready for my accept/reject decisions.
+Launch the Phase 3 currency check as a subagent during Phase 2, and run the two Phase 5 reviews
+as parallel subagents. Keep the plan's Section 5 "Done when" list as the finish line, and tell me
+which items are still open whenever you stop.
+```
+
+The session must be able to edit and commit in `multiomicsGEP`. Add that folder to the session if
+asked. If the session runs long, split after Phase 4: commit, then start a fresh session with the
+same prompt plus "Phases 1 to 4 are done."
