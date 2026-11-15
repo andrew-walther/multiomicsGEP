@@ -553,6 +553,11 @@ what was done and settled on; no negative statements or decision narration unles
 comparison is justified by results or literature. Applied in `b9d24164`; chapter 57 pp, prelim
 243 pp, assembly tests pass. Next: Results sign-off list.
 
+**Status 2026-11-15 (Phase 4, Results list sent).** R-01 to R-16 and `round5/ch4/results-proposed.qmd`
+(also places Appendix C.7 to C.15) sent to Andrew. Joint vs two-step check committed
+(`70057347`). Post-review steps recorded in bios ROADMAP (Ch1 review, Ch1-3 writing-rule sweep,
+abstract/continuity, full-prelim review).
+
 ### Phase 5. Independent reviews (two subagents in parallel)
 
 Run both on the revised chapter. Give each the source, the PDF, `PROJECT_STATUS.qmd` and the
