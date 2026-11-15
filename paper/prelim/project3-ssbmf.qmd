@@ -98,7 +98,7 @@ Survival enters the factorization only through the loading update, where the Cox
 
 ## Priors and Variational Inference {#sec-vi}
 
-Every entry of $\mathbf{l}_k$ has prior $g_{\mathbf{l}_k}$ and every entry of $\mathbf{f}_k$ has prior $g_{\mathbf{f}_k}$. Each is a point-Laplace distribution, a mixture of a point mass at zero and a Laplace distribution, with its mixing proportion and scale estimated by empirical Bayes for each program [@Willwerscheid2025]. The prior lets a loading be exactly zero and lets a whole program shrink to zero. Each coefficient has a Normal prior $g_{\beta_k}=N(0,\sigma_k^2)$ with $\sigma_k^2$ estimated. The noise precisions $\boldsymbol{\tau}$ are estimated in closed form at each sweep. The variational posterior factorizes as $q=\prod_k q(\mathbf{l}_k)\,q(\beta_k)\prod_j q(f_{jk})$, with the loadings independent across genes and programs. Appendix \ref{app:priors} states the priors in full, and Appendices \ref{app:lf-prior} and \ref{app:beta-prior} compare them with alternatives.
+Every entry of $\mathbf{l}_k$ has prior $g_{\mathbf{l}_k}$ and every entry of $\mathbf{f}_k$ has prior $g_{\mathbf{f}_k}$. Each is a point-Laplace distribution, a mixture of a point mass at zero and a Laplace distribution, with its mixing proportion and scale estimated by empirical Bayes for each program [@Willwerscheid2025]. The prior lets a loading be exactly zero and lets a whole program shrink to zero. Each coefficient has a Normal prior $g_{\beta_k}=N(0,\sigma_k^2)$ with $\sigma_k^2$ estimated. The noise precisions $\boldsymbol{\tau}$ are estimated in closed form at each sweep. The variational posterior factorizes as $q=\prod_k q(\mathbf{l}_k)\,q(\beta_k)\prod_j q(f_{jk})$, with the loadings independent across genes and programs. Appendix \ref{app:priors} states the priors in full, and Appendix \ref{app:lf-prior} compare them with alternatives.
 
 To keep each update in closed form, the Cox partial log-likelihood is replaced at each sweep by a second-order expansion around the current linear predictor with a diagonal approximation to the Hessian [@Simon2011]. Each update then has the form of a normal-means problem, solved with the ebnm package [@Willwerscheid2025]. Taking expectations under $q$, the expansion contributes the variance of $\eta_i$ as well as its mean. The coefficient update therefore uses the posterior second moment of each score, $E[z_{ik}^2]=\bar z_{ik}^2+\sum_j y_{ij}^2\operatorname{Var}(f_{jk})$ with $\bar z_{ik}=\sum_j y_{ij}E[f_{jk}]$, and in this way carries loading uncertainty into the coefficients. The survival part of the loading update adds $w_S$ times the Cox curvature to each loading's precision. Genes are updated one at a time, and each sees the scores refreshed by the genes before it.
 
@@ -286,9 +286,9 @@ Two-step & 0.656 (0.029) & 0.651 & $-$773.6 & 5/5 & 3 \\
 \end{table}
 ```
 
-Survival had almost no effect on the loadings. The median survival share among active programs in each full or fold fit ranged from $4.9\times10^{-7}$ to $1.2\times10^{-6}$, against 0.01 to 0.2 in the 2,000-gene simulation. Two features of the real data make the share this small. The real coefficients are small, at most 0.42 per standard deviation of the score in any fold, and the share scales with $E[\beta_k^2]$. The real programs also carry far more of the expression variance than the simulated program, which carried 0.25% to 5%. In the fits to all training patients the joint and two-step programs matched one to one, with loading correlations of 0.999994 to 0.9999997, score correlations of at least 0.99998, and 49 or 50 of the 50 largest loadings shared (Appendix \ref{app:joint-twostep}). At this weight survival changed the coefficients and left the factorization as EBMF found it. The agreement between the joint and EBMF factors may change once a survival weight gives supervision more influence on the loadings (@sec-continuing). The small concordance difference therefore comes from the joint coefficient update with its Normal shrinkage prior.
+Survival had almost no effect on the loadings. The median survival share among active programs in each full or fold fit ranged from $4.9\times10^{-7}$ to $1.2\times10^{-6}$, against 0.01 to 0.2 in the 2,000-gene simulation. Two features of the real data make the share this small. The real coefficients are small, at most 0.42 per standard deviation of the score in any fold, and the share scales with $E[\beta_k^2]$. The real programs also carry far more of the expression variance than the simulated program, which carried 0.25% to 5%. In the fits to all training patients the joint and two-step programs matched one to one, with loading correlations of 0.999994 to 0.9999997, score correlations of at least 0.99998, and 49 or 50 of the 50 largest loadings shared (Appendix \ref{app:joint-twostep}). At this weight survival changed the coefficients and left the factorization as EBMF found it. In the same PDAC training cohorts, DeSurv and standard NMF at the same rank produced different factors, and DeSurv's most prognostic factor had no close counterpart among the NMF factors [@Young2026]. The agreement between the joint and EBMF factors may therefore change once a survival weight gives supervision more influence on the loadings (@sec-continuing). The small concordance difference therefore comes from the joint coefficient update with its Normal shrinkage prior.
 
-Training cross-validation also chose the gene set, the input scaling, the rank and the priors. The one-standard-error rule selected $K=5$ on a plateau of concordance from $K=5$ to 12 (0.649 to 0.666), and repeating the cross-validation over four more partitions of the patients selected $K=5$ again. The alternative gene screen and input scalings each had lower concordance than the current choice, by 0.012 to 0.020, and every alternative prior had lower concordance than the point-Laplace and Normal priors (Appendices \ref{app:inputs-rank}, \ref{app:lf-prior} and \ref{app:beta-prior}). The model with the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$, gave nearly the same concordance (0.652 against 0.655) and risk scores that correlated 0.998 with the projection model's (Appendix \ref{app:param-compare}).
+Training cross-validation also chose the gene set, the input scaling, the rank and the priors. The one-standard-error rule selected $K=5$ on a plateau of concordance from $K=5$ to 12 (0.649 to 0.666), and repeating the cross-validation over four more partitions of the patients selected $K=5$ again. The alternative gene screen and input scalings each had lower concordance than the current choice, by 0.012 to 0.020, and every alternative prior had lower concordance than the point-Laplace and Normal priors (Appendices \ref{app:inputs-rank} and \ref{app:lf-prior}). The model with the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$, gave nearly the same concordance (0.652 against 0.655) and risk scores that correlated 0.998 with the projection model's (Appendix \ref{app:param-compare}).
 
 ## Concordance in Five External PDAC Cohorts {#sec-res-external}
 
@@ -482,23 +482,29 @@ All five programs stayed live in each full joint fit, and every joint program ma
 
 ## Interpretation of the Results
 
-On the PDAC data the supervised and two-step fits gave the same loadings and nearly the same predictions, in training cross-validation and in the validation series. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, but at the survival weight chosen from the data, survival supplied almost none of the loading precision. These results therefore do not show improved molecular program discovery on these data.
+On the PDAC data the joint SSBMF fit and the two-step EBMF and Cox fit gave the same programs and nearly the same predictions, in training cross-validation and in the five external cohorts. The joint fit carries posterior loading uncertainty into the coefficients and shrinks them, but at $w_S=1$ survival supplied almost none of the loading precision. The gain from joint fitting on these data is therefore confined to the coefficients, and the programs are the ones an expression-only factorization finds.
 
-The simulations show where supervised discovery can help and how far the current model gets there. A small survival weight acts mostly on low-variance programs, since the survival share grows as a program's variance share falls. Near the detection threshold the supervised fit found programs the two-step fit missed and predicted much better when survival was strong. When the planted program was easy to find, or survival was as weak as on the real data, the two fits were nearly the same. A larger fixed weight moved the loadings in strong-survival settings but overfit in realistic ones and failed to converge with 2,000 genes. Choosing the weight by cross-validated partial log-likelihood avoided those weights and adapted to the signal, but it left the coefficients attenuated in the strong-survival cells. That combination makes a data-driven weight the main open problem of the project.
+The simulations show where supervised discovery can help and how far the current model gets there. A small survival weight acts mostly on low-variance programs, since the survival share grows as a program's variance share falls. Near the detection threshold the joint fit found programs the two-step fit missed and predicted much better when survival was strong. When the planted program was easy to find, or survival was as weak as on the real data, the two fits were nearly the same. A larger fixed weight moved the loadings in strong-survival settings but overfit in realistic ones and failed to converge with 2,000 genes. Choosing the weight by cross-validated partial log-likelihood avoided those weights and adapted to the signal, but it left the coefficients attenuated in the strong-survival cells. That combination makes a data-driven weight the main open problem of the project.
 
-Placing the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$, gave nearly the same programs and predictions on these data, so these data provide no evidence of an accuracy gain from fold-in, while projection avoids it for new patients (Appendix \ref{app:param-compare}). Methylation alone predicted less well than expression and showed no survival-active program that expression misses, although some methylation programs are not explained by the expression programs (@sec-res-mmodal). The preliminary joint fit showed no added predictive or program-discovery benefit, but methylation dominated its shared programs (@sec-res-mmodal), so it does not yet test what the joint model is for.
+Placing the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$, gave nearly the same programs and predictions on these data, and the projection scores new patients directly from their expression (Appendix \ref{app:param-compare}). Methylation alone predicted less well than expression, and every methylation program with stable survival activity overlapped an expression program. Some methylation programs, including one with an immune signature, were largely unexplained by the expression programs (@sec-res-mmodal). The preliminary joint fit added no program beyond those of the single-modality fits, and methylation dominated its shared scores. It therefore has yet to test what the joint model is for: programs shared across expression and methylation, and programs specific to one of them.
 
 ## Limitations
 
-The rank-5 weight search retains 27 inner fits that reached the iteration cap, although the selected full and outer fits converged. The survival-active label of Programs 3 and 4 differs between ranks 5 and 7, so it is not stable for those two programs. Training cross-validation supports the gene screen and the input scaling. Comparisons on the five validation series had informed these choices earlier, so those series are not untouched by development. The rank and screen comparisons were repeated over five random partitions of the same 273 patients. That shows the choices do not depend on how patients are assigned to folds, but it does not measure sampling variability. The reported fit pools the two training cohorts with one baseline hazard, so it does not model a difference in baseline hazard between TCGA-PAAD and CPTAC. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its reported settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
+The programs are contrasts. Under the point-Laplace priors a loading can take either sign, and each program sets the genes at its positive pole against those at its negative pole. Such a program is harder to interpret than the additive set of genes a nonnegative factorization gives. The point-Laplace prior suits the expression input, which is z-standardized within cohort, and the nonnegative point-exponential prior lowered cross-validated concordance (Appendix \ref{app:lf-prior}).
+
+The survival-active label of Programs 3 and 4 changed between ranks 5 and 7, and it is unstable for those two programs. The rank-5 weight search kept 27 inner fits that reached the sweep limit, although every selected outer fit and the full fit converged, and at rank 7 three of five fold fits converged. Comparisons on the five validation series informed the gene screen and input scaling earlier in development, before training cross-validation confirmed them, and those series were therefore seen during development. The rank and screen comparisons were repeated over five random partitions of the same 273 patients. This shows that the choices are robust to fold assignment and leaves sampling variability unmeasured.
+
+The reported fit pools the two training cohorts with one baseline hazard and therefore assumes the same baseline hazard in TCGA-PAAD and CPTAC. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors, and the pooled estimand remains conditional on the observed series. DeSurv used its reported settings rather than a new search on our training folds. Stage, grade, age and margin are each missing from at least one training cohort or validation series, and the comparison therefore includes no clinical model. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
 
 ## Future Work
 
-We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-continuing). Each will be compared in simulation and in training cross-validation on PDAC. The extension to several data types (@sec-mmodal) is the second contribution still in development. Its fitter reproduces the current model for one data type, and separate loading priors found programs on one data type more often than a pooled prior when the feature counts were equal. The open problem is balance when methylation sites far outnumber genes, which a power on the reconstruction likelihood does not solve. Two alternatives will be derived and tested in simulation: weighting methylation only in the score update, and summarizing CpG sites, for example by genomic region, so that the feature counts are closer while every site still contributes. The balanced model will then be fitted to the matched TCGA patients at 10,000 and 100,000 sites and judged mainly on the programs it finds: which genes and sites load together, whether methylation adds programs the expression fit lacks, and whether the joint fit recovers the methylation-specific program seen at 100,000 sites. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
+The continuing work of @sec-continuing has three parts. The first is a data-driven survival weight that lets survival change the loadings where the data support it. The cross-validated weight, a calibrated weight on the partial likelihood and normalized loss terms will be compared on recovery, calibration, convergence and cross-validated concordance. The second is the extension to several data types, where the open problem is balance when methylation sites far outnumber genes. The balanced model will be judged mainly on the programs it finds. The third is rank selection under the chosen weight. Once these are settled, we will release the model as an R package with a single fitting function and use it to regenerate the reported results.
 
 \FloatBarrier
 
 # Appendix
+
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 
 <!-- Independently reviewed on 2026-11-12: docs/reviews/2026-11-12-task-a-independent-review.md, docs/reviews/2026-11-12-task-b-independent-review.md (training-CV redo: docs/reviews/2026-11-12-task-f-independent-review.md). Sources: docs/findings/2026-11-12-lf-prior-comparison-findings.md, docs/findings/2026-11-12-lf-prior-followup-findings.md, docs/findings/2026-11-12-beta-prior-comparison-findings.md; aggregate CSVs in results/benchmark_sim/outputs/lf_prior_2026-11-09/. Gene screen, input scaling and rank results go in A3 onward. -->
 
@@ -528,7 +534,29 @@ A separate script checks each update against a brute-force evaluation of the exp
 
 ## PDAC Datasets for Model Training and Validation
 
-\label{app:data}<!-- Cohort table (platform, patients, deaths, role) added in the Appendix step. -->The PACA-AU array and RNA-seq series share 47 donors, and the RNA-seq series contains a repeated donor. We therefore also report the pooled validation difference after excluding that series.
+\label{app:data}Table \ref{tab:cohorts} lists the cohorts. The PACA-AU array and RNA-seq series share 47 donors, and the RNA-seq series contains a repeated donor. We therefore also report the pooled validation difference after excluding that series.
+
+```{=latex}
+\begin{table}[!htb]
+\centering
+\caption[PDAC cohorts used for training and validation]{PDAC cohorts used for training and validation. Records count expression profiles with survival; the two PACA-AU series share 47 donors, and the 616 validation records come from 568 donors.}
+\label{tab:cohorts}
+\small
+\begin{tabular}{llccl}
+\toprule
+Cohort & Platform & Records & Deaths & Role \\
+\midrule
+TCGA-PAAD & RNA-seq & 144 & 75 & Training \\
+CPTAC & RNA-seq & 129 & 64 & Training \\
+Dijk & RNA-seq & 90 & 81 & Validation \\
+Moffitt & Microarray & 123 & 83 & Validation \\
+PACA-AU & Microarray & 63 & 38 & Validation \\
+PACA-AU & RNA-seq & 52 & 31 & Validation \\
+Puleo & Microarray & 288 & 181 & Validation \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
 
 ## Cross-Validation Procedure for Model Selection
 
@@ -647,11 +675,13 @@ Concordance changed little with the number of genes (Figure \ref{fig:size-curve}
 
 At rank 5, choosing the survival weight by training cross-validated partial log-likelihood over $\{1,2,5,10,20,50\}$ selected $w_S=1$. The partial log-likelihood was $-773.551$ at weight 1 and $-774.186$ at weight 50, a range of 0.635. Nested cross-validation gave $C=0.658$ with SE 0.027, compared with 0.660 for the fixed unit weight on the same preprocessed matrix and all-pairs fold scoring. The five outer training sets selected weights 1, 1, 1, 10 and 50. Of 216 fits, 189 converged and 27 inner fits reached the 300-sweep limit. The weight-selection rule retained error-free inner fits with finite likelihoods even when they reached that limit. Every selected outer fit and the selected full-data fit converged. Scaling was prepared before the nested splits, and this estimate therefore evaluates weight selection conditional on that matrix. At weight 50, survival supplied a median of $5.80\times10^{-5}$ of the loading precision for active programs. The selected full fit is identical to the unit-weight fit.
 
-## Priors on the Scores and Loadings
+## Comparison of Alternative Priors
 
 \label{app:lf-prior}Sensitivity analyses refit the model with alternatives to the priors of @sec-vi, using the simulation cells of @sec-sim-design and the five training folds, and compare recovery, false-active programs, convergence, calibration and cross-validated concordance. For the scores and loadings, the alternative is a point-exponential prior, a mixture of a point mass at zero and an exponential distribution [@Willwerscheid2025], fit to expression divided by its within-cohort standard deviation without centering. This gives a nonnegative factorization like DeSurv's, in which each program is an additive set of genes. That input keeps each cohort's mean level, and the training comparison therefore counts only pairs of patients from the same cohort. For the coefficients, the alternatives are point-Laplace and point-normal priors, which can set a coefficient exactly to zero, and the point-normal prior also gives a posterior probability that each coefficient is nonzero. Survival-active programs that match no planted program are reported with the size of their coefficients, since a program with a small coefficient changes the risk score little.
 
 The point-Laplace and Normal priors gave the highest concordance of the priors compared. A point-exponential prior on the scores and loadings, fit to nonnegative input, lowered within-cohort cross-validated concordance at rank 7 from 0.658 to between 0.573 and 0.635 across four input setups, and at most one of five folds converged. At rank 5 it gave 0.519 against 0.655. Shared point-Laplace, point-normal and Normal coefficient priors gave within-cohort concordance of 0.649 to 0.656 at rank 7, against 0.658 for the Normal prior, with nearly the same simulation results, and 0.648 to 0.649 at rank 5, against 0.655. The working model therefore keeps them.
+
+### Priors on the Scores and Loadings
 
 A point-exponential prior on $\mathbf{L}$ and $\mathbf{F}$ keeps every score and loading nonnegative, as in a nonnegative matrix factorization such as DeSurv. Tables \ref{tab:lf-prior-sim} and \ref{tab:lf-prior-real} compare it with the point-Laplace prior in simulation and in five-fold training cross-validation. The point-exponential fits need nonnegative input and a centered Cox projection, and three of the inputs remove or absorb the difference in mean expression between the two training cohorts. In simulation the point-exponential prior recovered the planted program as often as point-Laplace. Point-exponential fits also marked more programs survival-active that matched no planted program. Such programs are expected, and where their size was measured their coefficients were mostly a tenth to a quarter of the planted program's. The difference appeared on the training data, where the point-exponential prior lowered concordance by 0.023 to 0.085 under every input, and at most one of five folds converged. At the rank chosen by cross-validation, $K=5$, the point-exponential prior gave 0.519 against 0.655. Apart from that check, both comparisons in this appendix use rank 7, the rank in use before training cross-validation selected rank 5. The working model keeps the point-Laplace prior.
 
@@ -695,7 +725,7 @@ Point-exponential, within-patient ranks & 0.615 & $-$0.043 (0.016) & 0/5 & 2 & 1
 \end{table}
 ```
 
-## Prior on the Survival Coefficients
+### Priors on the Survival Coefficients
 
 \label{app:beta-prior}A sparse coefficient prior can set a program's coefficient exactly to zero, and the point-normal prior gives each program a posterior probability of a nonzero coefficient that could replace the activity threshold. Table \ref{tab:beta-prior} compares the Normal prior of the reported fit with point-Laplace and point-normal priors shared across programs, and with a shared Normal prior that separates sharing from sparsity. At rank 7 the four priors gave nearly the same fits. Concordance differed by at most 0.009, and recovery, calibration slopes and the counts of survival-active programs were nearly the same. On the training data the point-normal inclusion probabilities were 0.94 to 1.00 for all seven programs, so they did not identify the survival-active programs. At rank 5 the three shared priors gave within-cohort concordance of 0.648 to 0.649, against 0.655 for the Normal prior. The working model keeps the Normal prior.
 
@@ -800,7 +830,32 @@ Training direction & Protective & Adverse & Adverse \\
 
 ## Gene Lists for Each Program
 
-\label{app:gene-lists}<!-- Gene-list table built in the Appendix step. -->
+\label{app:gene-lists}Table \ref{tab:gene-lists} lists, for each survival-active program, the 25 genes with the largest positive and the 25 with the most negative posterior mean loadings in the joint SSBMF fit. The full loading matrix is in the project repository.
+
+```{=latex}
+\begin{table}[!htb]
+\centering
+\caption[Genes with the largest loadings at each pole of the survival-active programs]{Genes with the largest loadings at each pole of the survival-active programs of the joint SSBMF fit (rank 5), 25 per pole, in decreasing order of absolute posterior mean loading. The positive pole is the direction in which the program score increases. Program 2 is protective at its positive pole, and Programs 4 and 5 are adverse at theirs.}
+\label{tab:gene-lists}
+\small
+\begin{tabular}{@{}l l p{4.6in}@{}}
+\toprule
+Program & Pole & Genes \\
+\midrule
+2 & Positive & METTL7A, ATP2A3, ACACB, PDCD4, ACSS1, AKAP7, KIAA1324, LGALS2, ADH1B, C7, TMED6, CLU, AQP1, ABCB1, NOSTRIN, GATM, KCNK3, C6, P2RX1, CAPN6, ABAT, ATP8A1, NTRK2, SLC4A4, F11 \\
+  & Negative & LOXL2, MMP14, LDHA, P4HA1, SLC16A3, PGK1, GJB2, ENO2, FSCN1, SLC2A1, ITGA3, PLAU, CALU, ALDOA, RAI14, FN1, ENO1, GAPDH, PLOD1, MYOF, ANLN, AHNAK2, TPM4, CDH3, PLOD2 \\
+\addlinespace
+4 & Positive & SERPINA5, CTRB2, CPB1, REG1B, CTRB1, CPA1, CELA3A, CEL, CPA2, PNLIPRP1, SLC30A2, PLA2G1B, CTRC, CRP, REG3G, CELA3B, REG1A, REG3A, PKHD1, FGA, CLPS, ERP27, FGG, PNLIP, APCS \\
+  & Negative & SLAMF6, BANK1, AKNA, EMB, CXCR4, IRF8, CD79A, MS4A1, CYTIP, STK17B, NLRC5, NLRP1, GPA33, SELL, DOCK11, CCR7, CR2, PRKCB, ITK, KLF4, PAQR8, PLCB4, CD52, IKZF1, PTPRCAP \\
+\addlinespace
+5 & Positive & UHMK1, ARHGAP5, RAD21, PRKDC, TAOK1, DDX21, ATP13A3, IQGAP1, IL6ST, VPS13C, DDX3X, ZDHHC20, CLCN3, SMCHD1, ROCK1, SLC38A1, EGFR, ACSL4, CD2AP, ZKSCAN1, APOL6, RALGAPA2, SLK, SYNE2, HIPK2 \\
+  & Negative & RCN3, CHPF, MXRA8, LOXL1, EFEMP2, NPDC1, JUND, SPON2, MFAP2, ISLR, RPL28, RARRES2, ID3, PCOLCE, GPX1, EMILIN1, CST3, GAS6, PDLIM7, HTRA3, GPC1, NBL1, COMP, CFD, MIF \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
 
 # References {.unnumbered}
 
