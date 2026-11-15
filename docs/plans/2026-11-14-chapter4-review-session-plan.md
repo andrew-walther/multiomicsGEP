@@ -322,6 +322,17 @@ points to for a reason.
 
 ## 4. Work plan
 
+Model use. The main session (Opus) plans, decides with Andrew, and checks every subagent result
+before relying on it. Delegate bounded work to Sonnet subagents (model "sonnet"), each with a
+complete brief (goal, files, what done looks like):
+- applying approved edits from a sign-off list or review file, item by item, and reporting the
+  diff for the main session to check;
+- the Phase 3 currency check, citation lookups on Crossref or PubMed, render and page-count
+  checks, numbering and cross-reference checks, and searches across files;
+- the writing review (human-writer).
+Keep on Opus: content-map and restructuring decisions, new or substantially rewritten prose, the
+math check, and the committee-member review, since these depend on statistical reasoning.
+
 ### Phase 1. Set-up (about 15 minutes)
 
 1. Confirm the deadline.
