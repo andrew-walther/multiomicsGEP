@@ -386,3 +386,33 @@ prior comparisons as supplementary material. Removed:
 - > The loadings matched the $w_S=0$ fit across all 2,218 genes (Figure \ref{fig:program-correspondence}). Across the 1,985 genes shared with the historical $\alpha_F=0$ fit, Program 2 matched historical Program 7 at $|r|=0.623$ and Program 3 matched historical Program 3 at $|r|=0.649$. Both pairs had opposite loading signs. The matched poles shared nine and three of their top 25 genes, respectively. Program 5's best historical match had $|r|=0.180$.
 - Figure `fig:program-correspondence` (`figures/sup_programs_correspondence.pdf`, still produced by `make_figures_supervised_programs.R`). The agreement with the $w_S = 0$ loadings is already stated in the training cross-validation results.
 - The section "Proposed Comparison of Priors and Inputs", with its adoption rules for the point-exponential L/F prior and the sparse β priors, replaced by the shorter "Sensitivity to Priors and Input Processing". The full rules are in `docs/plans/2026-11-09-week-plan.md`.
+
+
+## 2026-11-15 Chapter 4 Methods restructure (round-5 review, items M-01 to M-20)
+
+Moved out of the Methods when they were restructured into eight subsections (multiomicsGEP
+commit after `205cafa3`). Reason: Andrew asked that the Methods state what was done and settled
+on, without implementation detail or planned-but-dropped steps. Candidates for the Discussion's
+Limitations are marked.
+
+**Implementation of the several-modality model (old Proposed Extension, 4th paragraph).**
+
+> The model is implemented by treating the columns of the concatenated matrix $[\mathbf{Y}_1\ \cdots\ \mathbf{Y}_M]$ as feature groups in the single-modality fitter. Scores, noise precisions, coefficient updates and prediction keep their existing form, while each group has a separate loading prior for each program. Omitting the groups or supplying one group follows the unchanged single-modality calculation. We checked this against frozen fits on pooled and stratified test datasets. For multiple groups, the loading Kullback–Leibler divergence is evaluated against the refitted group prior and checked by numerical integration and analytic calculations. An entire loading block that shrinks to a point mass is set to zero, including its contribution to the joint projection.
+
+**Clinical comparator (old Comparators, 1st paragraph; candidate for Limitations).**
+
+> A clinical model was planned, but no stage, grade, age or margin field is recorded in both training cohorts and all five validation series, so it was not fitted.
+
+**Stratified baseline hazard (old PDAC Data and Evaluation, 2nd paragraph; Limitations already says the pooled fit has one baseline hazard).**
+
+> A version that stratifies the baseline hazard by cohort is implemented but has not yet been evaluated on these data.
+
+**DeSurv settings (old Tuning Protocol, 2nd paragraph; duplicated by the Comparison Methods subsection).**
+
+> The DeSurv comparator used its published settings rather than a new search on our folds (@sec-comparators).
+
+**"73 checks" (old Variational Inference, 2nd paragraph; Andrew 2026-11-15: count not needed).**
+
+> A separate script checks each update against a brute-force evaluation of the expected objective and against the code (73 checks).
+
+**Efron disclosure (drafted, struck by Andrew 2026-11-15; the chapter states Breslow ties for both fits).** On the full training data the two-step Cox risk scores under Efron and Breslow ties correlate 0.9999998, with C 0.66953 and 0.66948.
