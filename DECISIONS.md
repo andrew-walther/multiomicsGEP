@@ -3,6 +3,28 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-15 — Chapter 4 round-5 review decisions (Andrew)
+
+**Decided.** The round-5 writing review (137 items) and committee review (C-01 to C-30) were
+applied to `paper/prelim/project3-ssbmf.qmd` with these author decisions:
+- The validation series are used only for scoring. Analyses that once used them (gene screen,
+  input scaling) were re-run with training cross-validation, so the old Limitations sentence was
+  removed.
+- "Working model" is dropped; "projection model" (η = (YF)β) and "latent-score model" (η = Lβ)
+  are defined. "Factor" is the column pair (l_k, f_k); "program" is the genes it describes,
+  weighted by their loadings.
+- The full derivation and update algorithm are in Appendix C.2, with no references to the
+  repository.
+- Coefficient attenuation is attributed to the joint coefficient update (one-observation Normal
+  prior), not the survival share. Interval coverage is a planned evaluation; the low simulated
+  coverage is in the oral Q&A prep, not the chapter.
+- The two-step tie method is not stated (it was fit with Efron, a negligible difference).
+- Claims are qualified where intervals include one or differences are within an SE; adverse and
+  protective directions are still named.
+
+**Why.** Andrew's accept/reject replies, 2026-11-15; facts checked against code and findings
+(see `docs/plans/2026-11-14-chapter4-review-session-plan.md`, Phase 6).
+
 ## 2026-11-13 — Pause multimodal development
 
 The preliminary expression and methylation results stand as reported. No

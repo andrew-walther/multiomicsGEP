@@ -12,13 +12,32 @@ round-5 edits. Check each answer against the current chapter before using it on 
 
 ## Where Each Question Belongs in the Deck
 
-| Deck section | Questions | Possible slide |
+Format: **main** (answer on a main-deck slide before it is asked), **backup** (a backup slide
+ready to show) or **spoken** (answered aloud, no slide).
+
+| Question | Deck section | Format |
 |---|---|---|
-| 1. Introduction | Q-01, Q-05, Q-19 | What a joint model adds over a two-step pipeline; the gap in the literature |
-| 2. Methods | Q-03, Q-04, Q-07, Q-09, Q-11, Q-13 | Generalized-Bayes reading of the objective; why the projection uses Y twice; the survival-active rule; prior choice; pooled baseline; Hessian approximation (backup) |
-| 3. Results, simulation | Q-02, Q-17 | Why a larger fixed weight fails; how a data-driven weight would be chosen |
-| 3. Results, PDAC | Q-06, Q-08, Q-10, Q-12, Q-14, Q-18, Q-20 | Training CV difference; rank stability; validation standardization; comparators; Program 4; risk-group cutpoint; the external concordance claim |
-| 4. Discussion and continuing work | Q-15, Q-16 | Methylation scale and priors; what the joint expression and methylation model should show |
+| Q-01 What the joint model buys over two steps | 1. Introduction / 4. Discussion | main |
+| Q-02 Why not raise $w_S$ | 3. Results, simulation | main |
+| Q-03 Partial likelihood in a variational objective | 2. Methods | backup |
+| Q-04 $\mathbf{Y}$ used twice | 2. Methods | spoken |
+| Q-05 Measurement error and coefficient bias | 1. Introduction | backup |
+| Q-06 Positive training concordance difference | 3. Results, PDAC | spoken |
+| Q-07 Meaning of survival-active | 2. Methods | backup |
+| Q-08 Rank chosen with non-converged fits | 3. Results, PDAC | backup |
+| Q-09 Point-Laplace against nonnegative priors | 2. Methods | spoken |
+| Q-10 Validation standardization and missing genes | 3. Results, PDAC | spoken |
+| Q-11 One baseline hazard | 2. Methods | spoken |
+| Q-12 Other comparators | 3. Results, PDAC | spoken |
+| Q-13 Dropped Hessian term | 2. Methods | backup |
+| Q-14 Program 4 and exocrine content | 3. Results, PDAC | spoken |
+| Q-15 Methylation scale and priors | 4. Continuing work | spoken |
+| Q-16 What the joint expression and methylation model should show | 4. Continuing work | main |
+| Q-17 SafeBayes and Holmes-Walker | 4. Continuing work | backup |
+| Q-18 Risk-group cutpoint | 3. Results, PDAC | spoken |
+| Q-19 Other Bayesian survival-guided factor models | 1. Introduction | spoken |
+| Q-20 What the external concordance claim is | 3. Results, PDAC | main |
+| Q-21 Coverage of the coefficient intervals | 3. Results, simulation | backup |
 
 ### Q-01. On these data the joint and two-step fits give the same programs and the same predictions. What does the Bayesian joint model buy you?
 
@@ -212,3 +231,16 @@ trained on the same patients (all paired intervals include zero), and better tha
 EBMF with unpenalized Cox (differences 0.055 and 0.049, intervals excluding zero). The claim is
 comparable prediction with interpretable programs and a single fixed score, not superiority.
 DeSurv's slopes stay below 1 (0.45 to 0.67) and SSBMF's range from 0.35 to 1.85.
+
+### Q-21. Do the posterior intervals for the coefficients cover the true effects?
+
+**Suggested answer.** Not yet, and the chapter lists it as planned evaluation. In the
+fixed-weight simulation at $w_S=1$ the 95% interval for the planted coefficient contained the
+true value in none of the 30 fits with 2,000 genes and in 6 of the 30 with 50 genes, because the
+posterior means were shrunk to less than half the true value
+(`docs/findings/2026-11-04-survival-weight-p2000-findings.md`, "Per-weight curves"). The cause is
+the coefficient update: each coefficient's Normal prior variance is estimated from its single
+pseudo-observation, $\hat\sigma_k^2=\max(0,x_k^2-s_k^2)$, and the posterior SD ignores the
+uncertainty in that estimate. The strong-survival simulations are far stronger than the PDAC data
+(true-predictor SD 9 to 26 against coefficients of at most 0.42), and coverage at realistic
+strength will be checked with the survival-weight comparison.
