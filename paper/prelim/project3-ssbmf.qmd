@@ -522,13 +522,101 @@ where $\delta_0$ is a point mass at zero, $\pi_0$ is the probability that the en
 
 ## Variational Update Algorithm and Derivations
 
-\label{app:vi}The full derivation, the update schedule and a one-page algorithm are in the supplementary derivation document in the project repository (\texttt{derivations/SSBMF-YFB-model-derivations/}). The main steps of the derivation are summarized here. With current linear predictor $\hat{\boldsymbol\eta}$, write $\hat\theta_i=e^{\hat\eta_i}$, $\hat S(t)=\sum_{l:\,t_l\ge t}\hat\theta_l$ for the risk-set sum and $\hat H(t)=\sum_{s\le t}d(s)/\hat S(s)$ for the Breslow cumulative hazard, where $d(s)$ is the number of events at time $s$. The expansion of $\ell_{\mathrm{Cox}}$ uses the score $u_i=\delta_i-\hat\theta_i\hat H(t_i)$ and the weight $W_{ii}=\hat\theta_i\hat H(t_i)$. The exact diagonal of the negative Hessian also contains $-\hat\theta_i^2\sum_{s\le t_i}d(s)/\hat S(s)^2$. We omit that term, which is small relative to the first when risk sets are large, and set a lower bound of $10^{-6}$ on $W_{ii}$.
+\label{app:vi}This appendix gives the derivation of each update, the update schedule and the complete algorithm. The supplementary derivation document in the project repository (\texttt{derivations/SSBMF-YFB-model-derivations/}) shows every algebraic step and is checked numerically against the fitting code.
 
-In the loading update for gene $j$ and program $k$, the ratio of survival to expression precision is
+### Notation and the Objective
+
+Moments are taken under the variational posterior $q$, with $E[l_{ik}^2]=E[l_{ik}]^2+\operatorname{Var}(l_{ik})$ and likewise for $f_{jk}$ and $\beta_k$. The program scores $\mathbf{Z}=\mathbf{Y}\mathbf{F}$ are a fixed linear function of the observed expression and the loadings. Under the factorized posterior the loadings are independent across genes and programs, which gives
 $$
-\rho_{jk}=\frac{w_S\,E[\beta_k^2]\sum_i W_{ii}\,y_{ij}^2}{\tau_j\sum_i E[l_{ik}^2]},
+\bar z_{ik}=\sum_j y_{ij}E[f_{jk}],\qquad V^Z_{ik}=\operatorname{Var}(z_{ik})=\sum_j y_{ij}^2\operatorname{Var}(f_{jk}),\qquad E[z_{ik}^2]=\bar z_{ik}^2+V^Z_{ik},
 $$
-and the survival share is $\rho_{jk}/(1+\rho_{jk})$. Rescaling a program multiplies the numerator and the denominator by the same constant and leaves the share unchanged. With standardized expression, $\sum_i W_{ii}y_{ij}^2\approx\sum_iW_{ii}=D$, the number of events. For nearly orthogonal programs whose scores are dominated by signal, $\rho_{jk}\approx w_S\,E[\beta_k^2]\,(D/n)/(\tau_j\,p^2\,v_k^2)$, where $v_k$ is program $k$'s share of the total variance of $\mathbf{Y}$. This approximation gives the dependence on $p$ and $v_k$ stated in @sec-model.
+with $z_{ik}$ and $z_{ik'}$ independent for $k\neq k'$. The expression term of the objective $\mathcal F$ is
+$$
+E_q[\log p(\mathbf{Y}\mid\mathbf{L},\mathbf{F},\boldsymbol\tau)]=\sum_j\Bigl[\tfrac n2\log\tau_j-\tfrac{\tau_j}{2}\sum_i\bar R^2_{ij}\Bigr]+C,
+$$
+$$
+\bar R^2_{ij}=\Bigl(y_{ij}-\sum_kE[l_{ik}]E[f_{jk}]\Bigr)^2+\sum_k\Bigl(E[l_{ik}^2]E[f_{jk}^2]-E[l_{ik}]^2E[f_{jk}]^2\Bigr).
+$$
+Every update below reduces to a normal-means problem with observation $x=B/A$ and standard error $s=A^{-1/2}$, where $A$ collects the coefficients of the second moment and $B$ those of the first moment in the expected log-likelihood. The ebnm package returns the posterior moments and the fitted prior [@Willwerscheid2025].
+
+### Expansion of the Cox Partial Likelihood
+
+With current linear predictor $\hat{\boldsymbol\eta}=\mathbf{Y}E[\mathbf{F}]E[\boldsymbol\beta]$, write $\hat\theta_i=e^{\hat\eta_i}$, $\hat S(t)=\sum_{l:\,t_l\ge t}\hat\theta_l$ for the risk-set sum and $\hat H(t)=\sum_{s\le t}d(s)/\hat S(s)$ for the Breslow cumulative hazard, where $d(s)$ is the number of events at time $s$. The second-order expansion of $\ell_{\mathrm{Cox}}$ around $\hat{\boldsymbol\eta}$ with a diagonal Hessian is
+$$
+\ell_{\mathrm{Cox}}(\boldsymbol\eta)\approx\ell_{\mathrm{Cox}}(\hat{\boldsymbol\eta})-\frac12\sum_iW_{ii}(r_i-\eta_i)^2+C,\qquad r_i=\hat\eta_i+\frac{u_i}{W_{ii}},
+$$
+with score $u_i=\delta_i-\hat\theta_i\hat H(t_i)$, weight $W_{ii}=\hat\theta_i\hat H(t_i)$ and working response $r_i$. The exact diagonal of the negative Hessian also contains $-\hat\theta_i^2\sum_{s\le t_i}d(s)/\hat S(s)^2$. We omit that term, which is small relative to the first when risk sets are large, and set a lower bound of $10^{-6}$ on $W_{ii}$. Since the scores sum to zero, $\sum_iW_{ii}=D$, the number of events, before the bound is applied. Taking expectations under $q$,
+$$
+E_q[\ell_{\mathrm{Cox}}(\boldsymbol\eta)]\approx\ell_{\mathrm{Cox}}(\hat{\boldsymbol\eta})-\frac12\sum_iW_{ii}\Bigl[(r_i-\bar\eta_i)^2+\operatorname{Var}(\eta_i)\Bigr]+C,\qquad \operatorname{Var}(\eta_i)=\sum_k\Bigl(E[z_{ik}^2]E[\beta_k^2]-\bar z_{ik}^2E[\beta_k]^2\Bigr).
+$$
+For program $k$ the part of the working response left to it is $r_i^{-k}=r_i-\sum_{k'\neq k}\bar z_{ik'}E[\beta_{k'}]$.
+
+### Coefficient Update
+
+Only the survival term and $\mathrm{KL}(q_{\beta_k}\Vert g_{\beta_k})$ involve $\beta_k$. Writing $\eta_i=z_{ik}\beta_k+\sum_{k'\neq k}z_{ik'}\beta_{k'}$ and using the independence of $\beta_k$, $z_{ik}$ and the other programs under $q$,
+$$
+-\tfrac12E_q\bigl[(r_i-\eta_i)^2\bigr]=-\tfrac12E[\beta_k^2]E[z_{ik}^2]+E[\beta_k]\,\bar z_{ik}\,r_i^{-k}+C.
+$$
+Multiplying by $w_SW_{ii}$ and summing over patients gives the expected log-likelihood of one normal observation of $\beta_k$ with
+$$
+A_{\beta_k}=w_S\sum_iW_{ii}E[z_{ik}^2],\qquad B_{\beta_k}=w_S\sum_iW_{ii}\,r_i^{-k}\bar z_{ik}.
+$$
+The term $V^Z_{ik}$ inside $E[z_{ik}^2]$ carries the loading uncertainty into the coefficient. The prior $g_{\beta_k}=N(0,\sigma_k^2)$ is refit at every update from this single observation, which gives $\hat\sigma_k^2=\max(0,x_k^2-s_k^2)$ with $x_k=B_{\beta_k}/A_{\beta_k}$ and $s_k^2=1/A_{\beta_k}$. The weight $w_S$ cancels in $x_k$ and scales $s_k$ by $w_S^{-1/2}$.
+
+### Score Update
+
+The scores $\mathbf{L}$ appear only in the expression term. With the partial residual $R^{-k}_{ij}=y_{ij}-\sum_{k'\neq k}E[l_{ik'}]E[f_{jk'}]$,
+$$
+A_{l_k}=\sum_j\tau_jE[f_{jk}^2],\qquad B_{l_{ik}}=\sum_j\tau_jR^{-k}_{ij}E[f_{jk}],
+$$
+and one normal-means problem over the $n$ patients, with common standard error $A_{l_k}^{-1/2}$, returns the posterior moments of $\mathbf{l}_k$ and refits $g_{\mathbf{l}_k}$. This is the standard EBMF update [@Wang2021]. Survival reaches the scores only through the current loadings.
+
+### Loading Update
+
+The loading $f_{jk}$ appears in both likelihoods. The expression term contributes
+$$
+A^{\mathrm{gen}}_{f_{jk}}=\tau_j\sum_iE[l_{ik}^2],\qquad B^{\mathrm{gen}}_{f_{jk}}=\tau_j\sum_iR^{-k}_{ij}E[l_{ik}].
+$$
+For the survival term, separate gene $j$ from the other genes of program $k$: $\eta_i=\beta_ky_{ij}f_{jk}+\beta_ks_{ij}+\eta_i^{-k}$, with $s_{ij}=\sum_{j'\neq j}y_{ij'}f_{j'k}$ and $\eta_i^{-k}=\sum_{k'\neq k}z_{ik'}\beta_{k'}$. These four quantities are independent under $q$, and with $E[s_{ij}]=\bar z_{ik}-y_{ij}E[f_{jk}]$,
+$$
+-\tfrac12E_q\bigl[(r_i-\eta_i)^2\bigr]=-\tfrac12E[\beta_k^2]\,y_{ij}^2E[f_{jk}^2]+\Bigl[E[\beta_k]\,y_{ij}r_i^{-k}-E[\beta_k^2]\,y_{ij}\bigl(\bar z_{ik}-y_{ij}E[f_{jk}]\bigr)\Bigr]E[f_{jk}]+C.
+$$
+Summing over patients with weights $W_{ii}$ gives
+$$
+A^{\mathrm{surv}}_{f_{jk}}=E[\beta_k^2]\sum_iW_{ii}y_{ij}^2,\qquad B^{\mathrm{surv}}_{f_{jk}}=E[\beta_k]\sum_iW_{ii}y_{ij}r_i^{-k}-E[\beta_k^2]\sum_iW_{ii}y_{ij}\bigl(\bar z_{ik}-y_{ij}E[f_{jk}]\bigr).
+$$
+The first part of $B^{\mathrm{surv}}$ is the weighted association between gene $j$ and the part of the working response that the other programs leave unexplained, and the second removes what the other genes of program $k$ already explain. The combined problem has
+$$
+A_{f_{jk}}=A^{\mathrm{gen}}_{f_{jk}}+w_SA^{\mathrm{surv}}_{f_{jk}},\qquad B_{f_{jk}}=B^{\mathrm{gen}}_{f_{jk}}+w_SB^{\mathrm{surv}}_{f_{jk}}.
+$$
+Since $B^{\mathrm{surv}}_{f_{jk}}$ depends on the other loadings of program $k$ through $\bar z_{ik}$, the genes are updated one at a time, and $\bar z_{\cdot k}$ and $V^Z_{\cdot k}$ are refreshed after each gene. The prior $g_{\mathbf{f}_k}$ is held fixed during the sweep, which keeps each gene's posterior in closed form, and is refit from the sweep's observations at its end. A program whose largest $A_{f_{jk}}$ falls below $10^{-8}$ receives no information from either likelihood, and its loadings are set to zero.
+
+The observation $x_j=B_{f_{jk}}/A_{f_{jk}}$ is a precision-weighted average of an expression-only estimate $B^{\mathrm{gen}}/A^{\mathrm{gen}}$ and a survival-only estimate $B^{\mathrm{surv}}/A^{\mathrm{surv}}$. The weight on the survival estimate, the survival share, is $\rho_{jk}/(1+\rho_{jk})$ with
+$$
+\rho_{jk}=\frac{w_SA^{\mathrm{surv}}_{f_{jk}}}{A^{\mathrm{gen}}_{f_{jk}}}=\frac{w_S\,E[\beta_k^2]\sum_i W_{ii}\,y_{ij}^2}{\tau_j\sum_i E[l_{ik}^2]}.
+$$
+Rescaling a program multiplies the numerator and the denominator by the same constant and leaves the share unchanged. With standardized expression, $\sum_i W_{ii}y_{ij}^2\approx\sum_iW_{ii}=D$. Let $v_k$ be program $k$'s share of the total variance of $\mathbf{Y}$. For nearly orthogonal programs whose scores are dominated by signal, $\bar{\mathbf z}_k\approx E[\mathbf l_k]\lVert E[\mathbf f_k]\rVert^2$, and unit score SD then gives $\sum_iE[l_{ik}]^2\approx np^2v_k^2$. Therefore,
+$$
+\rho_{jk}\approx\frac{w_S\,E[\beta_k^2]\,(D/n)}{\tau_j\,p^2\,v_k^2}.
+$$
+This approximation gives the dependence on $p$ and $v_k$ stated in @sec-model. Near the detection threshold the noise in the scores is no longer negligible, and the exact ratio applies.
+
+### Noise Precision, Rescaling and Prediction
+
+Setting the derivative of the expression term with respect to $\tau_j$ to zero gives $\hat\tau_j=n/\sum_i\bar R^2_{ij}$. At the end of each sweep, program $k$ is rescaled with $c_k=\mathrm{sd}_i(\bar z_{ik})$: $E[\mathbf f_k]$ is divided by $c_k$, $E[\mathbf l_k]$ and $E[\beta_k]$ are multiplied by $c_k$, and the second moments by the squared factors. The loading prior, which is carried across sweeps, is transformed with the loadings (a Laplace rate is multiplied by $c_k$). The priors on $\mathbf L$ and $\boldsymbol\beta$ are scale families refit at every update and need no transformation. A new patient with processed expression $\mathbf y^*$ has risk score $\hat\eta^*=\mathbf y^{*\top}E[\mathbf F]E[\boldsymbol\beta]$, the same formula as for the training patients.
+
+### Update Schedule and Algorithm
+
+The scores and loadings start from the rank-$K$ truncated singular value decomposition of $\mathbf Y$, $E[\mathbf L]=\mathbf U_K\mathbf D_K^{1/2}$ and $E[\mathbf F]=\mathbf V_K\mathbf D_K^{1/2}$, with $E[\boldsymbol\beta]=\mathbf 0$, $\hat\tau_j=1/\widehat{\mathrm{var}}(y_{\cdot j})$ and the programs rescaled. Each sweep then has six steps.
+
+1. Compute $u_i$, $W_{ii}$ and $r_i$ at $\hat{\boldsymbol\eta}=\mathbf YE[\mathbf F]E[\boldsymbol\beta]$. They stay fixed for the rest of the sweep.
+2. For $k=1,\ldots,K$, compute $\bar z_{ik'}$, $V^Z_{ik}$ and $r_i^{-k}$ from the current moments, then update, in order, (a) $q(\beta_k)$ and $g_{\beta_k}$, (b) $q(\mathbf l_k)$ and $g_{\mathbf l_k}$, and (c) $q(\mathbf f_k)$ gene by gene with $g_{\mathbf f_k}$ fixed, refitting $g_{\mathbf f_k}$ at the end. Programs already updated in the sweep enter the later ones with their new moments.
+3. Update $\hat\tau_j$ for all genes.
+4. Evaluate $\mathcal F$: the expression term, plus $w_S$ times $\ell_{\mathrm{Cox}}(\bar{\boldsymbol\eta})-\tfrac12\sum_iW_{ii}\operatorname{Var}(\eta_i)$ with $W$ recomputed at the current $\bar{\boldsymbol\eta}$, minus the KL terms.
+5. Rescale every program.
+6. Stop when the relative change in $\mathcal F$ is below $10^{-5}$ after more than five sweeps, or after 300 sweeps.
+
+The expansion point is fixed within a sweep and moves between sweeps, and the loading prior is refit from pseudo-observations without recomputing $q(\mathbf f_k)$. For both reasons $\mathcal F$ can decrease slightly between sweeps, as in other iteratively reweighted schemes. Any order of exact coordinate updates is valid coordinate ascent. The order affects the path and possibly the stationary point reached, while the update formulas stay the same.
 
 A separate script checks each update against a brute-force evaluation of the expected objective and against the fitting code.
 
