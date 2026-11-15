@@ -183,16 +183,18 @@ modalities).
   raises the Cox partial likelihood to the power w_S" and cites Bissiri et al. (2016) and Holmes
   and Walker (2017). Weight tuning is continuing work, not a main part of the proposal, so in
   the chapter:
-  - Describe w_S plainly as a weight on the Cox log partial likelihood in the objective, with
-    w_S = 1 the standard variational Bayes fit that the reported results use. Do not use the
-    term "generalized Bayes".
-  - Keep any power-likelihood interpretation to one cited sentence, and state what it does not
-    cover: only the survival block is weighted while the expression term keeps weight 1; the
-    Cox partial likelihood is not a full likelihood (Bissiri et al.'s loss-based updating may
-    cover this; verify in the paper before saying so); the
-    cited calibration work mostly concerns tempering with powers at most 1, while w_S > 1
-    upweights; and the variant that weights both the Cox term and the KL term for **β** is not
-    a power posterior on **β**. If the sentence cannot be made accurate briefly, drop it.
+  - Describe w_S as a weight on the Cox log partial likelihood in the objective, with w_S = 1
+    the standard variational Bayes fit that the reported results use.
+  - The term "generalized Bayes" (or a power-likelihood reading) may be used only if it is
+    defined for the reader and cited, never dropped in without context. Keep it brief: a few
+    sentences, not a subsection. The point is that tuning w_S is work in progress: some
+    approaches have been tried, and settling the weight and its interpretation is an open item.
+  - Where the reading is used, say what it does not cover: only the survival block is weighted
+    while the expression term keeps weight 1; the Cox partial likelihood is not a full
+    likelihood (Bissiri et al.'s loss-based updating may cover this; verify in the paper before
+    saying so); the cited calibration work mostly concerns tempering with powers at most 1,
+    while w_S > 1 upweights survival; and the variant that weights both the Cox term and the KL
+    term for **β** is not a power posterior on **β**.
   - Check that the citations support the exact claim made. Review B is asked to check this
     (Phase 5).
   - The derivation document's wording is outside this review. Revisiting it, and the formal
