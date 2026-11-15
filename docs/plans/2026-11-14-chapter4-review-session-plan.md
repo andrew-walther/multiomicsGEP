@@ -213,6 +213,29 @@ modalities).
   in the risk score's concordance. The software (an R package) may be mentioned only in the
   Discussion's Future Considerations.
 
+- **D11. Math accuracy (added 2026-11-14).** Every equation, symbol and formula in the chapter and
+  Appendix C must be correct for the current code and the fits behind the reported results. This
+  covers the text as it stands and every edit.
+  - Each symbol is defined at or before its first use and keeps one meaning across the body and
+    Appendix C (for example, w_S, K, η, the priors on L, F and β, and the C-index).
+  - Math from outside work (the Cox partial likelihood, point-Laplace and other ebnm priors, the
+    variational objective, Harrell's C-index, the one-SE rule, generalized Bayes under D9) is
+    cited to its source.
+  - Math that describes this project's own model, updates or prediction is checked against the
+    derivation and the code that produced the results: the full YFB derivation
+    (`derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.tex`, with its
+    `verify_derivation.R`), `code/fit_ssbmf_yfb.R` and the update scripts it calls
+    (`update_L_surv_YFB.R`, `update_F_surv_YFB.R`, `update_beta.R`, `update_tau.R`),
+    `code/predict_ssbmf_yfb.R` for new-patient risk scores, `code/select_K.R` for rank selection,
+    the LB comparison (`derivations/SSBMF-LB-vs-YFB-comparison/`, `code/fit_ssbmf_lb.R`) for the
+    alternative parameterization, and for the joint model the multimodal derivation
+    (`derivations/SSBMF-YFB-multimodal-model-derivations/`) and `code/fit_multimodal_yfb.R`.
+    Settings (w_S, α_F, K, prior families, centering) are checked against the configuration the
+    reported fits actually ran with, not against comments or defaults.
+  - Where the derivation, the code and the chapter disagree and it is unclear which is right, ask
+    Andrew. Never change code or the derivation to match the chapter.
+  - An edit that adds or changes math names its source in the Phase 4 approval or the review item.
+
 ## 3a. Content map: chapter body and Appendix C (proposed, to confirm in Phase 2)
 
 The current chapter has 12 Methods subsections, 8 Results subsections, 10 figures and
@@ -324,6 +347,15 @@ only checks what the chapter says. It does not propose adding new results. Outpu
 one row per claim: location, current text, source, status (current / outdated / unsourced),
 proposed text.
 
+### Phase 3b. Math check (subagent, runs alongside Phase 2)
+
+A second fresh subagent applies D11 to the chapter and Appendix C. Output
+`bios-dissertation/prelim/full-draft/notes/human-writer-review/round5/ch4/math-check.md`, one row
+per equation or symbol: location, the math as written, its source (citation, or file and line of
+the derivation or code), status (verified / cited / wrong / undefined / inconsistent / uncited),
+and proposed text. Wrong, undefined or inconsistent rows are fixed in Phase 4, before the
+Phase 5 reviews.
+
 ### Phase 4. Content edits (Andrew-led, section by section)
 
 Apply the target outline and the currency fixes first, so the reviewers read the revised
@@ -348,6 +380,8 @@ chapter. For each section check:
   before results sections. Each section is
   referenced from the body and kept brief: motivation, "Table X compares...", the finding.
 - **Layout:** fix floats that sit alone on a page or leave large gaps.
+- **Math:** apply the Phase 3b rows for the section, and check any new or moved equation under
+  D11 before showing it to Andrew.
 
 Commit the source in `multiomicsGEP` after each section or group of sections, so the hook
 re-renders the draft and each step can be reverted.
@@ -369,7 +403,8 @@ Andrew's decision.
 **Review B: committee member.** A biostatistics committee member reading the chapter cold. Finds
 inconsistencies between sections, gaps in the argument, unsupported claims, missing comparisons
 or citations, errors in notation or numbers, and questions likely at the oral prelim. It should
-also flag content that could be cut without loss, and check whether every description of w_S
+also flag content that could be cut without loss, flag any equation that is undefined, uncited
+or disagrees with the derivation or code (D11), and check whether every description of w_S
 as a power on the likelihood is accurate and supported by its citations (D9). Output `round5/ch4/committee-proposals.md` in
 the Chapter 1 format: items ordered by how likely they are to come up, each with the problem,
 the current text and a proposed revision. Any new reference is checked on Crossref or PubMed and
@@ -397,6 +432,8 @@ Proposals that add length need a matching cut.
 - Every number and status claim matches its source as of `14af817d` or later (the currency
   check has no "outdated" rows left).
 - Future Considerations names every open item, and each one appears in Methods as proposed work.
+- Every equation and symbol is defined and either cited or verified against the derivation and
+  code (the math check has no open rows).
 - Both review files exist, every item has a decision, and accepted items are applied.
 - The draft and the full prelim render without errors, with page counts recorded.
 
@@ -407,7 +444,7 @@ Proposals that add length need a matching cut.
 > repo's AGENTS.md and ROADMAP.md. Edits go to `../multiomicsGEP/paper/prelim/project3-ssbmf.qmd`,
 > never to the generated draft. The decisions in Section 3 are settled. Start with Phase 1, then
 > walk me through the Phase 2 review of the Section 3a content map (body versus Appendix C), and
-> launch the Phase 3 currency check as a subagent while we do it.
+> launch the Phase 3 currency check and the Phase 3b math check as subagents while we do it.
 
 ### Full-plan prompt
 
@@ -423,7 +460,9 @@ Work through the whole plan, Phases 1 to 6, in order. Stop and wait for me only 
 (1) after Phase 2, to confirm the content map before any prose edits;
 (2) after each section in Phase 4, to approve the edits before you commit them in multiomicsGEP;
 (3) after Phase 5, when the two review files are ready for my accept/reject decisions.
-Launch the Phase 3 currency check as a subagent during Phase 2, and run the two Phase 5 reviews
+Launch the Phase 3 currency check and the Phase 3b math check as subagents during Phase 2
+(decision D11: all math defined, and cited or verified against the derivation and code), and run
+the two Phase 5 reviews
 as parallel subagents. Keep the plan's Section 5 "Done when" list as the finish line, and tell me
 which items are still open whenever you stop.
 ```
