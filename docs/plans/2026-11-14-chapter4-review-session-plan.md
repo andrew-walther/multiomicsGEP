@@ -132,6 +132,7 @@ modalities).
 - No mannered prose. Avoid semicolons and dashes as punctuation. Title Case headings. Bold
   matrices and vectors, italic scalars. Table captions above, figure captions below.
 - Apply the `human-writer` skill to all drafting and revision.
+- American English throughout: spelling and usage.
 - "Fitted" only as an adjective before a noun ("the fitted model", "the fitted coefficients").
   The passive verb is "fit": "the model is fit by maximizing...", never "is fitted by" or "is
   fitted to". The same holds for the active past ("we fit the model") and a verb right after a
@@ -439,6 +440,8 @@ Proposals that add length need a matching cut.
 - Every equation and symbol is defined and either cited or verified against the derivation and
   code (the math check has no open rows).
 - Both review files exist, every item has a decision, and accepted items are applied.
+- The chapter is in American English, and "fitted" appears only before a noun (no "is fitted",
+  "we fitted" or "fitted to" left).
 - The draft and the full prelim render without errors, with page counts recorded.
 
 ## 6. Prompt to start the session in `bios-dissertation`
