@@ -54,7 +54,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-11-06 | [Flat β pruning rerun](2026-11-06-flat-beta-pruning-rerun-plan.md) | Repeat KL-1 after fixing the flat β likelihood | complete |
 | 2026-11-05 | [chapter4-revamp-plan](2026-11-05-chapter4-revamp-plan.md) | Revamp prelim Chapter 4 around the supervised w_S = 1 YFB fit: outline, results checklist (tables, figures, biology), affected documents | complete 2026-11-06: chapter assembled and revised after review (`be75ade`, `502cd93`, `0560150`); Andrew's review of the assembled prelim pending (due 11/16) |
 | 2026-11-05 | [chapter4-revamp-prompt](2026-11-05-chapter4-revamp-prompt.md) | Session prompt for the Chapter 4 revamp | used 2026-11-06 |
-| 2026-11-09 | [week-plan](2026-11-09-week-plan.md) | Week of 11/9: L/F prior (point-exponential vs point-Laplace), β prior, methylation alone, M-modality fitter, LB vs YFB with fold-in; training-CV redo of choices that used external cohorts; results-rebuild design; inventory of open plans | A, B, C, E, F, G and external scoring complete 2026-11-12; working model fixed (K = 5); D rerun and the November 13 documents open |
+| 2026-11-09 | [week-plan](2026-11-09-week-plan.md) | Week of 11/9: L/F prior (point-exponential vs point-Laplace), β prior, methylation alone, M-modality fitter, LB vs YFB with fold-in; training-CV redo of choices that used external cohorts; results-rebuild design; inventory of open plans | A, B, C, E, F, G and external scoring complete 2026-11-12; working model fixed (K = 5); D rerun and the November 13 documents complete 2026-11-13 |
 
 ## Superseded and historical plans
 
@@ -75,4 +75,4 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-10-26 | [parallel-work-sessions-plan](2026-10-26-parallel-work-sessions-plan.md) | Coordinates work on the current method (session A) with the rebuild (session B); round2 merge and the 10/26 meeting deliverables | superseded by the October 30 realignment |
 | 2026-11-06 | [real-data-comparators-plan](2026-11-06-real-data-comparators-plan.md) | Fixed S-11/S-12 references and four training-only prognostic comparators | registered |
 | 2026-11-06 | [desurv-style-analyses-plan](2026-11-06-desurv-style-analyses-plan.md) | Fixed risk groups, program classification, rank comparisons and mixed-signal simulation | registered |
-| 2026-11-14 | [chapter4-review-session-plan](2026-11-14-chapter4-review-session-plan.md) | Session plan for the prelim review of Chapter 4: context, decisions, currency check, writing and committee reviews | active |
+| 2026-11-14 | [chapter4-review-session-plan](2026-11-14-chapter4-review-session-plan.md) | Session plan for the prelim review of Chapter 4: context, decisions, currency check, writing and committee reviews | complete 2026-11-15 |

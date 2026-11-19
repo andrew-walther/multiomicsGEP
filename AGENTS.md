@@ -3,12 +3,16 @@
 Use [PROJECT_STATUS.qmd](PROJECT_STATUS.qmd) for the current research state.
 This file holds repository instructions.
 
-## Start here (2026-10-30)
+## Start here (2026-11-19)
 
-The current plan is [`docs/plans/2026-10-30-realignment-plan.md`](docs/plans/2026-10-30-realignment-plan.md).
-Start with its review handoff and the
-[`execution report`](docs/reviews/2026-10-30-codex-execution-report.md), then the
-October 30 progress-book chapter and issue tracker. The [current-state chapter](docs/progress_book/current-state.qmd) summarizes
+The written prelim is finished. The first priority is survival supervision strong
+enough to change the loadings with stable fits. The M-modality extension waits
+until it has a direction (DECISIONS.md, 2026-11-19). Read the "Open priorities"
+paragraph and the "Survival-weight studies" section of `PROJECT_STATUS.qmd`, then
+the lab-meeting update in the November 20 progress-book chapter (its other sections
+are still placeholders). The October 30
+[realignment plan](docs/plans/2026-10-30-realignment-plan.md) is background for
+the opt-in controls described below. The [current-state chapter](docs/progress_book/current-state.qmd) summarizes
 priorities and saved examples. Update it alongside the roadmap when the
 research state changes. The standalone YFB smoke test still reproduces zero coefficients and activities.
 Standalone test scripts now return a failure exit code when assertions fail.
@@ -29,10 +33,9 @@ updates are failures, not convergence. Results and limits are in
 prevents the tested explosions, but no case passes all screening criteria.
 These controls do not adopt a new model.
 Reliable survival supervision of the molecular loadings is the top priority.
-Start with the S-9 YFB test and its registered recovery, false-active and
-convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
-Multimodal development is deferred except when a unified fitter run with
-M = 1 offers a concrete route to resolving supervision. The single-modality
+Evaluate any fix against the registered recovery, false-active and convergence
+criteria. LB with fold-in was compared on 2026-11-12 and YFB stays.
+Multimodal development is deferred until supervision has a direction. The single-modality
 R package can start once the model meets its acceptance criteria.
 
 ## Key Instructions

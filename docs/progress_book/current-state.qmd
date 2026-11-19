@@ -1,6 +1,6 @@
 # Current project state {.unnumbered}
 
-Updated November 13, 2026. The working model is YFB at K = 5 with point-Laplace
+Updated November 19, 2026. The working model is YFB at K = 5 with point-Laplace
 scores and loadings, per-program Normal survival coefficients, pooled TCGA and CPTAC
 training, per-cohort z-scores on 2,218 genes and w_S = 1. The
 [November 13 chapter](chapters/2026-11-13.qmd) reports the current evidence.
@@ -14,9 +14,10 @@ training, per-cohort z-scores on 2,218 genes and w_S = 1. The
 | Done | LB and YFB comparison | YFB retained. On real data the programs and predictions closely agree |
 | Done | Single-modality methylation fit | Shares two strong axes with expression (canonical correlations about 0.9) and adds a recurring methylation-specific, immune-like program from about 50k CpGs. Prediction is lower than expression |
 | Done | Feature-group fitter and initial joint evaluation | Joint TCGA comparison is not validated by simulation, with no added prediction or joint-only program. The weight path is done and the multimodal work is paused. At balanced feature counts separate priors matched one-modality programs more often, but no fit recovered all three planted programs and a general advantage was not established. In TCGA, methylation dominates several shared programs. In simulation, likelihood weights empty the methylation loadings |
-| Next | Cohort-stratified fit and scale-robust identification of empty programs | Evaluate on training data before external scoring |
-| Open | Stronger loading supervision | Stable fits at weights that move loadings |
-| Paused | Multimodal modality balance | Next ideas in [balance-ideas notes](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md), starting with weighting methylation only in the score update |
+| Done | Share-targeted survival weight and fixed β prior | Neither adopted. Only small targets converged, and the loadings did not change. w_S = 1 stays |
+| Next | Stronger loading supervision (first priority) | Diagnose where large-weight fits diverge, then bound the score and loading scale with stable fits |
+| Paused | Multimodal modality balance (after supervision) | Next ideas in [balance-ideas notes](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/notes/2026-11-13-multimodal-balance-ideas-notes.md), starting with weighting methylation only in the score update |
+| Later | Cohort-stratified fit and scale-robust identification of empty programs | Evaluate on training data before external scoring |
 | Later | R package and final analysis snapshot | Follow methodological evaluation and final model decisions |
 
 The sections below preserve earlier model diagrams and technical notes. Their

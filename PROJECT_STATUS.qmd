@@ -2,7 +2,7 @@
 title: "multiomicsGEP — Project Status"
 subtitle: "Supervised Bayesian Matrix Factorization for Joint Genomics + Survival Modelling"
 author: "Andrew Walther"
-date: "November 12, 2026"
+date: "November 19, 2026"
 format:
   pdf:
     toc: true
@@ -40,12 +40,32 @@ within-cohort CV concordance is 0.655. The pooled external concordance, weighted
 comparable pairs within each series, is 0.628 (donor-bootstrap interval 0.596 to 0.662).
 Results reported earlier at K = 7 keep that label.
 
-**Open priorities.** The [ROADMAP](ROADMAP.md) lists them in order: a fit stratified by
-cohort, further evaluation of modality balance after the descriptive joint comparison, a
-dead-program rule that does not depend on scale, and the false-activity interpretation
-in the near-threshold cell. The program rule has been reapplied at K = 5 and identifies
-only Program 2 as a main program. The open methods problem from November 6 remains: fits are not stable at survival
-weights large enough to move real-data loadings (about 10⁴).
+**Open priorities (2026-11-19).** The written prelim is finished (Chapter 4 on
+November 15). The first priority is survival supervision strong enough to change the
+real-data loadings with stable fits. At w_S = 1 survival supplies at most about 0.015% of
+the precision along each survival-active program's loadings, so the supervised and
+two-step fits give practically the same programs. The share-targeted weight and fixed
+β-prior studies of November 13–14 did not solve this (next section). The M-modality
+extension follows once supervision has a direction (DECISIONS.md, 2026-11-19). The
+[ROADMAP](ROADMAP.md) keeps the later items: a fit stratified by cohort, a dead-program
+rule that does not depend on scale, and the false-activity interpretation in the
+near-threshold cell. The program rule has been reapplied at K = 5 and identifies only
+Program 2 as a main program.
+
+## Survival-weight studies (2026-11-13 to 14)
+
+Two registered studies tried to raise the influence of survival on the loadings. Neither
+selected an arm, and the working model keeps w_S = 1 (DECISIONS.md, 2026-11-14).
+
+| Study | Approach | Result |
+|---|---|---|
+| Share-targeted weight | Set w_S so survival supplies a target share (1% to 50%) of the precision along one program's loadings | Only the 1% target converged on real data (w_S ≈ 83), with loadings correlating 0.999 to the unit-weight fit. It lost the low-variance simulation program (0 of 10 against 5 of 10). Targets of 5% and above did not converge in 500 sweeps ([findings](docs/findings/2026-11-13-share-targeted-weight-findings.md)) |
+| Fixed β prior | Fixed Normal or Laplace prior on standardized β, σ_b 0.1 to 1, at targets 5%, 25% and 50% | Stable with in-range coefficients only at 5%. At 25% and 50% every fit failed to converge or converged with coefficients far outside the prior's range. Training CV and the simulation null check were not reached ([findings](docs/findings/2026-11-14-bounded-risk-findings.md)) |
+
+The working explanation is that the score scale grows through F, so shrinking β alone
+does not stabilize large weights. The next step is to check this on the saved per-sweep
+traces (`results/benchmark_sim/outputs/bounded_risk_2026-11-14/*_trace.csv`), then derive
+a fix that bounds the scale of the scores and loadings.
 
 ## Prelim Chapter 4 review (2026-11-15)
 

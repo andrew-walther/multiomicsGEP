@@ -1,5 +1,21 @@
 # multiomicsGEP — Research Roadmap
 
+**After the prelim (2026-11-19).** The written prelim is finished (Chapter 4 review
+complete 2026-11-15). Priorities in order (DECISIONS.md, 2026-11-19):
+
+- [x] Share-targeted survival weight and fixed β-prior studies (2026-11-13 to 14). Neither
+  is adopted, and w_S = 1 stays (DECISIONS.md, 2026-11-14).
+- [ ] **Survival supervision strong enough to change the loadings.** First diagnose where
+  large-weight fits diverge from the saved per-sweep traces of the fixed-prior study
+  (scale of F, direction of F, or β). Then derive a fix, such as bounding each program's
+  score or loading scale, and evaluate it against the registered recovery, false-activity
+  and convergence criteria before training CV.
+- [ ] **M-modality extension**, after supervision has a direction: balance expression and
+  methylation without cutting both to small feature counts
+  ([balance ideas](docs/notes/2026-11-13-multimodal-balance-ideas-notes.md)).
+- [ ] Results migration under the [rebuild design](docs/plans/2026-11-11-results-rebuild-design.md):
+  needs approval of the proposed script roles and of how much to migrate.
+
 **Week of 2026-11-09.** The [week plan](docs/plans/2026-11-09-week-plan.md) fixed the
 working single-modality model from training data alone. External cohorts are for
 validation scoring only (DECISIONS.md, 2026-11-09). The model is YFB with point-Laplace L
@@ -18,7 +34,7 @@ and F, per-program Normal β, per-cohort z-scores on 2,218 genes, pooled trainin
 - [x] November 13 progress-book chapter, writeup version and prelim Chapter 4 update,
   including independent numerical review and the tested full-prelim rebuild.
 
-**Next priorities (after 2026-11-12).**
+**Next priorities (after 2026-11-12).** Reordered on 2026-11-19 by the list at the top of this file. The stratified fit and the items below follow the supervision work.
 
 - [ ] **Fit stratified by cohort.** Fit the working model with cohort strata in the Cox
   term, so each cohort keeps its own baseline hazard, and compare it with the pooled fit
@@ -254,10 +270,9 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ## Current research and publication priorities
 
 Reliable survival supervision of the molecular loadings is the top priority.
-Start with the S-9 YFB test and its registered recovery, false-active and
-convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
-Multimodal development is deferred except when a unified fitter run with
-M = 1 offers a concrete route to resolving supervision. The single-modality
+Evaluate any fix against the registered recovery, false-active and convergence
+criteria. LB with fold-in was compared on 2026-11-12 and YFB stays.
+Multimodal development is deferred until supervision has a direction. The single-modality
 R package can start once the model meets its acceptance criteria.
 
 The single-modality fitters were renamed on 2026-11-04: `fit_ssbmf_yfb()` (η = (YF)β, formerly

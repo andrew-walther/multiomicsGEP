@@ -3,6 +3,36 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-19 — Survival supervision comes before the M-modality extension (Andrew)
+
+The next methods work is the survival weight, so that survival has a measurable influence
+on the single-modality factorization while fits stay stable. The M-modality extension
+(shared patient scores, a loading matrix and loading prior for each data type) waits until
+supervision has a direction. Reason: a supervision fix improves the single-modality model
+directly, and the joint model cannot work well while the survival term is negligible. With
+a working supervised model, the extension should be close to routine. The first step is a
+diagnosis of where large-weight fits diverge (scale of F, direction of F, or β), using the
+per-sweep traces saved by the fixed-prior study, before any new fit or fix is derived.
+
+## 2026-11-14 — Share-targeted weights and fixed β priors are not adopted, and w_S = 1 stays
+
+Two registered studies tried to give survival more influence on the loadings. Setting w_S
+so that survival supplies a target share of the precision along one program's loadings
+(S-16) converged on the real data only at the smallest target, 1% (w_S ≈ 83). That target
+also failed the registered null gate as first specified (false-active risk fraction 0.19
+against a limit of 0.01), a gate the later review replaced. Its loadings
+still correlated 0.999 with the unit-weight fit, and in simulation it lost the low-variance
+program that w_S = 1 recovers (0 of 10 against 5 of 10). Targets of 5% and above did not
+converge in 500 sweeps. A fixed Normal or Laplace prior on the standardized β (S-17, σ_b
+from 0.1 to 1) gave stable fits with coefficients within the prior's range only at the 5%
+target, and only for σ_b of 0.5 and 1 (Normal) and 1 (Laplace). At 25% and 50% every fit either failed to converge or converged with coefficients
+far outside that range, so its training CV and simulation null check were not reached.
+Neither study selected an arm or scored the external cohorts. The working model keeps w_S = 1. The working
+explanation, not yet tested, is that the score scale grows through F, so the next idea
+bounds the scale of the scores and loadings rather than only β. Findings:
+`docs/findings/2026-11-13-share-targeted-weight-findings.md` and
+`docs/findings/2026-11-14-bounded-risk-findings.md`.
+
 ## 2026-11-15 — Per-program Kaplan–Meier curves split at the series median (Andrew)
 
 Chapter 4 Appendix C now shows the per-program Kaplan–Meier curves (Programs 2, 4 and 5) with
