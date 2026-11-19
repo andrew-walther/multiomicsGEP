@@ -47,7 +47,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-e196add9810e8777687702019779b7d3.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-428c8a5a8b63ce799146e23e25e5412c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -291,31 +291,69 @@ ul.task-list li input[type="checkbox"] {
 <li><em>Why YFB is kept.</em> First, YFB scores a new patient exactly as Y<sub>new</sub>F. LB has no fitted L for a new patient and must estimate it by fold-in. Second, YFB’s validation C is slightly higher: 0.655 against 0.652 in training CV (difference 0.003, SE 0.004) and 0.628 against 0.627 externally (interval −0.002 to 0.005). Both differences are within noise. Third, in simulation at w_S = 1, LB flagged more survival-active programs that match no planted program: 1.8, 1.5 and 1.2 per fit against 0.9, 0.1 and 0.0 for YFB in three of the four simulation settings. In the fourth, near the detection threshold, YFB flagged more (2.9 against 1.4).</li>
 </ul></li>
 <li><strong>Supervised fit against two-step EBMF then Cox.</strong> The two are practically the same. The supervised-minus-two-step difference in C is +0.004 in training CV (SE 0.004) and −0.001 externally (−0.010 to 0.008). Their loadings correlate above 0.99999. The reason is that at w_S = 1 the survival term has almost no influence on the factorization compared with the expression likelihood. It supplies at most about 0.015% of the precision along each survival-active program’s loading direction. Resolving this is the first open item below.</li>
-<li><strong>Simulation with low-variance prognostic programs.</strong> We planted programs carrying 0.05%, 0.1% and 0.2% of expression variance. With a strong survival effect, the supervised fit had higher validation C in 29 of 30 datasets. At 0.05% it recovered the program in 5 of 10 datasets, while the two-step fit recovered none, and validation C was 0.156 higher. With a realistic survival effect the two fits were within 0.01 of each other at 0.1% and 0.2%. At 0.05% the supervised fit’s validation C was 0.038 higher, but neither fit recovered the program. Supervision helps when the survival signal is strong relative to the program’s share of variance.</li>
+<li><strong>Simulation with low-variance prognostic programs.</strong> We planted a prognostic program carrying 0.05%, 0.1% or 0.2% of expression variance and compared the supervised and two-step fits at K = 5 under four survival-signal settings, from one close to the real data to one far stronger (<a href="#fig-near-threshold" class="quarto-xref">Figure&nbsp;<span>16.1</span></a>). With the very strong signal, the supervised fit had higher validation C in 29 of 30 datasets. At 0.05% it recovered the program in 4 of 10 datasets against none for the two-step fit, with C 0.112 higher. In the real-data-like setting the two fits give nearly the same programs (median loading correlation 0.98 to 0.999) and nearly the same C (mean gain 0.003 to 0.017), and neither recovers the 0.05% program. Supervision helps only when the survival signal is strong relative to the program’s share of variance. A first run at K = 7 with two of these settings, reported on November 6, gave the same pattern.</li>
 <li><strong>Methylation alone.</strong> On 144 matched TCGA patients, methylation shares its two strongest axes with expression (canonical correlations 0.85 to 0.92) and adds a recurring immune-like program once about 50,000 CpGs are included.</li>
 </ol>
-<p><a href="#fig-near-threshold" class="quarto-xref">Figure&nbsp;<span>16.1</span></a> shows the low-variance simulation in item 7. Supervision can find a weak prognostic program that the unsupervised factorization misses, but only when the survival signal is very strong. With a moderate signal, the supervised and two-step fits land close to the diagonal. The real data look like the moderate setting or weaker. Our best models reach C of about 0.63 to 0.66 there, below the 0.74 that a perfect model reaches in the moderate setting. This matches what we see on the real data: the supervised SSBMF and unsupervised EBMF factorizations give nearly the same programs (loadings correlate above 0.99999).</p>
-<div id="fig-near-threshold" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Two scatter plots of validation C, supervised fit on the y-axis and two-step fit on the x-axis, with a dashed diagonal. In the very strong survival panel, the 0.05% points sit far above the diagonal (mean gain 0.156, recovered 5 of 10 against 0) and the 0.1% and 0.2% points sit slightly above it. In the moderate panel, most points lie near the diagonal, with gains of 0.038, 0.008 and 0.002.">
+<p><a href="#fig-near-threshold" class="quarto-xref">Figure&nbsp;<span>16.1</span></a> shows the low-variance simulation in item 7. Supervision can find a weak prognostic program that the unsupervised factorization misses, and it moves the loadings away from the unsupervised ones, but only when the survival signal is strong. As the signal weakens, the gain in C shrinks and the loadings of the two fits converge. In the real-data-like setting, where a perfect model reaches C of about 0.69, the dots sit close to the diagonal and the loading correlations are 0.98 to 0.999. Our best models reach C of about 0.63 to 0.66 on the real PDAC data, so the real survival signal is likely in that range. This matches the real data: the supervised SSBMF and unsupervised EBMF factorizations give nearly the same programs (loadings correlate above 0.99999). It is why stronger supervision than w_S = 1 is the first open issue below.</p>
+<div id="fig-near-threshold" class="quarto-float quarto-figure quarto-figure-center anchored" alt="Four scatter plots in a two-by-two grid of validation C, supervised fit on the y-axis and two-step fit on the x-axis, with a dashed diagonal, for survival signals from real-data-like to very strong. In the real-data-like and moderate panels nearly all points lie on the diagonal, with mean C gains of 0.002 to 0.030 and loading correlations of 0.978 to 0.999 between the fits. In the strong and very strong panels the 0.05% points sit well above the diagonal, with gains of 0.077 and 0.112, recovery of 3 and 4 of 10 against 0, and loading correlations of 0.926 and 0.873.">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-near-threshold-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="../figures/2026-11-20/near-threshold-paired-c.png" class="img-fluid figure-img" alt="Two scatter plots of validation C, supervised fit on the y-axis and two-step fit on the x-axis, with a dashed diagonal. In the very strong survival panel, the 0.05% points sit far above the diagonal (mean gain 0.156, recovered 5 of 10 against 0) and the 0.1% and 0.2% points sit slightly above it. In the moderate panel, most points lie near the diagonal, with gains of 0.038, 0.008 and 0.002.">
+<img src="../figures/2026-11-20/near-threshold-paired-c.png" class="img-fluid figure-img" alt="Four scatter plots in a two-by-two grid of validation C, supervised fit on the y-axis and two-step fit on the x-axis, with a dashed diagonal, for survival signals from real-data-like to very strong. In the real-data-like and moderate panels nearly all points lie on the diagonal, with mean C gains of 0.002 to 0.030 and loading correlations of 0.978 to 0.999 between the fits. In the strong and very strong panels the 0.05% points sit well above the diagonal, with gains of 0.077 and 0.112, recovery of 3 and 4 of 10 against 0, and loading correlations of 0.926 and 0.873.">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-near-threshold-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;16.1: Validation C of the supervised SSBMF fit (w_S = 1) against the two-step fit in the near-threshold simulation. Each dot is one simulated dataset, scored by both methods. The design and terms are listed below the figure.
+Figure&nbsp;16.1: Validation C of the supervised SSBMF fit (w_S = 1) against the two-step fit in the near-threshold simulation at K = 5, under four survival-signal settings. Each dot is one simulated dataset, scored by both methods. The design and terms are listed below the figure.
 </figcaption>
 </figure>
 </div>
 <p><strong>How the simulation works and what a dot is.</strong></p>
 <ul>
-<li><em>What is simulated.</em> Each dataset has 400 training and 120 validation patients and 2,000 genes. Expression is built from three true programs plus gene-level noise. Each program loads on a random 15% of genes with nonnegative weights. Programs 1 and 2 are strong and unrelated to survival. Program 3 is the prognostic program, and it is made weak by scaling it down to a small share of expression variance.</li>
-<li><em>Share of expression variance (0.05%, 0.1% or 0.2%).</em> The fraction of total expression variance that comes from the prognostic program. The smaller it is, the harder the program is to find from expression alone.</li>
-<li><em>Survival.</em> Survival times come from a Weibull model whose log hazard is the patient’s score on the prognostic program, with about 30% censoring.</li>
-<li><em>How each dataset is fit.</em> Both methods factorize the training expression at K = 7, more programs than the three that exist, so neither is told the true number. The supervised SSBMF fit estimates the programs and the Cox coefficients together (w_S = 1). The two-step fit estimates the programs without survival (w_S = 0), then fits a Cox model to all seven program scores.</li>
-<li><em>What a dot is.</em> Each method’s full risk score, using all seven programs, is computed for the 120 validation patients and scored by Harrell’s C. A dot places the two-step C on the x-axis and the supervised C on the y-axis for the same dataset. There are 10 datasets per share and setting.</li>
-<li><em>True-risk C.</em> The C of the true simulated risk score on the validation patients. It is the best any model could reach.</li>
-<li><em>The two survival settings.</em> In the very strong setting the true risk score has SD 6 to 9 (true-risk C 0.95), far stronger than any real cohort. In the moderate setting it is rescaled to SD 1.1, a hazard ratio of about 3 per SD (true-risk C 0.74).</li>
-<li><em>Relation to the real data.</em> On the real PDAC data the working model reaches C of about 0.63 to 0.66, so the real survival signal is closer to the moderate setting, or weaker.</li>
-<li><em>Recovery (corner tables).</em> Among the seven fitted programs, take the one whose loadings correlate most with the true prognostic program. It counts as recovered when that correlation is at least 0.7 in absolute value, its survival coefficient is at least 1.96 SDs from zero, and its direction is correct. The corner tables also give the mean paired gain in validation C (supervised minus two-step).</li>
+<li><p><em>What is simulated.</em> Each dataset has 400 training and 120 validation patients and 2,000 genes. Expression is built from three true programs plus gene-level noise. Each program loads on a random 15% of genes with nonnegative weights. Programs 1 and 2 are strong and unrelated to survival. Program 3 is the prognostic program, and it is made weak by scaling it down to a small share of expression variance.</p></li>
+<li><p><em>Share of expression variance (0.05%, 0.1% or 0.2%).</em> The fraction of total expression variance that comes from the prognostic program. The smaller it is, the harder the program is to find from expression alone.</p></li>
+<li><p><em>Survival.</em> Survival times come from a Weibull model whose log hazard is the patient’s score on the prognostic program, with about 30% censoring.</p></li>
+<li><p><em>How each dataset is fit.</em> Both methods factorize the training expression at K = 5, the working rank, which is more programs than the three that exist, so neither is told the true number. The supervised SSBMF fit estimates the programs and the Cox coefficients together (w_S = 1). The two-step fit estimates the programs without survival (w_S = 0), then fits a Cox model to all of its program scores.</p></li>
+<li><p><em>What a dot is.</em> Each method’s full risk score, using all of its programs, is computed for the 120 validation patients and scored by Harrell’s C. A dot places the two-step C on the x-axis and the supervised C on the y-axis for the same dataset. There are 10 datasets per share and setting.</p></li>
+<li><p><em>True-risk C.</em> The C of the true simulated risk score on the validation patients. It is the best any model could reach.</p></li>
+<li><p><em>The four survival settings.</em> The true risk score SD measures how strongly the program drives survival: the larger it is, the more cleanly it separates high- and low-risk patients. The hazard ratio per SD is how many times higher the risk is for a patient one SD higher on the true risk score.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Setting</th>
+<th>True risk score SD</th>
+<th>Hazard ratio per SD</th>
+<th>True-risk C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Real-data-like</td>
+<td>0.8</td>
+<td>about 2.2</td>
+<td>0.69</td>
+</tr>
+<tr class="even">
+<td>Moderate</td>
+<td>1.1</td>
+<td>about 3</td>
+<td>0.74</td>
+</tr>
+<tr class="odd">
+<td>Strong</td>
+<td>2.5</td>
+<td>about 12</td>
+<td>0.86</td>
+</tr>
+<tr class="even">
+<td>Very strong</td>
+<td>about 6 to 10</td>
+<td>hundreds to tens of thousands</td>
+<td>0.95</td>
+</tr>
+</tbody>
+</table></li>
+<li><p><em>Relation to the real data.</em> On the real PDAC data the working model reaches C of about 0.63 to 0.66. The real ceiling must be at least that high, so the real-data-like setting is the closest of the four. The real ceiling cannot be measured, so this is an approximation.</p></li>
+<li><p><em>Recovery (corner tables).</em> Among the fitted programs, take the one whose loadings correlate most with the true prognostic program. It counts as recovered when that correlation is at least 0.7 in absolute value, its survival coefficient is at least 1.96 SDs from zero, and its direction is correct. The corner tables also give the mean paired gain in validation C (supervised minus two-step).</p></li>
+<li><p><em>Loading r (corner tables).</em> Whether supervision changed the factorization. For each supervised program, take the largest absolute correlation of its loadings with any two-step program, and average over the programs of that dataset. The table gives the median over the 10 datasets. A value near 1 means the two fits found the same programs.</p></li>
+<li><p><em>Run.</em> 240 fits (10 datasets × 3 shares × 4 settings × 2 methods). All converged within 29 sweeps, with no errors or undefined C. Design and outputs are in the <a href="https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/plans/2026-11-19-near-threshold-k5-rerun-plan.md">registration</a>.</p></li>
 </ul>
 </section>
 <section id="open-issues-and-where-feedback-would-help" class="level3" data-number="16.3.2">
