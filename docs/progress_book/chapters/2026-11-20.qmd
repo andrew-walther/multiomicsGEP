@@ -1,0 +1,122 @@
+# November 20, 2026
+
+## Executive summary
+
+*To be filled in.*
+
+## Current state of method
+
+*To be filled in.*
+
+## Rashid Lab Meeting Update (November 19th, 2026)
+
+This update covers the work since the last lab update. The November 5 meeting was
+cancelled, so it spans roughly November 2 to 15. The model factors standardized expression
+as Y ≈ LF′, where L holds patient scores and F holds gene loadings, and fits a Cox model on
+the program scores in the same fit. The supervision weight w_S is a power on the Cox partial
+likelihood, so w_S = 1 is the ordinary likelihood and larger values give survival more
+influence. The working model is K = 5 programs on 2,218 genes, fit to 273 TCGA and CPTAC
+training patients (139 deaths) with w_S = 1.
+
+### Progress
+
+1. **Prelim proposal.** The chapter on this project was finalized for the November 15
+   deadline. The oral exam is December 7.
+2. **Every model choice redone on the training data alone.** The gene screen, input scaling
+   and rank had partly used outcomes from the validation cohorts. We reran each with
+   five-fold cross-validation (CV) on the 273 training patients. The 2,218-gene screen and
+   within-cohort z-scores stay. The one-SE rule picks K = 5, with mean within-cohort CV C
+   0.643 over five fold partitions. The five external series are now used only to score the
+   frozen model. Their equal-series mean C is 0.630 (donor-bootstrap interval 0.587 to
+   0.670).
+3. **Priors on L and F.** A point-exponential prior, which gives a nonnegative factorization
+   like DeSurv's, did worse than the point-Laplace prior. Its CV C was 0.573 to 0.635 against
+   0.658 at K = 7, at most one of five folds converged, and in simulation it flagged two to
+   four extra survival-active programs per fit. Point-Laplace stays.
+4. **Priors on β.** Shared point-normal and point-Laplace priors were 0.002 to 0.008 lower in
+   CV C than a Normal prior, with about the same number of spurious survival-active programs.
+   Normal stays.
+5. **Two ways to link programs to survival (LB and YFB).** LB puts the latent patient scores
+   in the Cox model (η = Lβ). YFB puts the projection of each patient's expression onto the
+   loadings in the Cox model (η = (YF)β), the same kind of score DeSurv uses.
+   - *Factors.* On the real data the two learn nearly the same programs. Their risk scores
+     correlate 0.998, each matched pair of programs has the same 20 top genes, and Programs
+     2, 4 and 5 are survival-active in both. They are not identical in principle, since
+     YF ≈ L(F′F) mixes programs that share genes. Here the overlap is small, and each latent
+     score correlates 0.985 to 0.999 with its projection.
+   - *Why YFB is kept.* First, YFB scores a new patient exactly as Y~new~F. LB has no fitted
+     L for a new patient and must estimate it by fold-in. Second, YFB's validation C is
+     slightly higher: 0.655 against 0.652 in training CV (difference 0.003, SE 0.004) and
+     0.628 against 0.627 externally (interval −0.002 to 0.005). Both differences are within
+     noise. Third, in simulation at w_S = 1, LB flagged more survival-active programs that
+     match no planted program: 1.8, 1.5 and 1.2 per fit against 0.9, 0.1 and 0.0 for YFB in
+     three of the four simulation settings. In the fourth, near the detection threshold, YFB
+     flagged more (2.9 against 1.4).
+6. **Supervised fit against two-step EBMF then Cox.** The two are practically the same. The
+   supervised-minus-two-step difference in C is +0.004 in training CV (SE 0.004) and −0.001
+   externally (−0.010 to 0.008). Their loadings correlate above 0.99999. The reason is that at
+   w_S = 1 the survival term has almost no influence on the factorization compared with the
+   expression likelihood. It supplies at most about 0.015% of the precision along each
+   survival-active program's loading direction. Resolving this is the first open item below.
+7. **Simulation with low-variance prognostic programs.** We planted programs carrying 0.05%,
+   0.1% and 0.2% of expression variance. With a strong survival effect, the supervised fit had
+   higher validation C in 29 of 30 datasets. At 0.05% it recovered the program in 5 of 10
+   datasets, while the two-step fit recovered none, and validation C was 0.156 higher. With a
+   realistic survival effect the two fits were within 0.01 of each other at 0.1% and 0.2%.
+   At 0.05% the supervised fit's validation C was 0.038 higher, but neither fit recovered
+   the program. Supervision helps when the survival signal is strong relative
+   to the program's share of variance.
+8. **Methylation alone.** On 144 matched TCGA patients, methylation shares its two strongest
+   axes with expression (canonical correlations 0.85 to 0.92) and adds a recurring immune-like
+   program once about 50,000 CpGs are included.
+
+### Open issues and where feedback would help
+
+1. **Supervision is too weak to change the gene programs.** With w_S as a power on the Cox
+   likelihood, w_S = 1 leaves the programs the same as unsupervised ones. We tried three ways
+   to raise it, and none has yet given enough influence with a stable fit:
+   - A grid of fixed weights from 1 to 50 chosen by CV. CV chose 1.
+   - A weight set so that survival supplies a target share of the precision along one
+     program's loadings. Only the smallest target, 1% (w_S ≈ 83), converged, and its
+     loadings still correlated 0.999 with the w_S = 1 fit. In simulation that weight also
+     lost the low-variance program the w_S = 1 fit had found (0 of 10 against 5 of 10).
+     Targets of 5% or more (w_S ≈ 430 and up) did not converge within 500 sweeps.
+   - A fixed Normal or Laplace prior on β to shrink the coefficients. Fits were stable with
+     moderate coefficients at the 5% target for some prior scales. At the 25% and 50%
+     targets, every fit either failed to converge or converged with coefficients far beyond
+     what its prior allows (largest |β| up to 17 under a prior SD of 0.1). Our working
+     explanation is that the score scale grows through F, so shrinking β alone is not
+     enough.
+
+   The next idea is to bound the scale of the scores and loadings, not only β. We would
+   welcome feedback on whether a power on the likelihood is the right lever, or whether
+   another form of supervision would work better.
+2. **Balancing expression and methylation in the joint model.** The M-modality model shares
+   patient scores across data types and gives each data type its own loadings and loading
+   prior. In the matched TCGA fit, methylation supplies 83% to 97% of the reconstruction
+   precision in three shared programs. Down-weighting the methylation likelihood did not fix
+   this. In simulation it shrank the methylation loadings to zero in nearly every program,
+   and on TCGA the most methylation-heavy program stayed above 94% methylation at every
+   weight. We need a way to put the two
+   data types on the same scale without cutting both down to similar small feature counts
+   (for example, about 2,000 genes and 2,000 CpGs). This work is paused until the
+   supervision problem has a direction.
+
+## Supervision-weight tuning for more influence on factorization
+
+*To be filled in.*
+
+## M-modality model extension
+
+*To be filled in.*
+
+## Recent progress & decisions
+
+*To be filled in.*
+
+## Open items
+
+- Supervision-weight tuning so that survival has a measurable influence on the
+  factorization, with stable fits.
+- Validation and refinement of the M-modality model, starting with balancing
+  expression and methylation.
