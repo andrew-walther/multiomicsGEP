@@ -12,17 +12,28 @@
 # Synthetic data only.
 
 Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1, VECLIB_MAXIMUM_THREADS = 1)
-S14_OUT <- "results/benchmark_sim/outputs/yfb_near_threshold_2026-11-05"
+S14_OUT <- Sys.getenv("S14_OUT", "results/benchmark_sim/outputs/yfb_near_threshold_2026-11-05")
+# Optional settings for the 2026-11-19 rerun (docs/plans/2026-11-19-near-threshold-k5-rerun-plan.md).
+# Unset, the runner reproduces the November 5 design: K from config (7), settings strong and
+# realistic, four arms.
+S14_K <- Sys.getenv("S14_K", "")
+S14_STRENGTHS <- strsplit(Sys.getenv("S14_STRENGTHS", "strong,realistic"), ",")[[1]]
+S14_ARMS <- strsplit(Sys.getenv("S14_ARMS", "twostep,A1_w1,A1_w5,A2_w1"), ",")[[1]]
+# True risk score SD for the rescaled settings. "strong" keeps the generator's coefficient 3.3.
+S14_RISK_SD <- c(real_like = 0.8, realistic = 1.1, middle = 2.5)
 
 #' One S-14 dataset
-#' @param seed Seed. @param share Planted share. @param strength "strong" or "realistic".
+#' @param seed Seed. @param share Planted share.
+#' @param strength "strong" (coefficient 3.3, unscaled) or a name in `S14_RISK_SD`, which rescales
+#'   the true risk score to that training SD.
 #' @return Data list with z-scored Ytr, Yva and outcomes.
 #' @examples
 #' # s14_data(1, .001, "realistic")
 s14_data <- function(seed, share, strength) {
   d <- yfb_decision_data(seed, 2000L, share, truth_mode = "shared")
-  if (strength == "realistic") {
-    f <- 1.1 / sd(d$training_eta)
+  if (strength != "strong") {
+    if (!strength %in% names(S14_RISK_SD)) stop("Unknown survival setting: ", strength)
+    f <- S14_RISK_SD[[strength]] / sd(d$training_eta)
     set.seed(seed + 5000L)
     draw <- function(eta) {
       et <- (-log(runif(length(eta))) / (.01 * exp(eta)))^(1 / 1.5); cb <- rexp(length(eta))
@@ -48,7 +59,8 @@ s14_task <- function(task, cfg) {
   d <- s14_data(task$seed, task$share, task$strength)
   w <- switch(task$arm, twostep = 0, A1_w1 = 1, A1_w5 = 5, A2_w1 = 1)
   t0 <- proc.time()[["elapsed"]]
-  f <- fit_ssbmf_yfb(d$Ytr, d$time, d$event, K = cfg$benchmark$k_merged_yfb_desurv,
+  K <- if (nzchar(S14_K)) as.integer(S14_K) else cfg$benchmark$k_merged_yfb_desurv
+  f <- fit_ssbmf_yfb(d$Ytr, d$time, d$event, K = K,
                      max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol, prior_LF = "point_laplace",
                      prior_beta = "normal", canonicalize = TRUE, w_S = w, survival_block_weight = TRUE,
                      beta_posterior = if (task$arm == "A2_w1") "joint" else "meanfield",
@@ -76,16 +88,40 @@ s14_task <- function(task, cfg) {
   sprintf("%s ok %.0fs", key, row$fit_sec)
 }
 
+#' Loading similarity between the supervised (w_S = 1) and two-step fits of each dataset
+#'
+#' For each live supervised program (column norm above 1e-8), the largest absolute correlation
+#' of its loadings with any live two-step program. A value near 1 for every program means
+#' supervision left the factorization unchanged.
+#' @param out Output folder holding `fits/`. @param design Task design (seed, share, strength).
+#' @return Data frame with one row per dataset: mean and minimum over live supervised programs,
+#'   and the number of live programs in each fit.
+#' @examples
+#' # s14_loading_similarity(S14_OUT, design)
+s14_loading_similarity <- function(out, design) {
+  ds <- unique(design[, c("seed", "share", "strength")])
+  do.call(rbind, lapply(seq_len(nrow(ds)), function(i) {
+    key <- sprintf("%s_sh%g_s%02d_%%s.rds", ds$strength[i], ds$share[i], ds$seed[i])
+    paths <- file.path(out, "fits", sprintf(key, c("A1_w1", "twostep")))
+    if (!all(file.exists(paths))) return(data.frame(ds[i, ], sim_mean = NA, sim_min = NA,
+                                                     live_sup = NA, live_two = NA))
+    Fs <- readRDS(paths[1])$EF; Ft <- readRDS(paths[2])$EF
+    Fs <- Fs[, colSums(Fs^2) > 1e-8, drop = FALSE]; Ft <- Ft[, colSums(Ft^2) > 1e-8, drop = FALSE]
+    best <- if (ncol(Fs) && ncol(Ft)) apply(abs(suppressWarnings(cor(Fs, Ft))), 1, max, na.rm = TRUE) else NA
+    data.frame(ds[i, ], sim_mean = mean(best), sim_min = min(best), live_sup = ncol(Fs), live_two = ncol(Ft))
+  }))
+}
+
 if (sys.nframe() == 0L) {
   cores <- if (length(commandArgs(TRUE))) as.integer(commandArgs(TRUE)[1]) else 1L
   dir.create(file.path(S14_OUT, "fits"), recursive = TRUE, showWarnings = FALSE)
   writeLines(c(system("git rev-parse HEAD", intern = TRUE), format(Sys.time())),
              file.path(S14_OUT, "provenance.txt"))
-  design <- expand.grid(seed = 1:10, share = c(.0005, .001, .002), strength = c("strong", "realistic"),
-                        arm = c("twostep", "A1_w1", "A1_w5", "A2_w1"), stringsAsFactors = FALSE)
+  design <- expand.grid(seed = 1:10, share = c(.0005, .001, .002), strength = S14_STRENGTHS,
+                        arm = S14_ARMS, stringsAsFactors = FALSE)
   design <- design[order(design$arm != "twostep" & design$arm != "A1_w1", design$strength, design$share), ]
   cl <- parallel::makePSOCKcluster(cores)
-  parallel::clusterExport(cl, c("S14_OUT", "s14_data", "s14_task"))
+  parallel::clusterExport(cl, c("S14_OUT", "S14_K", "S14_RISK_SD", "s14_data", "s14_task"))
   parallel::clusterEvalQ(cl, { Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1,
     VECLIB_MAXIMUM_THREADS = 1); source("results/benchmark_sim/run_yfb_survival_weight_p2000.R")
     s9_load(); source("code/concordance_ci.R"); cfg <- yaml::read_yaml("config/globals.yml"); NULL })
@@ -95,4 +131,8 @@ if (sys.nframe() == 0L) {
   writeLines(unlist(st), file.path(S14_OUT, "task_status.txt"))
   m <- do.call(rbind, lapply(list.files(file.path(S14_OUT, "fits"), full.names = TRUE), function(f) readRDS(f)$metrics))
   write.csv(m, file.path(S14_OUT, "metrics.csv"), row.names = FALSE)
+  if (all(c("twostep", "A1_w1") %in% S14_ARMS)) {
+    sim <- s14_loading_similarity(S14_OUT, design)
+    write.csv(sim, file.path(S14_OUT, "loading_similarity.csv"), row.names = FALSE)
+  }
 }
