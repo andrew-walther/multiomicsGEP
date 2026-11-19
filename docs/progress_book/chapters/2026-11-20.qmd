@@ -70,6 +70,33 @@ training patients (139 deaths) with w_S = 1.
    axes with expression (canonical correlations 0.85 to 0.92) and adds a recurring immune-like
    program once about 50,000 CpGs are included.
 
+@fig-near-threshold shows the low-variance simulation in item 7. Supervision can find a
+weak prognostic program that the unsupervised factorization misses, but only when the
+survival signal is very strong. With a moderate signal, the supervised and two-step fits
+land close to the diagonal. The real data look like the moderate setting or weaker. Our
+best models reach C of about 0.63 to 0.66 there, below the 0.74 that a perfect model
+reaches in the moderate setting. This matches what we see on the real data: the supervised
+SSBMF and unsupervised EBMF factorizations give nearly the same programs (loadings
+correlate above 0.99999).
+
+![Validation C of the supervised SSBMF fit (w_S = 1) against the two-step fit, one point
+per simulated dataset (400 training and 120 validation patients, 2,000 genes, 10 datasets
+per setting). The two-step fit factorizes expression without survival, then fits a Cox
+model to the program scores. Each dataset plants one prognostic program. Its *share of
+expression variance* (0.05%, 0.1% or 0.2%) measures how weak the program is: the smaller
+the share, the harder it is to find from expression alone. Survival times are drawn from a
+Weibull model whose log hazard is that program's score, with about 30% censoring.
+*True-risk C* is the concordance of the true simulated risk score with the validation
+outcomes, the best any model could achieve. In the *very strong* setting the true risk
+score has SD 6 to 9 (true-risk C 0.95), far stronger than any real cohort. In the
+*moderate* setting the true risk score is rescaled to SD 1.1, a hazard ratio of about 3
+per SD (true-risk C 0.74). On the real PDAC data the working model reaches C of about 0.63
+to 0.66, so the real survival signal is closer to the moderate setting, or weaker. The
+corner tables give the mean paired gain in validation C (supervised minus two-step) and
+the number of datasets in which each fit recovered the planted program (absolute loading
+correlation of at least 0.7, a survival coefficient at least 1.96 SDs from zero, and the
+correct survival direction).](../figures/2026-11-20/near-threshold-paired-c.png){#fig-near-threshold fig-alt="Two scatter plots of validation C, supervised fit on the y-axis and two-step fit on the x-axis, with a dashed diagonal. In the very strong survival panel, the 0.05% points sit far above the diagonal (mean gain 0.156, recovered 5 of 10 against 0) and the 0.1% and 0.2% points sit slightly above it. In the moderate panel, most points lie near the diagonal, with gains of 0.038, 0.008 and 0.002."}
+
 ### Open issues and where feedback would help
 
 1. **Supervision is too weak to change the gene programs.** With w_S as a power on the Cox
