@@ -72,10 +72,14 @@ the two-step fit 0.87). In a setting calibrated to the real data (true-risk C 0.
 two fits give nearly the same programs (0.98 to 0.999) and C. This reproduces the
 real-data behavior, so that setting is the test bed for any supervision fix.
 
-The working explanation is that the score scale grows through F, so shrinking β alone
-does not stabilize large weights. The next step is to check this on the saved per-sweep
-traces (`results/benchmark_sim/outputs/bounded_risk_2026-11-14/*_trace.csv`), then derive
-a fix that bounds the scale of the scores and loadings.
+A diagnosis on 2026-11-20 replaced the earlier working explanation (score scale growing
+through F): large weights overfit training survival through low-variance expression
+directions, and above a weight of about 110 the weighted likelihood prefers that
+degenerate fit. Per-gene noise precision then collapses on a few genes and amplifies it.
+In simulation, w_S = 10 moves the loadings but away from the prognostic program. Ranked
+candidate fixes, DeSurv's optimizer and the literature are in the
+[brainstorm findings](docs/findings/2026-11-20-supervision-influence-brainstorm-findings.md).
+The next step is Andrew's choice among them.
 
 ## Prelim Chapter 4 review (2026-11-15)
 

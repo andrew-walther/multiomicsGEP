@@ -7,6 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-20 | [supervision-influence-brainstorm-findings](2026-11-20-supervision-influence-brainstorm-findings.md) | Why survival has no influence on the loadings at w_S = 1 and why large weights fail (overfitting through low-variance expression directions, amplified by noise-precision collapse; break-even weight about 110), DeSurv's optimizer, literature, a weight-grid spike, and ranked candidate fixes | complete; for discussion, nothing adopted |
 | 2026-11-14 | [bounded-risk-findings](2026-11-14-bounded-risk-findings.md) | S-17 fixed-prior supervision, risk stability and conditional evaluation gates | complete under registered stop; 24 cases, no qualifying scale, 1,611 audit checks and 879 tests pass; independent review passes; no adoption |
 | 2026-11-13 | [share-targeted-weight-findings](2026-11-13-share-targeted-weight-findings.md) | S-16 exact share targeting, convergence diagnostics, simulation null gate and reference CV/structure | complete under registered fallback; target 0.01 fails null variance gate; unit weight retained; no external scoring |
 | 2026-11-13 | [weight-path-findings](2026-11-12-weight-path-findings.md) | Fixed methylation likelihood-weight path, all-truth block correlations and descriptive TCGA programs | complete; repeats exact; 150/150 simulation and 4/4 new TCGA converged; no usable weight or new TCGA program; task D paused |
