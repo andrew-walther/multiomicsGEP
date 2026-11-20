@@ -5,6 +5,11 @@ complete 2026-11-15). Priorities in order (DECISIONS.md, 2026-11-19):
 
 - [x] Share-targeted survival weight and fixed β-prior studies (2026-11-13 to 14). Neither
   is adopted, and w_S = 1 stays (DECISIONS.md, 2026-11-14).
+- [x] Near-threshold simulation at K = 5 with four survival-signal settings (2026-11-19,
+  [registration and results](docs/plans/2026-11-19-near-threshold-k5-rerun-plan.md)).
+  Closed. The supervised fit's C gain and loading change grow with the survival signal,
+  and in the real-data-like setting it matches the two-step fit. Kept as a descriptive
+  figure; nothing adopted. The real-data-like setting is the test bed for the fix below.
 - [ ] **Survival supervision strong enough to change the loadings.** First diagnose where
   large-weight fits diverge from the saved per-sweep traces of the fixed-prior study
   (scale of F, direction of F, or β). Then derive a fix, such as bounding each program's

@@ -62,6 +62,16 @@ selected an arm, and the working model keeps w_S = 1 (DECISIONS.md, 2026-11-14).
 | Share-targeted weight | Set w_S so survival supplies a target share (1% to 50%) of the precision along one program's loadings | Only the 1% target converged on real data (w_S ≈ 83), with loadings correlating 0.999 to the unit-weight fit. It lost the low-variance simulation program (0 of 10 against 5 of 10). Targets of 5% and above did not converge in 500 sweeps ([findings](docs/findings/2026-11-13-share-targeted-weight-findings.md)) |
 | Fixed β prior | Fixed Normal or Laplace prior on standardized β, σ_b 0.1 to 1, at targets 5%, 25% and 50% | Stable with in-range coefficients only at 5%. At 25% and 50% every fit failed to converge or converged with coefficients far outside the prior's range. Training CV and the simulation null check were not reached ([findings](docs/findings/2026-11-14-bounded-risk-findings.md)) |
 
+A descriptive simulation on 2026-11-19 shows where w_S = 1 has and lacks influence
+([registration and results](docs/plans/2026-11-19-near-threshold-k5-rerun-plan.md)). At
+K = 5, with a weak prognostic program (0.05% to 0.2% of expression variance), the
+supervised fit's gain in validation C over the two-step fit and the change in its loadings
+both grow with the survival signal. With a very strong signal it recovers the 0.05%
+program in 4 of 10 datasets against none for two-step (median loading correlation with
+the two-step fit 0.87). In a setting calibrated to the real data (true-risk C 0.69) the
+two fits give nearly the same programs (0.98 to 0.999) and C. This reproduces the
+real-data behavior, so that setting is the test bed for any supervision fix.
+
 The working explanation is that the score scale grows through F, so shrinking β alone
 does not stabilize large weights. The next step is to check this on the saved per-sweep
 traces (`results/benchmark_sim/outputs/bounded_risk_2026-11-14/*_trace.csv`), then derive
