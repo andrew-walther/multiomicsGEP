@@ -61,7 +61,7 @@ training patients (139 deaths) with w_S = 1.
 7. **Simulation with low-variance prognostic programs.** We planted a prognostic program
    carrying 0.05%, 0.1% or 0.2% of expression variance and compared the supervised and
    two-step fits at K = 5 under four survival-signal settings, from one close to the real
-   data to one far stronger (@fig-near-threshold). With the very strong signal, the
+   data to one far stronger (see the next subsection and @fig-near-threshold). With the very strong signal, the
    supervised fit had higher validation C in 29 of 30 datasets. At 0.05% it recovered the
    program in 4 of 10 datasets against none for the two-step fit, with C 0.112 higher. In
    the real-data-like setting the two fits give nearly the same programs (median loading
@@ -73,7 +73,9 @@ training patients (139 deaths) with w_S = 1.
    axes with expression (canonical correlations 0.85 to 0.92) and adds a recurring immune-like
    program once about 50,000 CpGs are included.
 
-@fig-near-threshold shows the low-variance simulation in item 7. Supervision can find a
+### Simulation with low-variance prognostic programs
+
+This subsection expands item 7. Supervision can find a
 weak prognostic program that the unsupervised factorization misses, and it moves the
 loadings away from the unsupervised ones, but only when the survival signal is strong.
 As the signal weakens, the gain in C shrinks and the loadings of the two fits converge.
@@ -83,6 +85,11 @@ about 0.63 to 0.66 on the real PDAC data, so the real survival signal is likely 
 range. This matches the real data: the supervised SSBMF and unsupervised EBMF
 factorizations give nearly the same programs (loadings correlate above 0.99999). It is
 why stronger supervision than w_S = 1 is the first open issue below.
+
+In the two weaker settings, neither method recovers the faintest program (0.05%), but both
+still find the 0.1% and 0.2% programs in 8 to 10 of 10 datasets, because the factorization
+alone can detect them. The weaker settings miss only the faintest program, not
+low-variance programs in general.
 
 ![Validation C of the supervised SSBMF fit (w_S = 1) against the two-step fit in the near-threshold simulation at K = 5, under four survival-signal settings. Each dot is one simulated dataset, scored by both methods. The design and terms are listed below the figure.](../figures/2026-11-20/near-threshold-paired-c.png){#fig-near-threshold fig-alt="Four scatter plots in a two-by-two grid of validation C, supervised fit on the y-axis and two-step fit on the x-axis, with a dashed diagonal, for survival signals from real-data-like to very strong. In the real-data-like and moderate panels nearly all points lie on the diagonal, with mean C gains of 0.002 to 0.030 and loading correlations of 0.978 to 0.999 between the fits. In the strong and very strong panels the 0.05% points sit well above the diagonal, with gains of 0.077 and 0.112, recovery of 3 and 4 of 10 against 0, and loading correlations of 0.926 and 0.873."}
 
@@ -135,8 +142,7 @@ why stronger supervision than w_S = 1 is the first open issue below.
   two-step program, and average over the programs of that dataset. The table gives the
   median over the 10 datasets. A value near 1 means the two fits found the same programs.
 - *Run.* 240 fits (10 datasets × 3 shares × 4 settings × 2 methods). All converged within
-  29 sweeps, with no errors or undefined C. Design and outputs are in the
-  [registration](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/plans/2026-11-19-near-threshold-k5-rerun-plan.md).
+  29 sweeps, with no errors or undefined C.
 
 ### Open issues and where feedback would help
 

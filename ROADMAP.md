@@ -10,7 +10,10 @@ complete 2026-11-15). Priorities in order (DECISIONS.md, 2026-11-19):
   Closed. The supervised fit's C gain and loading change grow with the survival signal,
   and in the real-data-like setting it matches the two-step fit. Kept as a descriptive
   figure; nothing adopted. The real-data-like setting is the test bed for the fix below.
-- [ ] **Survival supervision strong enough to change the loadings.** First diagnose where
+- [ ] **Survival supervision strong enough to change the loadings.** Start with a thorough
+  brainstorm and literature review (DeSurv and other supervised factorization methods) of
+  how supervision can be made to influence the factorization without losing convergence.
+  Diagnose where
   large-weight fits diverge from the saved per-sweep traces of the fixed-prior study
   (scale of F, direction of F, or β). Then derive a fix, such as bounding each program's
   score or loading scale, and evaluate it against the registered recovery, false-activity
