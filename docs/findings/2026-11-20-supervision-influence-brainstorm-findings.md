@@ -279,10 +279,21 @@ overfitting of the predictive direction. Weights of 100 and above never converge
 with the break-even weight of about 110 in Section 2. The fits were not saved, so τ was not
 inspected.
 
-## 8. Questions for Andrew
+## 8. Decisions so far (Andrew, 2026-11-23)
 
-- Which outcome counts as success on the real data: programs that change while CV C holds,
-  or programs that change and CV C improves?
+- **What counts as success.** Supervision succeeds if the model identifies
+  survival-associated programs on the real data and gives a survival-informed
+  factorization that differs from the unsupervised EBMF fit. The simulation analog is
+  recovering a low-variance prognostic program at a realistic survival signal, which the
+  current model does not do (Section 7). A gain in CV C is not expected to be large and is
+  not the measure of progress, though C should not degrade.
+- **Updates that always increase the objective** (candidate 2) make sense and should be
+  part of any approach.
+- **Status.** Tabled for now. Next, discuss any further ideas, then test the candidates
+  systematically, each on its own branch as needed, in the real-data-like test bed.
+
+## 9. Open questions for Andrew
+
 - Is a restriction of survival to the high-variance expression directions (candidate 1)
   acceptable, given that it limits which weak programs can be found?
 - Should survival-driven programs (candidate 4) be separate from the expression programs,
