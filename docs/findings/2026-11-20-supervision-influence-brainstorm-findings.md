@@ -253,6 +253,49 @@ An evaluation should therefore:
 Only a candidate that passes there moves to training CV on the real data, with the
 external cohorts scored once after the model is fixed.
 
+### Measures of success beyond CV C
+
+A large gain in CV C is not expected (DeSurv's CV C was 0.655, close to the current
+model's), so these measures carry the evaluation alongside recovery. A factorization
+that differs from EBMF counts only if it moves toward survival-relevant structure, since
+the spike in Section 7 shows that divergence alone can be overfitting.
+
+In simulation, where the truth is known:
+
+- **Loading accuracy as a continuous measure.** The correlation of the matched program
+  with the true prognostic loadings, not only the pass or fail recovery threshold.
+- **Gene-level recovery.** Precision and recall of the true program's genes among a
+  fitted program's top genes. DeSurv reported 0.50 against 0.07 for NMF.
+- **Specificity.** Under permuted survival, no spurious survival-active programs and no
+  gain in held-out C.
+- **Rank needed.** The smallest K at which the prognostic program appears. Supervision
+  should find it at a smaller K than the two-step fit.
+
+On the real data, where there is no truth:
+
+- **Parsimony.** Similar C with fewer programs. DeSurv's main argument was that it needed
+  3 factors where NMF needed 7 for the same per-cohort C.
+- **Concentration.** Survival signal concentrated in one or two programs, measured by each
+  program's share of the risk score or its drop in partial log likelihood (DeSurv's
+  leading factor had Δℓ = 66.4).
+- **Low-variance prognostic programs.** A program that is clearly prognostic while
+  explaining little expression variance. DeSurv's main factor explained 7% of the
+  variance. The current Program 5 explains 3.6%.
+- **Localized change.** Supervision changes the survival-relevant programs while the
+  others stay close to EBMF. Every program changing a little would look like noise.
+- **Stability.** The same program appears across CV folds and random starts.
+- **External replication per program.** Each program's hazard ratio has the same direction
+  and similar size in the five external cohorts, not only the combined risk score.
+- **Added value over known subtypes.** The program stays prognostic after adjusting for
+  PurIST and DeCAF. DeSurv reported a hazard ratio of 1.33 after that adjustment.
+- **Biological coherence.** Enrichment for known PDAC biology (basal and classical,
+  stromal subtypes, immune).
+- **Held-out partial log likelihood.** More sensitive than C, so it can show small real
+  gains that C hides.
+
+Several of these already exist in the repository: the program rule with its risk-score
+share and fold stability, the external per-program curves and the PurIST comparisons.
+
 ## 7. Weight-grid spike in the test bed
 
 A spike on 2026-11-20 (script and per-fit metrics in
